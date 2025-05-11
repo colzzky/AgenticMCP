@@ -11,6 +11,11 @@ import { AppConfig } from '../core/types'; // Ensure AppConfig is correctly type
  * @param program The main Commander program instance.
  */
 export function registerConfigCommands(program: Command): void {
+  // Show help if no command is specified
+  if (process.argv.slice(2).length === 0) {
+    program.outputHelp();
+  }
+
   const configCommand = program.command('config').description('Manage CLI configuration');
 
   configCommand
@@ -27,7 +32,7 @@ export function registerConfigCommands(program: Command): void {
       try {
         const currentConfig = await configManager.loadConfig();
         console.log('Current configuration:');
-        console.log(JSON.stringify(currentConfig, null, 2));
+        console.log(JSON.stringify(currentConfig, undefined, 2));
       } catch (error) {
         console.error('Failed to load configuration:', error);
       }
@@ -39,12 +44,10 @@ export function registerConfigCommands(program: Command): void {
     .action(async (key: string) => {
       try {
         const value = await configManager.get(key as keyof AppConfig);
-        if (value !== undefined) {
-          console.log(`${key}:`, value);
-        } else {
+        if (value) {
           const currentConfig = await configManager.loadConfig(); // Load to check if key exists
           if (Object.prototype.hasOwnProperty.call(currentConfig, key)) {
-            console.log(`${key}:`, value); // Value is explicitly undefined or null
+            console.log(`${key}:`, value); // Value is explicitly undefined or undefined
           } else {
             console.log(`Configuration key '${key}' not found.`);
           }
@@ -56,28 +59,31 @@ export function registerConfigCommands(program: Command): void {
 
   configCommand
     .command('set <key> <value>')
-    .description('Set a specific configuration value by key (e.g., defaultProvider openai)')
-    .action(async (key: string, value: any) => {
+    .description('Set a specific configuration value by key (e.g., defaultProvider openai, or providers \'{...}\'')
+    .action(async (key: string, value: string) => {
       try {
-        let parsedValue: any = value;
-        if (typeof value === 'string') {
-            if (value.toLowerCase() === 'true') {
-                parsedValue = true;
-            } else if (value.toLowerCase() === 'false') {
-                parsedValue = false;
-            } else if (!isNaN(parseFloat(value)) && isFinite(value as any)) {
-                // Check if it's a number, but ensure it's not just a string that happens to be numeric
-                // Commander might pass numbers as strings
-                const num = parseFloat(value);
-                if (String(num) === value) { // If re-stringifying gives the same value, it's likely a number
-                    parsedValue = num;
-                }
-            }
+        if (key === 'defaultProvider') {
+          if (typeof value !== 'string' || ['true', 'false'].includes(value.toLowerCase()) || (!Number.isNaN(Number(value)) && Number.isFinite(Number(value)))) {
+             console.error(`Invalid value for 'defaultProvider'. It must be a string (e.g., 'openai').`);
+             return;
+          }
+          await configManager.set('defaultProvider', value);
+          console.log(`Configuration 'defaultProvider' set to:`, value);
+        } else if (key === 'providers') {
+          try {
+            const providersObject = JSON.parse(value);
+            // TODO: Add a type guard or schema validation for providersObject structure
+            await configManager.set('providers', providersObject);
+            console.log(`Configuration 'providers' set to:`, providersObject);
+          } catch {
+            console.error(`Invalid JSON string for 'providers'. Please provide a valid JSON object string.`);
+            console.error('Example: config set providers \'{ "myOpenAI": { "providerType": "openai", "model": "gpt-4" } }\'');
+            return;
+          }
+        } else {
+          console.error(`Invalid configuration key: ${key}. Allowed keys are 'defaultProvider' or 'providers'.`);
+          return;
         }
-        // If value is already a boolean or number from Commander's parsing, it will be used directly.
-
-        await configManager.set(key as keyof AppConfig, parsedValue);
-        console.log(`Configuration '${key}' set to:`, parsedValue);
       } catch (error) {
         console.error(`Failed to set configuration for key '${key}':`, error);
       }

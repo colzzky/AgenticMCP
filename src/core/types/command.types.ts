@@ -8,9 +8,9 @@ export interface CommandContext {
   // Example: Raw arguments passed to the command
   rawArgs?: string[];
   // Example: Parsed options
-  options?: Record<string, any>;
+  options?: Record<string, unknown>; // Use unknown for safer type
   // Example: User configuration
-  config?: any; // To be refined later
+  config?: unknown; // Use unknown for safer type
   // Example: Session ID for persistent operations
   sessionId?: string;
 }
@@ -22,7 +22,7 @@ export interface CommandContext {
 export interface CommandOutput {
   success: boolean;
   message?: string; // For simple text output or error messages
-  data?: any; // For structured data output
+  data?: unknown; // For structured data output
   error?: Error; // For detailed error objects
 }
 
@@ -41,7 +41,7 @@ export interface Command {
   options?: Array<{
     flags: string; // e.g., "-f, --force"
     description: string;
-    defaultValue?: any;
+    defaultValue?: unknown;
   }>;
 
   /**
@@ -50,7 +50,7 @@ export interface Command {
    * @param args - The arguments passed to the command.
    * @returns A promise that resolves to the command's output.
    */
-  execute(context: CommandContext, ...args: any[]): Promise<CommandOutput>;
+  execute(context: CommandContext, ...args: unknown[]): Promise<CommandOutput>;
 
   /**
    * Optional method to provide help/usage information for the command.

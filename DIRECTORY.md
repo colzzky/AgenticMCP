@@ -1,90 +1,99 @@
 # Project Directory Structure
 
+This document outlines the directory structure of the AgenticMCP.Typescript project.
+
+## Directory Tree
+
 ```
-. (AgenticMCP.Typescript)
-├── .aider.chat.history.md
-├── .aider.tags.cache.v4/
-├── .eslintrc.js
-├── .git/
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-├── .gitignore
-├── .prettierrc.js
-├── .vscode/
-├── .windsurfrules
+.
 ├── DIRECTORY.md
 ├── LICENSE
-├── package.json
 ├── PROGRESS.jsonl
 ├── README.md
 ├── TASKS.jsonl
-├── tsconfig.json
 ├── context/
-├── dist/
 ├── docs/
 │   └── ARCHITECTURE.md
+├── jest.config.js
+├── package-lock.json
+├── package.json
 ├── project-summary.md
 ├── src/
+│   ├── commands/
+│   │   ├── configCommands.ts
+│   │   └── credentialCommands.ts
 │   ├── core/
-│   │   ├── index.ts
-│   │   ├── types/
-│   │   │   ├── command.types.ts
-│   │   │   ├── provider.types.ts
-│   │   │   ├── context.types.ts
-│   │   │   ├── config.types.ts
-│   │   │   ├── credentials.types.ts
-│   │   │   └── index.ts
 │   │   ├── config/
 │   │   │   ├── configManager.ts
 │   │   │   └── index.ts
 │   │   ├── credentials/
 │   │   │   ├── credentialManager.ts
 │   │   │   └── index.ts
-│   │   └── utils/
-│   ├── commands/
-│   │   ├── configCommands.ts
-│   │   └── credentialCommands.ts
-│   └── index.ts
+│   │   ├── index.ts
+│   │   └── types/
+│   │       ├── command.types.ts
+│   │       ├── config.types.ts
+│   │       ├── context.types.ts
+│   │       ├── credentials.types.ts
+│   │       ├── index.ts
+│   │       └── provider.types.ts
+│   ├── index.ts
+│   └── providers/
+│       ├── index.ts
+│       └── openai/
+│           ├── index.ts
+│           └── openaiProvider.ts
 ├── tests/
 │   └── index.test.ts
 ├── tree.sh
+└── tsconfig.json
+```
+
+## Key Files:
+
+*   **`README.md`**: Provides an overview of the project, its objectives, and how to use the CLI tool.
+*   **`DIRECTORY.md`**: (This file) Outlines the project directory structure.
+*   **`PROGRESS.jsonl`**: Logs the agent's progress, with each line being a JSON object detailing an action.
+*   **`TASKS.jsonl`**: Manages tasks, with each line being a JSON object describing a task's status and details.
+*   **`LICENSE`**: Contains the project's licensing information.
+*   **`package.json`**: Defines project metadata, dependencies, and scripts.
+*   **`package-lock.json`**: Records the exact versions of dependencies.
+*   **`tsconfig.json`**: Configures the TypeScript compiler options.
+*   **`jest.config.js`**: Configuration file for the Jest testing framework.
+*   **`tree.sh`**: A shell script used to generate a tree-like representation of the directory structure.
+*   **`project-summary.md`**: Provides a high-level summary of the project.
 
 ## Key Directories:
 
 *   **`src/`**: Contains the main source code for the AgenticMCP CLI application.
-*   **`src/core/types/`**: Contains core TypeScript type and interface definitions for the application.
-*   **`src/core/config/`**: Manages application configuration.
-    *   `configManager.ts`: Manages loading, saving, and accessing application configuration.
-    *   `index.ts`: Barrel file re-exporting all config utils within `src/core/config`.
-*   **`src/core/credentials/`**: Handles secure storage and retrieval of credentials using the system keychain.
-    *   `credentialManager.ts`: Provides methods to get, set, and delete secrets.
-    *   `index.ts`: Barrel file for the credentials module.
-*   **`src/core/utils/`**: Utility functions and helper modules.
-*   **`src/commands/`**: Contains modules for different CLI command groups.
-    *   `configCommands.ts`: Defines and registers the 'config' command and its subcommands.
-    *   `credentialCommands.ts`: Implements CLI commands for managing secure credentials (e.g., `credentials set`, `credentials get`).
+    *   **`src/core/`**: Houses the core logic, types, and utilities shared across the application.
+        *   **`src/core/config/`**: Manages application configuration.
+            *   `configManager.ts`: Manages loading, saving, and accessing application configuration.
+            *   `index.ts`: Barrel file re-exporting all config utils within `src/core/config`.
+        *   **`src/core/credentials/`**: Handles secure storage and retrieval of credentials using the system keychain.
+            *   `credentialManager.ts`: Provides methods to get, set, and delete secrets.
+            *   `index.ts`: Barrel file for the credentials module.
+        *   **`src/core/types/`**: Contains core TypeScript type and interface definitions for the application.
+            *   `command.types.ts`: Defines types related to CLI commands.
+            *   `config.types.ts`: Defines types for configuration structures.
+            *   `context.types.ts`: Defines types for context management.
+            *   `credentials.types.ts`: Defines TypeScript interfaces for credentials.
+            *   `provider.types.ts`: Defines interfaces for LLM provider adapters.
+            *   `index.ts`: Barrel file for all type definitions.
+        *   `index.ts`: Barrel file for the `core` module.
+    *   **`src/providers/`**: Contains adapters for different LLM providers.
+        *   **`src/providers/openai/`**: OpenAI provider specific implementations.
+            *   `openaiProvider.ts`: Class implementing `LLMProvider` for OpenAI.
+            *   `index.ts`: Barrel file for the OpenAI provider module.
+        *   `index.ts`: Barrel file re-exporting all provider modules.
+    *   **`src/commands/`**: Contains modules for different CLI command groups.
+        *   `configCommands.ts`: Defines and registers the 'config' command and its subcommands.
+        *   `credentialCommands.ts`: Implements CLI commands for managing secure credentials (e.g., `credentials set`, `credentials get`).
+    *   `index.ts`: Main entry point for the CLI application.
 *   **`tests/`**: Houses all unit, integration, and end-to-end tests for the project.
+    *   `index.test.ts`: Example test file.
 *   **`docs/`**: Includes all project documentation, such as requirements, design documents, and user guides.
-*   **`dist/`**: Contains the compiled JavaScript code output by the TypeScript compiler.
-*   **`context/`**: (Purpose to be defined, seems project specific based on listing)
-
-## Key Files:
-
-*   **`README.md`**: Main project overview, requirements, and setup instructions.
-*   **`TASKS.jsonl`**: Tracks project tasks, their status, and assignments.
-*   **`PROGRESS.jsonl`**: Logs detailed progress on tasks and development activities.
-*   **`LICENSE`**: Project's open-source license information (MIT License).
-*   **`package.json`**: Manages project dependencies and scripts.
-*   **`.gitignore`**: Specifies intentionally untracked files that Git should ignore.
-*   **`project-summary.md`**: (Purpose to be defined, seems project specific based on listing)
-*   **`tsconfig.json`**: TypeScript compiler configuration.
-*   **`.eslintrc.js`**: ESLint configuration file.
-*   **`.prettierrc.js`**: Prettier configuration file.
-*   **`tree.sh`**: (Purpose to be defined, seems project specific based on listing)
-*   **`src/core/config/configManager.ts`**: Manages loading, saving, and accessing application configuration.
-*   **`src/core/config/index.ts`**: Barrel file re-exporting all config utils within `src/core/config`.
-*   **`src/core/index.ts`**: Barrel file re-exporting all modules within `src/core`.
-*   **`src/core/types/credentials.types.ts`**: Defines TypeScript interfaces for credentials.
-*   **`src/core/credentials/credentialManager.ts`**: Class for managing credentials via `keytar`.
-*   **`src/core/credentials/index.ts`**: Barrel file for the `credentials` module.
+    *   `ARCHITECTURE.md`: Describes the software architecture of the project.
+*   **`context/`**: (Purpose to be defined, seems project specific based on listing - e.g. stores contextual data for agent operations)
+*   **`.vscode/`**: Contains VS Code editor-specific settings.
+    *   `settings.json`: Workspace settings for VS Code.

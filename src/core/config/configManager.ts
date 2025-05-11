@@ -2,8 +2,8 @@
  * @file Manages application configuration, including loading, saving, and providing defaults.
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import path from 'node:path';
 import envPaths from 'env-paths';
 import { AppConfig, ProviderSpecificConfig } from '../types'; 
 import { CredentialManager } from '../credentials'; 
@@ -15,9 +15,9 @@ const CONFIG_FILE_NAME = 'config.json';
 /**
  * Manages the application's configuration.
  */
-class ConfigManager {
+export class ConfigManager {
   private configPath: string;
-  private config: AppConfig | null = null;
+  private config: AppConfig | undefined = undefined;
 
   constructor(appName: string = APP_NAME) {
     const paths = envPaths(appName, { suffix: '' });
@@ -31,8 +31,13 @@ class ConfigManager {
     const dir = path.dirname(this.configPath);
     try {
       await fs.mkdir(dir, { recursive: true });
-    } catch (error: any) {
-      if (error.code !== 'EEXIST') {
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as { code?: string }).code !== 'EEXIST'
+      ) {
         console.error(`Failed to create config directory at ${dir}:`, error);
         throw error;
       }
@@ -54,8 +59,13 @@ class ConfigManager {
     try {
       const fileContent = await fs.readFile(this.configPath, 'utf-8');
       this.config = JSON.parse(fileContent) as AppConfig;
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as { code?: string }).code === 'ENOENT'
+      ) {
         console.log(`Config file not found at ${this.configPath}. Initializing with defaults.`);
         this.config = this.getDefaults();
         await this.saveConfig();
@@ -64,7 +74,7 @@ class ConfigManager {
         this.config = this.getDefaults();
       }
     }
-    return this.config as AppConfig;
+    return this.config;
   }
 
   /**
@@ -82,7 +92,7 @@ class ConfigManager {
     }
     await this.ensureConfigDirectory();
     try {
-      const fileContent = JSON.stringify(this.config, null, 2);
+      const fileContent = JSON.stringify(this.config, undefined, 2);
       await fs.writeFile(this.configPath, fileContent, 'utf-8');
       console.log(`Configuration saved to ${this.configPath}`);
     } catch (error) {
@@ -101,7 +111,7 @@ class ConfigManager {
     if (!this.config) {
       await this.loadConfig();
     }
-    // Ensure config is not null before accessing its properties
+    // Ensure config is not undefined before accessing its properties
     return this.config ? this.config[key] : undefined;
   }
 
@@ -116,7 +126,7 @@ class ConfigManager {
     if (!this.config) {
       await this.loadConfig();
     }
-    // Ensure config is not null before modifying and saving
+    // Ensure config is not undefined before modifying and saving
     if (this.config) {
         this.config[key] = value;
         await this.saveConfig();
@@ -127,54 +137,53 @@ class ConfigManager {
   }
 
   /**
-   * Retrieves a provider's specific configuration.
+   * Retrieves a provider's specific configuration using its user-defined alias.
    * Loads config if not already loaded.
-   * @param providerType The type of the provider (e.g., 'openai').
+   * @param alias The user-defined alias of the provider configuration (e.g., 'myOpenAI').
    * @returns {Promise<ProviderSpecificConfig | undefined>} The provider's configuration, or undefined if not found.
    */
-  public async getProviderConfig(providerType: string): Promise<ProviderSpecificConfig | undefined> {
+  public async getProviderConfigByAlias(alias: string): Promise<ProviderSpecificConfig | undefined> {
     if (!this.config) {
       await this.loadConfig();
     }
-    return this.config?.providers?.[providerType];
+    return this.config?.providers?.[alias];
   }
 
   /**
-   * Retrieves an API key for a given provider.
-   * It first checks the local configuration file (non-sensitive settings).
-   * If not found, it attempts to retrieve the key from the secure keychain.
-   * @param providerType The type of the provider (e.g., 'openai').
-   * @param apiKeyName The name of the key to look for in the keychain (e.g. 'apiKey', 'secretKey'). Defaults to 'apiKey'.
-   * @returns {Promise<string | null>} The API key string if found, otherwise null.
+   * Retrieves an API key for a given provider configuration from secure storage.
+   * @param providerConfig The specific configuration object for the provider instance.
+   * @returns {Promise<string | undefined>} The API key string if found, otherwise undefined.
    */
-  public async getResolvedApiKey(providerType: string, apiKeyName: string = 'apiKey'): Promise<string | null> {
-    if (!this.config) {
-      await this.loadConfig();
+  public async getResolvedApiKey(providerConfig: ProviderSpecificConfig): Promise<string | undefined> {
+    if (!providerConfig || !providerConfig.providerType) {
+      console.error('Invalid providerConfig (or missing providerType) passed to getResolvedApiKey.');
+      return undefined;
     }
 
-    // 1. Check non-sensitive config first (e.g., if a user explicitly set it there for some reason)
-    // This is not recommended for sensitive keys but provides a fallback.
-    const providerConfig = this.config?.providers?.[providerType];
-    if (providerConfig && typeof providerConfig[apiKeyName] === 'string') {
-      console.warn(`API key for ${providerType} found in non-secure config. Consider moving to secure storage.`);
-      return providerConfig[apiKeyName] as string;
-    }
+    const actualProviderType = providerConfig.providerType;
+    // Use instanceName as the accountName for credentials if available,
+    // otherwise fall back to 'apiKey' as a default account name for that providerType's credential.
+    const accountNameForCredentials = providerConfig.instanceName || 'apiKey'; 
 
-    // 2. If not in config, try to get from secure storage
-    const credentialIdentifier: CredentialIdentifier = { providerType, accountName: apiKeyName };
+    const credentialIdentifier: CredentialIdentifier = { 
+      providerType: actualProviderType,
+      accountName: accountNameForCredentials 
+    };
+
     try {
       const secret = await CredentialManager.getSecret(credentialIdentifier);
       if (secret) {
-        console.log(`API key for ${providerType} (key: ${apiKeyName}) resolved from secure storage.`);
+        console.log(`API key for ${actualProviderType} (account: ${accountNameForCredentials}) resolved from secure storage.`);
         return secret;
       }
     } catch (error) {
-      console.error(`Error retrieving API key for ${providerType} (key: ${apiKeyName}) from secure storage:`, error);
-      return null;
+      console.error(`Error retrieving API key for ${actualProviderType} (account: ${accountNameForCredentials}) from secure storage:`, error);
+      // It's important to return undefined or throw, not to fall through to 'not found' if it's an actual error.
+      return undefined; 
     }
     
-    console.log(`API key for ${providerType} (key: ${apiKeyName}) not found in config or secure storage.`);
-    return null;
+    console.log(`API key for ${actualProviderType} (account: ${accountNameForCredentials}) not found in secure storage.`);
+    return undefined;
   }
 
   /**

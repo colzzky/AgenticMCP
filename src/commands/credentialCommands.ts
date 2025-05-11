@@ -13,8 +13,12 @@ export function registerCredentialCommands(program: Command): void {
       try {
         await CredentialManager.setSecret(identifier, secret);
         // Message is logged by CredentialManager
-      } catch (error: any) {
-        console.error(`Failed to set secret: ${error.message}`);
+      } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'message' in error) {
+          console.error(`Failed to set secret: ${(error as { message: string }).message}`);
+        } else {
+          console.error('Failed to set secret:', error);
+        }
       }
     });
 
@@ -30,8 +34,12 @@ export function registerCredentialCommands(program: Command): void {
         } else {
           console.log(`No secret found for '${accountName}' under provider '${providerType}'.`);
         }
-      } catch (error: any) {
-        console.error(`Failed to get secret: ${error.message}`);
+      } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'message' in error) {
+          console.error(`Failed to get secret: ${(error as { message: string }).message}`);
+        } else {
+          console.error('Failed to get secret:', error);
+        }
       }
     });
 
@@ -43,8 +51,12 @@ export function registerCredentialCommands(program: Command): void {
       try {
         await CredentialManager.deleteSecret(identifier);
         // Message is logged by CredentialManager or it indicates if not found
-      } catch (error: any) {
-        console.error(`Failed to delete secret: ${error.message}`);
+      } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'message' in error) {
+          console.error(`Failed to delete secret: ${(error as { message: string }).message}`);
+        } else {
+          console.error('Failed to delete secret:', error);
+        }
       }
     });
 
@@ -56,14 +68,18 @@ export function registerCredentialCommands(program: Command): void {
         const credentials = await CredentialManager.findCredentialsByProvider(providerType);
         if (credentials.length > 0) {
           console.log(`Stored credentials for provider '${providerType}':`);
-          credentials.forEach(cred => {
+          for (const cred of credentials) {
             console.log(`  Account: ${cred.account}`); // We don't display the password itself
-          });
+          }
         } else {
           console.log(`No credentials found for provider '${providerType}'.`);
         }
-      } catch (error: any) {
-        console.error(`Failed to list credentials: ${error.message}`);
+      } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'message' in error) {
+          console.error(`Failed to list credentials: ${(error as { message: string }).message}`);
+        } else {
+          console.error('Failed to list credentials:', error);
+        }
       }
     });
 }

@@ -35,7 +35,11 @@
 
 10. Everytime you need to use a library or third-party package/SDK/API, always make sure that you look-out for the latest documentation and use the latest version of the library or third-party package by using the tool "Context7" - if the library or third-party package is not available in the tool, use the web to search for the latest documentation and use the latest version of the library or third-party package
 
-11. when creating/editing a javascript or typescript file, check the line count of the file and make sure it does not exceed the ideal line count per file. you can use tools such as "wc -l filename" to check the line count of the file of an existing file or count lines of a string using the tool "wc -l <(echo "string")" before creating a new file to make sure it does not exceed the ideal line count per file
+11. After creating a file, always run "npm run lint --fix" to see any type/linting errors, and proceed to fix if errors are found - then run "npm run lint" to ensure that there are no errors - repeat process until there are no errors
+
+12. Always run "npm run type-check" to ensure that there are no type errors - repeat process until there are no errors
+
+13. when creating/editing a javascript or typescript file, check the line count of the file and make sure it does not exceed the ideal line count per file. you can use tools such as "wc -l filename" to check the line count of the file of an existing file or count lines of a string using the tool "wc -l <(echo "string")" before creating a new file to make sure it does not exceed the ideal line count per file
 
 ### ✅ **Rules: Ideal Line Count per File**
 

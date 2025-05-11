@@ -19,16 +19,17 @@ export class CredentialManager {
   /**
    * Retrieves a secret for a given provider and account name from the keychain.
    * @param identifier - The CredentialIdentifier containing providerType and accountName.
-   * @returns The secret string if found, otherwise null.
+   * @returns The secret string if found, otherwise undefined.
    */
-  static async getSecret(identifier: CredentialIdentifier): Promise<string | null> {
+  static async getSecret(identifier: CredentialIdentifier): Promise<string | undefined> {
     const { providerType, accountName } = identifier;
     const serviceName = this.getFullServiceName(providerType);
     try {
-      return await keytar.getPassword(serviceName, accountName);
+      const secret = await keytar.getPassword(serviceName, accountName);
+      return secret || undefined;
     } catch (error) {
       console.error(`Error getting secret for ${accountName} under ${serviceName}:`, error);
-      return null;
+      return undefined;
     }
   }
 

@@ -1,17 +1,6 @@
 // src/core/types/provider.types.ts
 
-/**
- * Defines the configuration for an LLM provider.
- */
-export interface ProviderConfig {
-  providerName: string; // e.g., "openai", "anthropic"
-  apiKey?: string; // API key for the provider
-  model?: string; // Default model to use, e.g., "gpt-4", "claude-2"
-  baseURL?: string; // Optional base URL for self-hosted or proxy setups
-  timeout?: number; // Request timeout in milliseconds
-  maxRetries?: number; // Maximum number of retries on failure
-  [key: string]: any; // Allow other provider-specific options
-}
+import { ProviderSpecificConfig } from './config.types';
 
 /**
  * Represents a generic request to an LLM provider.
@@ -25,7 +14,7 @@ export interface ProviderRequest {
   maxTokens?: number; // Max tokens to generate
   stopSequences?: string[]; // Sequences to stop generation at
   stream?: boolean; // Whether to stream the response
-  [key: string]: any; // Allow other provider-specific parameters
+  [key: string]: unknown; // Allow other provider-specific parameters
 }
 
 /**
@@ -43,9 +32,9 @@ export interface ProviderResponse {
   error?: {
     message: string;
     code?: string | number;
-    details?: any;
+    details?: unknown;
   };
-  rawResponse?: any; // The raw response object from the provider
+  rawResponse?: unknown; // The raw response object from the provider
 }
 
 /**
@@ -59,7 +48,7 @@ export interface LLMProvider {
    * Configures the provider with the given settings.
    * @param config - The configuration object for the provider.
    */
-  configure(config: ProviderConfig): void;
+  configure(config: ProviderSpecificConfig): Promise<void> | void;
 
   /**
    * Generates a text completion based on a prompt.

@@ -1,6 +1,6 @@
 export interface KeytarCredential {
   account: string;
-  password?: string | null; // Password can be null if not found or not applicable
+  password?: string | undefined; // Password can be undefined if not found or not applicable
 }
 
 /**

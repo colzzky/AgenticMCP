@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { version, description } from '../package.json'; // Assuming package.json is in the root
-import { configManager } from './core/config'; // Import the configManager
+// import { configManager } from './core/config'; // Import the configManager (removed as unused)
 import { registerConfigCommands } from './commands/configCommands';
 import { registerCredentialCommands } from './commands/credentialCommands'; // Add this import
 
@@ -12,7 +12,7 @@ program
   .version(version)
   .description(description);
 
-async function main() {
+function main() {
   // Register command modules
   registerConfigCommands(program);
   registerCredentialCommands(program); // Add this line
@@ -26,11 +26,11 @@ async function main() {
     });
 
   // Handle cases where no command is specified
-  if (!process.argv.slice(2).length) {
+  if (process.argv.slice(2).length === 0) {
     program.outputHelp();
   }
 
   program.parse(process.argv);
 }
 
-main();
+void main();
