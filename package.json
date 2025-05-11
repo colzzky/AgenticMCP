@@ -1,0 +1,30 @@
+{
+  "name": "agenticmcp.typescript",
+  "version": "1.0.0",
+  "description": "## Executive Summary",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/colzzky/AgenticMCP.Typescript.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/colzzky/AgenticMCP.Typescript/issues"
+  },
+  "homepage": "https://github.com/colzzky/AgenticMCP.Typescript#readme",
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "typescript": "^5.8.3"
+  }
+}
