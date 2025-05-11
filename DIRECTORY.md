@@ -15,6 +15,7 @@
 ├── TASKS.jsonl
 ├── context/
 ├── docs/
+│   └── ARCHITECTURE.md
 ├── project-summary.md
 ├── src/
 ├── tests/
