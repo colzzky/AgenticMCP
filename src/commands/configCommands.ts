@@ -3,8 +3,10 @@
  */
 
 import { Command } from 'commander';
-import { configManager } from '../core/config';
-import { AppConfig } from '../core/types'; // Ensure AppConfig is correctly typed
+import { ConfigManager } from '../core/config/configManager';
+import { AppConfig } from '../core/types/config.types';
+import { logger } from '../core/utils/index';
+import { isValidProviderType } from '../core/utils/index';
 
 /**
  * Registers the 'config' command and its subcommands with the main program.
@@ -16,7 +18,8 @@ export function registerConfigCommands(program: Command): void {
     program.outputHelp();
   }
 
-  const configCommand = program.command('config').description('Manage CLI configuration');
+  const configCommand = program.command('config').description('Manage CLI configuration.');
+  const configManager = new ConfigManager();
 
   configCommand
     .command('path')
@@ -46,7 +49,7 @@ export function registerConfigCommands(program: Command): void {
         const value = await configManager.get(key as keyof AppConfig);
         if (value) {
           const currentConfig = await configManager.loadConfig(); // Load to check if key exists
-          if (Object.prototype.hasOwnProperty.call(currentConfig, key)) {
+          if (key in currentConfig) {
             console.log(`${key}:`, value); // Value is explicitly undefined or undefined
           } else {
             console.log(`Configuration key '${key}' not found.`);
@@ -86,6 +89,24 @@ export function registerConfigCommands(program: Command): void {
         }
       } catch (error) {
         console.error(`Failed to set configuration for key '${key}':`, error);
+      }
+    });
+
+  configCommand
+    .command('remove <key>')
+    .description('Remove a specific configuration value by key')
+    .action(async (key: string) => {
+      try {
+        const currentConfig = await configManager.loadConfig();
+        if (key in currentConfig) {
+          delete currentConfig[key as keyof AppConfig]; // Type assertion after check
+          await configManager.saveConfig(currentConfig);
+          logger.info(`Configuration key "${key}" removed successfully.`);
+        } else {
+          console.log(`Configuration key '${key}' not found.`);
+        }
+      } catch (error) {
+        console.error(`Failed to remove configuration for key '${key}':`, error);
       }
     });
 }

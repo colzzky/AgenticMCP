@@ -3,3 +3,4 @@
  */
 
 export * from './configManager';
+export * from '../types/config.types';

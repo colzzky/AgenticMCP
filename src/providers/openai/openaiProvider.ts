@@ -1,20 +1,25 @@
 import OpenAI from 'openai';
-import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import {
   LLMProvider,
   ProviderRequest,
   ProviderResponse,
+  ChatMessage,
+  ProviderConfig,
 } from '../../core/types/provider.types';
 import { ConfigManager } from '../../core/config/configManager';
 import { ProviderSpecificConfig, OpenAIProviderSpecificConfig } from '../../core/types/config.types';
+import { info, error, warn, debug } from '@/core/utils';
 
 export class OpenAIProvider implements LLMProvider {
   private client?: OpenAI;
   private providerConfig?: OpenAIProviderSpecificConfig;
   private configManager: ConfigManager;
+  private OpenAIClass: typeof OpenAI;
 
-  constructor(configManager: ConfigManager) {
+  constructor(configManager: ConfigManager, OpenAIClass: typeof OpenAI = OpenAI) {
     this.configManager = configManager;
+    this.OpenAIClass = OpenAIClass;
   }
 
   get name(): string {
@@ -40,13 +45,13 @@ export class OpenAIProvider implements LLMProvider {
       );
     }
 
-    this.client = new OpenAI({
+    this.client = new this.OpenAIClass({
       apiKey: apiKey,
       baseURL: this.providerConfig.baseURL,
       timeout: this.providerConfig.timeout,
       maxRetries: this.providerConfig.maxRetries ?? 2,
     });
-    console.log(
+    info(
       `OpenAIProvider configured for instance: ${this.providerConfig.instanceName || this.providerConfig.providerType}`
     );
   }
@@ -61,16 +66,20 @@ export class OpenAIProvider implements LLMProvider {
     }
 
     try {
-      const params: OpenAI.Chat.ChatCompletionCreateParams = {
+      const messages = request.messages as ChatMessage[];
+      const openAIParams: OpenAI.Chat.Completions.ChatCompletionCreateParams = {
         model: request.model || this.providerConfig.model || 'gpt-3.5-turbo',
-        messages: request.messages as ChatCompletionMessageParam[],
-        temperature: request.temperature,
-        max_tokens: request.maxTokens,
+        messages: messages as ChatCompletionMessageParam[],
+        temperature: request.temperature ?? this.providerConfig.temperature ?? 0.7,
+        max_tokens: request.maxTokens ?? this.providerConfig.maxTokens ?? 150,
       };
 
-      const completion: OpenAI.Chat.ChatCompletion = await this.client.chat.completions.create(params);
+      const completion: OpenAI.Chat.ChatCompletion = await this.client.chat.completions.create(openAIParams);
 
       const choice = completion.choices[0];
+      info(
+        `Chat completion successful for instance ${this.providerConfig.instanceName} with model ${openAIParams.model}`
+      );
       return {
         success: true,
         content: choice.message?.content || "",
@@ -81,16 +90,17 @@ export class OpenAIProvider implements LLMProvider {
         },
         rawResponse: completion,
       };
-    } catch (error: unknown) {
-      console.error('Error during OpenAI chat completion:', error);
-      let errorMessage = 'Failed to get chat completion from OpenAI.';
-      if (error && typeof error === 'object' && 'message' in error) {
-        errorMessage = (error as { message: string }).message || errorMessage;
+    } catch (error_: unknown) {
+      const errorMessage = error_ instanceof Error ? error_.message : String(error_);
+      error(`Error during OpenAI chat completion: ${errorMessage}`);
+      let apiErrorMessage = 'Failed to get chat completion from OpenAI.';
+      if (error_ && typeof error_ === 'object' && 'message' in error_) {
+        apiErrorMessage = (error_ as { message: string }).message || apiErrorMessage;
       }
       return {
         success: false,
-        error: { message: errorMessage },
-        rawResponse: error,
+        error: { message: apiErrorMessage },
+        rawResponse: error_,
       };
     }
   }

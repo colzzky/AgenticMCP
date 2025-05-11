@@ -5,9 +5,10 @@
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import envPaths from 'env-paths';
-import { AppConfig, ProviderSpecificConfig } from '../types'; 
-import { CredentialManager } from '../credentials'; 
+import { AppConfig, ProviderSpecificConfig, OpenAIProviderSpecificConfig } from '../types/config.types'; 
+import { CredentialManager } from '../credentials/credentialManager'; 
 import { CredentialIdentifier } from '../types/credentials.types'; 
+import { logger } from '../utils/index';
 
 const APP_NAME = 'agenticmcp';
 const CONFIG_FILE_NAME = 'config.json';

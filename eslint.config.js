@@ -11,7 +11,7 @@ export default [
       languageOptions: {
         parser: tseslint.parser,
         parserOptions: {
-          tsconfigRootDir: import.meta.dirname + "/src",
+          tsconfigRootDir: import.meta.dirname,
         },
       },
 			rules: {
@@ -20,6 +20,7 @@ export default [
         'unicorn/text-encoding-identifier-case': 'off',
         'unicorn/prevent-abbreviations': 'off',
         'unicorn/filename-case': 'off',
+        'max-lines': ["error", {"max": 350, "skipComments": true, "skipBlankLines": true}]
 			},
 		},
 ];

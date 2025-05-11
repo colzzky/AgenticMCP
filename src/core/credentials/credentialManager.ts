@@ -1,7 +1,8 @@
-import * as keytar from 'keytar';
+import keytar from 'keytar';
 import { CredentialIdentifier, KeytarCredential } from '../types/credentials.types';
+import { logger } from '../utils/index'; // Corrected: Import from barrel file
 
-const APP_SERVICE_PREFIX = 'agenticmcp_cli';
+const SERVICE_NAME_PREFIX = 'AgenticMCP'; // General prefix for all services
 
 /**
  * Manages secure credentials using the system keychain via keytar.
@@ -10,10 +11,10 @@ export class CredentialManager {
   /**
    * Generates the full service name for keytar.
    * @param providerType - The type of the provider (e.g., 'openai').
-   * @returns The full service name string (e.g., 'agenticmcp_cli-openai').
+   * @returns The full service name string (e.g., 'AgenticMCP-openai').
    */
   private static getFullServiceName(providerType: string): string {
-    return `${APP_SERVICE_PREFIX}-${providerType.toLowerCase()}`;
+    return `${SERVICE_NAME_PREFIX}-${providerType.toLowerCase()}`;
   }
 
   /**

@@ -19,9 +19,12 @@
     - status: the status of the task
 
 
-3. For Any new files added, list all the files and directories and update DIRECTORY.md
+3. For Any new files added, run the "bash tree.sh" CLI command to list all the files and directories and update DIRECTORY.md
 
 4. Always read the DIRECTORY.md to understand the project structure before working on a task
+ - 4.1 when looking for files, always first refer to the DIRECTORY.md before using filesystem search tool
+ - 4.2 if DIRECTORY.md is not helpful, only then should you use the filesystem search tool
+
 
 5. Always read the TASKS.jsonl to understand the task list, and to understand the current task and its status before working on a task
 
@@ -40,6 +43,8 @@
 12. Always run "npm run type-check" to ensure that there are no type errors - repeat process until there are no errors
 
 13. when creating/editing a javascript or typescript file, check the line count of the file and make sure it does not exceed the ideal line count per file. you can use tools such as "wc -l filename" to check the line count of the file of an existing file or count lines of a string using the tool "wc -l <(echo "string")" before creating a new file to make sure it does not exceed the ideal line count per file
+
+14. If the file lines number exceeds the suggested number of lines based on "Rules: Ideal Line Count per File", then split the file into multiple files, just use "import" and "export" to share code between files, or use composables
 
 ### ✅ **Rules: Ideal Line Count per File**
 
@@ -72,3 +77,11 @@
 
 10. **Maintain separation of concerns across layers (service, controller, utils, etc.)**
     * Don’t mix types, logic, and API handlers in the same file.
+
+
+### ✅ **Rules: Testing**
+
+1. Types/Interfaces are defined in the types directory - do not define types/interfaces in the test file itself or any tests directory
+ - 1.1 Import types/interfaces from the revelant modules types directory
+ 
+2. Consult Context7 tool to get the latest documentation of the library or third-party package before creating/mocking tests

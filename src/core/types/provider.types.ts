@@ -3,6 +3,11 @@
 import { ProviderSpecificConfig } from './config.types';
 
 /**
+ * Defines the valid LLM provider types supported by the CLI.
+ */
+export type ProviderType = 'openai' | 'anthropic' | 'google'; // Add more as supported
+
+/**
  * Represents a generic request to an LLM provider.
  * This will be specialized by specific request types (e.g., chat, completion).
  */
@@ -38,6 +43,26 @@ export interface ProviderResponse {
 }
 
 /**
+ * Defines the structure for a chat message, which includes the role and content.
+ */
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+/**
+ * Interface for the overall provider configuration, extending specific configurations.
+ */
+export interface ProviderConfig extends ProviderSpecificConfig {
+  enabled?: boolean;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  timeout?: number;
+  maxRetries?: number;
+}
+
+/**
  * Defines the core functionality that any LLM provider must implement.
  */
 export interface LLMProvider {
@@ -48,7 +73,7 @@ export interface LLMProvider {
    * Configures the provider with the given settings.
    * @param config - The configuration object for the provider.
    */
-  configure(config: ProviderSpecificConfig): Promise<void> | void;
+  configure(config: ProviderConfig): Promise<void> | void;
 
   /**
    * Generates a text completion based on a prompt.

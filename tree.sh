@@ -44,7 +44,7 @@ print_tree() {
     basename=$(basename "$entry")
 
     # Exclude dot-directories and __pycache__
-    if [[ "$basename" == .* || "$basename" == "__pycache__" ]]; then
+    if [[ "$basename" == .* || "$basename" == "__pycache__" || "$basename" == "node_modules" || "$basename" == "dist" ]]; then
       continue
     fi
 
