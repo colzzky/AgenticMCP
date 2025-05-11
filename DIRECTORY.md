@@ -1,6 +1,7 @@
 # Project Directory Structure
 ```markdown
 .
+├── CLAUDE.md
 ├── DIRECTORY.md
 ├── LICENSE
 ├── PROGRESS.jsonl
@@ -25,7 +26,8 @@
 ├── src/
 │   ├── commands/
 │   │   ├── configCommands.ts
-│   │   └── credentialCommands.ts
+│   │   ├── credentialCommands.ts
+│   │   └── mcpCommands.ts
 │   ├── core/
 │   │   ├── config/
 │   │   │   ├── configManager.ts
@@ -35,6 +37,7 @@
 │   │   │   └── index.ts
 │   │   ├── index.ts
 │   │   ├── types/
+│   │   │   ├── cli.types.ts
 │   │   │   ├── command.types.ts
 │   │   │   ├── config.types.ts
 │   │   │   ├── context.types.ts
@@ -49,14 +52,15 @@
 │   ├── index.ts
 │   ├── providers/
 │   │   ├── anthropic/
-│   │   │   ├── anthropicProvider.ts +8
+│   │   │   ├── anthropicProvider.ts
 │   │   │   └── index.ts
 │   │   ├── index.ts
 │   │   └── openai/
 │   │       ├── index.ts
 │   │       └── openaiProvider.ts
 │   └── tools/
-│       └── localCliTool.ts
+│       ├── localCliTool.ts
+│       └── mcpTool.ts
 ├── tests/
 │   ├── core/
 │   │   └── utils/

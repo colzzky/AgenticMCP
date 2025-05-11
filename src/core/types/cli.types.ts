@@ -10,3 +10,35 @@ export interface FileSearchResult {
     line_number: number;
     line_content: string;
 }
+
+// --- LocalCliTool Command Argument/Result Types ---
+export interface CreateDirectoryArgs { path: string; }
+export interface WriteFileArgs { path: string; content: string; }
+export interface ReadFileArgs { path: string; }
+export interface DeleteFileArgs { path: string; }
+export interface DeleteDirectoryArgs { path: string; }
+export interface ListDirectoryArgs { path: string; }
+export interface SearchCodebaseArgs { query: string; recursive?: boolean; }
+export interface FindFilesArgs { pattern: string; recursive?: boolean; }
+
+export interface ListDirectoryResult { entries: DirectoryEntry[]; }
+export interface ReadFileResult { content: string; }
+export interface WriteFileResult { success: boolean; }
+export interface CreateDirectoryResult { success: boolean; }
+export interface DeleteFileResult { success: boolean; }
+export interface DeleteDirectoryResult { success: boolean; }
+export interface SearchCodebaseResult { results: FileSearchResult[]; }
+export interface FindFilesResult { files: string[]; }
+
+export type CommandHandler<Args, Result> = (args: Args) => Promise<Result>;
+
+export interface LocalCliCommandMap {
+  create_directory: CommandHandler<CreateDirectoryArgs, CreateDirectoryResult>;
+  write_file: CommandHandler<WriteFileArgs, WriteFileResult>;
+  read_file: CommandHandler<ReadFileArgs, ReadFileResult>;
+  delete_file: CommandHandler<DeleteFileArgs, DeleteFileResult>;
+  delete_directory: CommandHandler<DeleteDirectoryArgs, DeleteDirectoryResult>;
+  list_directory: CommandHandler<ListDirectoryArgs, ListDirectoryResult>;
+  search_codebase: CommandHandler<SearchCodebaseArgs, SearchCodebaseResult>;
+  find_files: CommandHandler<FindFilesArgs, FindFilesResult>;
+}

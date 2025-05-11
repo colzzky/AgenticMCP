@@ -56,21 +56,22 @@ export interface ContextManager { // No 'any' used
 
   /**
    * Retrieves all loaded context items.
-   * @returns An array of context items.
+   * @returns A promise that resolves to an array of context items.
    */
-  getContextItems(): ContextItem[];
+  getContextItems(): Promise<ContextItem[]>;
 
   /**
    * Retrieves a specific context item by its ID.
    * @param id - The ID of the context item to retrieve.
-   * @returns The context item if found, otherwise undefined.
+   * @returns A promise that resolves to the context item if found, otherwise undefined.
    */
-  getContextItemById(id: string): ContextItem | undefined;
+  getContextItemById(id: string): Promise<ContextItem | undefined>;
 
   /**
    * Clears all loaded context items and sources.
+   * @returns A promise that resolves when context is cleared.
    */
-  clearContext(): void;
+  clearContext(): Promise<void>;
 
   /**
    * Returns the total number of tokens for all loaded context items.
