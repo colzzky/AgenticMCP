@@ -1,0 +1,68 @@
+1. Always log your Progress to PROGRESS.jsonl - each line should be a valid JSON object and should contain the following fields:
+    - timestamp: the current time in ISO 8601 format
+    - action: the action you are taking
+    - file: the file you are working on
+    - line: the line number you are working on
+    - column: the column number you are working on
+    - message: a message describing what you are doing
+    - task_number: the task number you are working on
+    - task_title: the task title you are working on
+    - task_description: the task description you are working on
+    - task_assigned_to: the person assigned to the task you are working on
+    - task_status: the status of the task you are working on
+
+2. Always update task status in TASKS.jsonl - each line should be a valid JSON object and should contain the following fields:
+    - task_number: the task number
+    - title: the task title
+    - description: the task description
+    - assigned_to: the person assigned to the task
+    - status: the status of the task
+
+
+3. For Any new files added, list all the files and directories and update DIRECTORY.md
+
+4. Always read the DIRECTORY.md to understand the project structure before working on a task
+
+5. Always read the TASKS.jsonl to understand the task list, and to understand the current task and its status before working on a task
+
+6. Always read the PROGRESS.jsonl to understand the progress made on the project before working on a task
+
+7. Always read the README.md to understand the project requirements before working on a task
+
+8. Before marketing the task as complete, make sure to run tests and ensure that the code works as expected - only if test is applicable
+
+9. For every completed task, do a "git add --all", "git commit" and "git push"
+
+10. Everytime you need to use a library or third-party package/SDK/API, always make sure that you look-out for the latest documentation and use the latest version of the library or third-party package by using the tool "Context7" - if the library or third-party package is not available in the tool, use the web to search for the latest documentation and use the latest version of the library or third-party package
+
+### ✅ **Rules: Ideal Line Count per File**
+
+1. **Limit each file to a single responsibility**
+   * If a file is handling multiple unrelated concerns, split it.
+
+2. **Cap most files between 100–300 lines**
+   * This range supports readability and testability while allowing meaningful logic.
+
+3. **Keep utility/helper files under 150 lines**
+   * Utility files should focus on small, reusable functions. Split them when they start housing unrelated utilities.
+
+4. **Limit test files to 300 lines max**
+   * Group related test cases in the same file, but break them up if there are too many logical variations being tested.
+
+5. **Interface and type files should stay under 150 lines**
+   * Keep closely related types together; split into multiple files if modeling large, unrelated entities.
+
+6. **Index (`index.ts`) and entry point files should stay under 50 lines**
+   * These should primarily import, re-export, or initialize — avoid complex logic.
+
+7. **Avoid nesting more than 2 classes or large functions in a single file**
+   * Deep nesting harms testability and makes files harder to reason about.
+
+8. **If a file contains more than \~10 screenfuls of code, consider refactoring**
+   * This is a soft limit based on visual length and ease of navigation.
+
+9. **Split files when editing requires frequent scrolling or search**
+   * Ease of navigation is critical for collaborative teams and future maintainers.
+
+10. **Maintain separation of concerns across layers (service, controller, utils, etc.)**
+    * Don’t mix types, logic, and API handlers in the same file.
