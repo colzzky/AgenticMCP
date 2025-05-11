@@ -1,180 +1,72 @@
 # Project Directory Structure
-
-.
-├── DIRECTORY.md
-├── LICENSE
-├── PROGRESS.jsonl
-├── README.md
-├── TASKS.jsonl
-├── __mocks__/
-│   ├── core/
-│   │   └── utils/
-│   │       └── logger.ts
-│   └── @/
-│       └── core/
-│           └── utils/
-│               └── index.ts
-├── context/
-├── docs/
-│   └── ARCHITECTURE.md
-├── eslint.config.js
-├── jest.config.js
-├── package-lock.json
-├── package.json
-├── project-summary.md
-├── src/
-│   ├── commands/
-│   │   ├── configCommands.ts
-│   │   └── credentialCommands.ts
-│   ├── core/
-│   │   ├── config/
-│   │   │   ├── configManager.ts
-│   │   │   └── index.ts
-│   │   ├── credentials/
-│   │   │   ├── credentialManager.ts
-│   │   │   └── index.ts
-│   │   ├── index.ts
-│   │   ├── types/
-│   │   │   ├── command.types.ts
-│   │   │   ├── config.types.ts
-│   │   │   ├── context.types.ts
-│   │   │   ├── credentials.types.ts
-│   │   │   ├── index.ts
-│   │   │   └── provider.types.ts
-│   │   └── utils/
-│   │       └── logger.ts
-│   ├── index.ts
-│   └── providers/
-│       ├── index.ts
-│       └── openai/
-│           ├── index.ts
-│           └── openaiProvider.ts
-├── tests/
-│   ├── core/
-│   │   └── utils/
-│   │       └── logger.test.ts
-│   ├── index.test.ts
-│   └── providers/
-│       └── openai/
-│           └── openaiProvider.test.ts
-├── tree.sh
-├── tsconfig.json
-
-
-.
-├── DIRECTORY.md
-├── LICENSE
-├── PROGRESS.jsonl
-├── README.md
-├── TASKS.jsonl
-├── __mocks__/
-│   ├── core/
-│   │   └── utils/
-│   │       └── logger.ts
-│   └── @/
-│       └── core/
-│           └── utils/
-│               └── index.ts
-├── context/
-├── docs/
-│   └── ARCHITECTURE.md
-├── eslint.config.js
-├── jest.config.js
-├── package-lock.json
-├── package.json
-├── project-summary.md
-├── src/
-│   ├── commands/
-│   │   ├── configCommands.ts
-│   │   └── credentialCommands.ts
-│   ├── core/
-│   │   ├── config/
-│   │   │   ├── configManager.ts
-│   │   │   └── index.ts
-│   │   ├── credentials/
-│   │   │   ├── credentialManager.ts
-│   │   │   └── index.ts
-│   │   ├── index.ts
-│   │   ├── types/
-│   │   │   ├── command.types.ts
-│   │   │   ├── config.types.ts
-│   │   │   ├── context.types.ts
-│   │   │   ├── credentials.types.ts
-│   │   │   ├── index.ts
-│   │   │   └── provider.types.ts
-│   │   └── utils/
-│   │       └── logger.ts
-│   ├── index.ts
-│   └── providers/
-│       ├── index.ts
-│       └── openai/
-│           ├── index.ts
-│           └── openaiProvider.ts
-├── tests/
-│   ├── core/
-│   │   └── utils/
-│   │       └── logger.test.ts
-│   ├── index.test.ts
-│   └── providers/
-│       └── openai/
-│           └── openaiProvider.test.ts
-├── tree.sh
-├── tsconfig.json
-This document outlines the directory structure of the AgenticMCP.Typescript project.
-
-## Directory Tree
-
 ```markdown
 .
-├── DIRECTORY.md +31
+├── DIRECTORY.md
 ├── LICENSE
 ├── PROGRESS.jsonl
 ├── README.md
 ├── TASKS.jsonl
-├── __mocks__/ 
+├── __mocks__/
+│   ├── @/
+│   │   └── core/
+│   ├── core/
+│   ├── openai.ts
+│   └── src/
+│       └── core/
+│           └── utils/
 ├── context/
 ├── docs/
 │   └── ARCHITECTURE.md
-├── eslint.config.js +1
-├── jest.config.js +18
-├── package-lock.json +20
-├── package.json +3
+├── eslint.config.js
+├── jest.config.js
+├── package-lock.json
+├── package.json
 ├── project-summary.md
 ├── src/
 │   ├── commands/
-│   │   ├── configCommands.ts +25
-│   │   └── credentialCommands.ts +38
+│   │   ├── configCommands.ts
+│   │   └── credentialCommands.ts
 │   ├── core/
 │   │   ├── config/
-│   │   │   ├── configManager.ts +4
-│   │   │   └── index.ts +2
+│   │   │   ├── configManager.ts
+│   │   │   └── index.ts
 │   │   ├── credentials/
-│   │   │   ├── credentialManager.ts +6
-│   │   │   └── index.ts +1
-│   │   ├── index.ts +3
+│   │   │   ├── credentialManager.ts
+│   │   │   └── index.ts
+│   │   ├── index.ts
 │   │   ├── types/
 │   │   │   ├── command.types.ts
-│   │   │   ├── config.types.ts
+│   │   │   ├── config.types.ts +12
 │   │   │   ├── context.types.ts
 │   │   │   ├── credentials.types.ts
-│   │   │   ├── index.ts +5
-│   │   │   └── provider.types.ts +27
+│   │   │   ├── index.ts
+│   │   │   └── provider.types.ts
 │   │   └── utils/
-│   ├── index.ts +43
+│   │       ├── index.ts
+│   │       ├── logger.ts
+│   │       └── validation.ts
+│   ├── index.ts
 │   └── providers/
-│       ├── index.ts +1
+│       ├── anthropic/
+│       ├── index.ts
 │       └── openai/
-│           ├── index.ts +1
-│           └── openaiProvider.ts +19
+│           ├── index.ts
+│           └── openaiProvider.ts
 ├── tests/
 │   ├── core/
 │   │   └── utils/
-│   ├── index.test.ts +2
+│   │       └── logger.test.ts
+│   ├── index.test.ts
+│   ├── jest.setup.ts
 │   └── providers/
 │       └── openai/
-├── tree.sh +1
-└── tsconfig.json +4
+│           └── openaiProvider.test.ts
+├── tree.sh
+├── tsconfig.json
+└── tsconfig.test.json
 ```
+
+This document outlines the directory structure of the AgenticMCP.Typescript project.
 
 ## Key Files:
 

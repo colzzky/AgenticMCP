@@ -25,6 +25,18 @@ export interface OpenAIProviderSpecificConfig extends ProviderSpecificConfig {
 }
 
 /**
+ * Represents Anthropic-specific configuration, extending the base ProviderSpecificConfig.
+ */
+export interface AnthropicProviderSpecificConfig extends ProviderSpecificConfig {
+  apiKey?: string;
+  baseURL?: string;
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  // Add any other Anthropic/Claude-specific settings here
+}
+
+/**
  * Represents the overall application configuration structure.
  */
 export interface AppConfig {
