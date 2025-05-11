@@ -370,4 +370,6 @@ describe('OpenAIProvider', () => {
       expect(response.rawResponse).toEqual(apiError);
     });
   });
+
+  // Tool calling tests have been moved to openaiProviderToolCalling.test.ts
 });

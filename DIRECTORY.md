@@ -10,6 +10,8 @@
 ├── __mocks__/
 │   ├── @/
 │   │   └── core/
+│   ├── @anthropic-ai/
+│   │   └── sdk.ts
 │   ├── core/
 │   ├── openai.ts
 │   └── src/
@@ -62,14 +64,25 @@
 │       ├── localCliTool.ts
 │       └── mcpTool.ts
 ├── tests/
+│   ├── context/
+│   │   └── contextManager.test.ts
 │   ├── core/
+│   │   ├── commands/
 │   │   └── utils/
 │   │       └── logger.test.ts
 │   ├── index.test.ts
 │   ├── jest.setup.ts
-│   └── providers/
-│       └── openai/
-│           └── openaiProvider.test.ts
+│   ├── providers/
+│   │   ├── anthropic/
+│   │   │   ├── anthropicProvider.test.ts
+│   │   │   ├── anthropicProviderToolCalling2a.test.ts
+│   │   │   └── anthropicProviderToolCalling2b.test.ts
+│   │   ├── google/
+│   │   └── openai/
+│   │       ├── openaiProvider.test.ts
+│   │       └── openaiProviderToolCalling.test.ts
+│   └── tools/
+│       └── localCliTool.test.ts
 ├── tree.sh
 ├── tsconfig.json
 └── tsconfig.test.json
@@ -111,14 +124,27 @@ This document outlines the directory structure of the AgenticMCP.Typescript proj
         *   `index.ts`: Barrel file for the `core` module.
     *   **`src/providers/`**: Contains adapters for different LLM providers.
         *   **`src/providers/openai/`**: OpenAI provider specific implementations.
-            *   `openaiProvider.ts`: Class implementing `LLMProvider` for OpenAI.
+            *   `openaiProvider.ts`: Class implementing `LLMProvider` for OpenAI with tool calling support.
             *   `index.ts`: Barrel file for the OpenAI provider module.
+        *   **`src/providers/anthropic/`**: Anthropic provider specific implementations.
+            *   `anthropicProvider.ts`: Class implementing `LLMProvider` for Anthropic.
+            *   `index.ts`: Barrel file for the Anthropic provider module.
         *   `index.ts`: Barrel file re-exporting all provider modules.
     *   **`src/commands/`**: Contains modules for different CLI command groups.
         *   `configCommands.ts`: Defines and registers the 'config' command and its subcommands.
         *   `credentialCommands.ts`: Implements CLI commands for managing secure credentials (e.g., `credentials set`, `credentials get`).
     *   `index.ts`: Main entry point for the CLI application.
 *   **`tests/`**: Houses all unit, integration, and end-to-end tests for the project.
+    *   **`tests/providers/`**: Tests for all LLM provider adapters.
+        *   **`tests/providers/openai/`**: Tests for the OpenAI provider.
+            *   `openaiProvider.test.ts`: Tests for basic OpenAI provider functionality.
+            *   `openaiProviderToolCalling.test.ts`: Tests for OpenAI tool calling functionality.
+        *   **`tests/providers/anthropic/`**: Tests for the Anthropic provider.
+            *   `anthropicProvider.test.ts`: Tests for Anthropic provider functionality.
+    *   **`tests/tools/`**: Tests for tool implementations.
+        *   `localCliTool.test.ts`: Tests for the local file CLI tool.
+    *   **`tests/context/`**: Tests for context management.
+        *   `contextManager.test.ts`: Tests for context management functionality.
     *   `index.test.ts`: Example test file.
 *   **`docs/`**: Includes all project documentation, such as requirements, design documents, and user guides.
     *   `ARCHITECTURE.md`: Describes the software architecture of the project.

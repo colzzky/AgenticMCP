@@ -1,11 +1,14 @@
 import OpenAI from 'openai';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import {
   LLMProvider,
   ProviderRequest,
   ProviderResponse,
   ChatMessage,
   ProviderConfig,
+  Tool,
+  ToolCall,
+  ToolCallOutput,
 } from '../../core/types/provider.types';
 import { ConfigManager } from '../../core/config/configManager';
 import { ProviderSpecificConfig, OpenAIProviderSpecificConfig } from '../../core/types/config.types';
@@ -56,6 +59,62 @@ export class OpenAIProvider implements LLMProvider {
     );
   }
 
+  /**
+   * Convert our generic Tool interface to OpenAI's ChatCompletionTool format
+   */
+  private convertToolsToOpenAIFormat(tools?: Tool[]): ChatCompletionTool[] | undefined {
+    if (!tools || tools.length === 0) {
+      return undefined;
+    }
+
+    return tools.map(tool => ({
+      type: 'function',
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+      }
+    }));
+  }
+
+  /**
+   * Convert OpenAI's tool_calls to our ToolCall format
+   */
+  private convertOpenAIToolCallsToGeneric(toolCalls?: OpenAI.Chat.ChatCompletionMessageToolCall[]): ToolCall[] | undefined {
+    if (!toolCalls || toolCalls.length === 0) {
+      return undefined;
+    }
+
+    return toolCalls.map(toolCall => ({
+      id: toolCall.id,
+      call_id: toolCall.id, // Use the same ID for both id and call_id for OpenAI
+      type: 'function_call',
+      name: toolCall.function.name,
+      arguments: toolCall.function.arguments,
+    }));
+  }
+
+  /**
+   * Executes a tool call and returns the result
+   */
+  public async executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
+    if (!availableTools) {
+      throw new Error('No tools available to execute');
+    }
+
+    const { name, arguments: argsStr } = toolCall;
+    const toolFunction = availableTools[name];
+
+    try {
+      const result = toolFunction ? await toolFunction(JSON.parse(argsStr)) : JSON.stringify({ error: `Tool not found: ${name}` });
+      return typeof result === 'string' ? result : JSON.stringify(result);
+    } catch (error_: unknown) {
+      const errorMessage = error_ instanceof Error ? error_.message : String(error_);
+      error(`Error executing tool call ${name}: ${errorMessage}`);
+      return JSON.stringify({ error: errorMessage });
+    }
+  }
+
   public async chat(request: ProviderRequest): Promise<ProviderResponse> {
     if (!this.client || !this.providerConfig) {
       throw new Error('OpenAIProvider not configured. Call configure() first.');
@@ -74,15 +133,34 @@ export class OpenAIProvider implements LLMProvider {
         max_tokens: request.maxTokens ?? this.providerConfig.maxTokens ?? 150,
       };
 
+      // Add tool-related parameters if tools are provided
+      if (request.tools && request.tools.length > 0) {
+        openAIParams.tools = this.convertToolsToOpenAIFormat(request.tools);
+
+        // Add tool_choice if specified
+        if (request.toolChoice) {
+          openAIParams.tool_choice = typeof request.toolChoice === 'string'
+            ? request.toolChoice
+            : { type: 'function', function: { name: request.toolChoice.name } };
+        }
+      }
+
       const completion: OpenAI.Chat.ChatCompletion = await this.client.chat.completions.create(openAIParams);
 
       const choice = completion.choices[0];
       info(
         `Chat completion successful for instance ${this.providerConfig.instanceName} with model ${openAIParams.model}`
       );
+
+      // Extract tool calls if present
+      const toolCalls = choice.message?.tool_calls
+        ? this.convertOpenAIToolCallsToGeneric(choice.message.tool_calls)
+        : undefined;
+
       return {
         success: true,
         content: choice.message?.content || "",
+        toolCalls,
         usage: {
           promptTokens: completion.usage?.prompt_tokens,
           completionTokens: completion.usage?.completion_tokens,
@@ -103,6 +181,53 @@ export class OpenAIProvider implements LLMProvider {
         rawResponse: error_,
       };
     }
+  }
+
+  /**
+   * Continues a conversation with tool call results
+   */
+  public async continueWithToolResults(
+    initialRequest: ProviderRequest,
+    initialResponse: ProviderResponse,
+    toolResults: ToolCallOutput[]
+  ): Promise<ProviderResponse> {
+    if (!initialRequest.messages) {
+      throw new Error('Initial request must contain messages');
+    }
+
+    if (!initialResponse.toolCalls || initialResponse.toolCalls.length === 0) {
+      throw new Error('Initial response does not contain any tool calls');
+    }
+
+    // Create a new messages array with all previous messages plus tool calls and results
+    const newMessages = [...initialRequest.messages];
+
+    // Add the assistant's response with tool calls
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: initialResponse.content || '',
+      tool_calls: initialResponse.toolCalls
+    };
+    newMessages.push(assistantMessage);
+
+    // Add tool results as messages
+    for (const toolResult of toolResults) {
+      const toolResultMessage: ChatMessage = {
+        role: 'user',
+        content: toolResult.output,
+        tool_call_id: toolResult.call_id,
+      };
+      newMessages.push(toolResultMessage);
+    }
+
+    // Create a new request with the updated messages and the same tools
+    const newRequest: ProviderRequest = {
+      ...initialRequest,
+      messages: newMessages,
+    };
+
+    // Call the chat method with the new request
+    return this.chat(newRequest);
   }
 
   public async generateCompletion(request: ProviderRequest): Promise<ProviderResponse> {

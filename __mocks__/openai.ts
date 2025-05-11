@@ -1,32 +1,62 @@
 import { jest } from '@jest/globals';
 
 // This is the mock for the openai.chat.completions.create method
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
+import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions.js';
 
 // Explicitly type the mock to match OpenAI's expected call signature
 export const mockCreate: jest.MockedFunction<(...args: any[]) => Promise<any>> = jest.fn((...args: any[]) => {
-  console.log('>>>>>>>>>> MANUAL MOCK __mocks__/openai.ts: mockCreate CALLED with:', args);
   // Default behavior: resolve with a generic success. Tests can override this.
-  return Promise.resolve({
+  const params = args[0] || {};
+
+  // Default response without tool calls
+  const response = {
     id: 'chatcmpl-manual-mock',
     object: 'chat.completion',
     created: Date.now(),
-    model: 'gpt-mocked-model',
+    model: params.model || 'gpt-mocked-model',
     choices: [
       {
         index: 0,
-        message: { role: 'assistant', content: 'Manually mocked OpenAI response' },
+        message: {
+          role: 'assistant',
+          content: 'Manually mocked OpenAI response',
+        },
         finish_reason: 'stop',
       },
     ],
     usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
-  });
+  };
+
+  // Always ensure success
+  response.choices[0].message = response.choices[0].message || {};
+
+  // Check if tools are provided in the request and modify the response accordingly
+  if (params.tools && params.tools.length > 0) {
+    // For testing, we'll simulate a tool call response when tools are present
+    response.choices[0].message.content = ''; // Set empty string instead of null for TypeScript
+    // Add tool_calls to message
+    (response.choices[0].message as any).tool_calls = [
+      {
+        id: 'call_mock12345',
+        type: 'function',
+        function: {
+          name: params.tools[0].function.name,
+          arguments: JSON.stringify({
+            parameter1: 'value1',
+            parameter2: 'value2'
+          })
+        }
+      }
+    ];
+    response.choices[0].finish_reason = 'tool_calls';
+  }
+
+  return Promise.resolve(response);
 });
 
 // This is the mock for the OpenAI constructor
 // Explicitly type the mock constructor as a class (typeof OpenAI)
 export const mockOpenAIConstructorSpy = jest.fn().mockImplementation(function(this: any, constructorArgs: any) {
-  console.log('>>>>>>>>>> MANUAL MOCK __mocks__/openai.ts: mockOpenAIConstructorSpy CALLED with:', constructorArgs);
   return {
     chat: {
       completions: {

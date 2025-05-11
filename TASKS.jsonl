@@ -8,9 +8,16 @@
 {"taskNumber": "8", "title": "Develop Secure Credential Storage", "shortDescription": "Implement keytar integration for secure API key management", "assignedTo": "coder", "status": "complete"}
 {"taskNumber": "9", "title": "Implement OpenAI Provider Adapter", "shortDescription": "Create adapter for OpenAI API with TypeScript interfaces", "assignedTo": "coder", "status": "complete"}
 {"taskNumber": "10", "title": "Implement Anthropic Provider Adapter", "shortDescription": "Create adapter for Anthropic Claude API with TypeScript interfaces", "assignedTo": "coder", "status": "complete"}
+{"taskNumber": "10.1", "title": "Implement Google/Gemini Provider Adapter", "shortDescription": "Create adapter for Google Gemini API with TypeScript interfaces", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "11", "title": "Implement Basic Context Management", "shortDescription": "Develop system to handle simple file-based context input", "assignedTo": "coder", "status": "complete"}
-{"taskNumber": "12", "title": "Create Provider Abstract Factory", "shortDescription": "Implement provider factory pattern with dependency injection", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "13", "title": "Develop Command Registry System", "shortDescription": "Create extensible registry for agent commands with TypeScript decorators", "assignedTo": "coder", "status": "pending"}
+{"taskNumber": "12", "title": "Create Provider Abstract Factory", "shortDescription": "Implement provider factory pattern with dependency injection", "assignedTo": "coder", "status": "complete"}
+{"taskNumber": "13", "title": "Develop Command Registry System", "shortDescription": "Create extensible registry for agent commands with TypeScript decorators", "assignedTo": "coder", "status": "complete"}
+{"taskNumber": "53", "title": "Implement Tool Calling Interfaces", "shortDescription": "Develop TypeScript interfaces for LLM tool calling", "assignedTo": "coder", "status": "complete"}
+{"taskNumber": "54", "title": "Implement OpenAI Provider Tool Calling", "shortDescription": "Add tool calling support to the OpenAI provider", "assignedTo": "coder", "status": "complete"}
+{"taskNumber": "55", "title": "Implement LocalCliTool Definition", "shortDescription": "Create tool definitions for LocalCliTool operations", "assignedTo": "coder", "status": "pending"}
+{"taskNumber": "56", "title": "Implement Tool Execution Flow", "shortDescription": "Create system for executing tool calls and feeding results back to LLMs", "assignedTo": "coder", "status": "pending"}
+{"taskNumber": "57", "title": "Create MCP Command with Tool Support", "shortDescription": "Implement CLI command that supports model-driven tool calling", "assignedTo": "coder", "status": "pending"}
+{"taskNumber": "58", "title": "Implement Anthropic Provider Tool Calling", "shortDescription": "Add tool calling support to the Anthropic provider", "assignedTo": "coder", "status": "complete"}
 {"taskNumber": "14", "title": "Implement Basic Writer Command", "shortDescription": "Create first agent command for generating written content", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "15", "title": "Implement Basic Coder Command", "shortDescription": "Create agent command for code generation tasks", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "16", "title": "Implement Basic Analyst Command", "shortDescription": "Create agent command for analytical tasks", "assignedTo": "coder", "status": "pending"}
@@ -50,21 +57,6 @@
 {"taskNumber": "50", "title": "Implement User Feedback Collection", "shortDescription": "Add mechanism for collecting user feedback", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "51", "title": "Alpha Release", "shortDescription": "Release alpha version to selected users", "assignedTo": "project manager", "status": "pending"}
 {"taskNumber": "52", "title": "Develop Command Chaining", "shortDescription": "Create system for piping between commands", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "53", "title": "Implement Tool Calling Interfaces", "shortDescription": "Develop TypeScript interfaces for LLM tool calling", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "54", "title": "Implement Basic Tools for Agents", "shortDescription": "Create initial set of tools for agent commands", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "55", "title": "Develop Translator Command", "shortDescription": "Create agent command for translation tasks", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "56", "title": "Implement Structured Data Handling", "shortDescription": "Add special handling for CSV and JSON data", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "57", "title": "Develop Context Merging System", "shortDescription": "Create system for merging context from multiple sources", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "58", "title": "Performance Optimization", "shortDescription": "Optimize performance for large context processing", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "59", "title": "Implement Cost Tracking", "shortDescription": "Add token usage tracking and cost estimation", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "60", "title": "Develop Explain Command", "shortDescription": "Create agent command for explaining complex topics", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "61", "title": "User Documentation - Advanced Usage", "shortDescription": "Create documentation for advanced features", "assignedTo": "project manager", "status": "pending"}
-{"taskNumber": "62", "title": "Beta Release Preparation", "shortDescription": "Prepare for beta release with expanded functionality", "assignedTo": "project manager", "status": "pending"}
-{"taskNumber": "63", "title": "Plugin Architecture Design", "shortDescription": "Design extensible plugin system for commands and providers", "assignedTo": "architect", "status": "pending"}
-{"taskNumber": "64", "title": "Implement Plugin System", "shortDescription": "Create plugin loading and management system", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "65", "title": "Beta Testing", "shortDescription": "Conduct beta testing with wider audience", "assignedTo": "quality assurance/tester", "status": "pending"}
-{"taskNumber": "66", "title": "Implement Context Vector Storage", "shortDescription": "Add vector storage for improved context retrieval", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "67", "title": "Develop Advanced Retrieval System", "shortDescription": "Create system for semantic search of context", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "68", "title": "Advanced Tool Calling Implementation", "shortDescription": "Expand tool calling capabilities with complex tools", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "69", "title": "Implement Context Prioritization", "shortDescription": "Create system for prioritizing context within window", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "70", "title": "Performance Benchmarking", "shortDescription": "Establish performance benchmarks for key operations", "assignedTo": "quality assurance/tester", "status": "pending"}

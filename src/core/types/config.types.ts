@@ -37,6 +37,22 @@ export interface AnthropicProviderSpecificConfig extends ProviderSpecificConfig 
 }
 
 /**
+ * Represents Google/Gemini-specific configuration, extending the base ProviderSpecificConfig.
+ */
+export interface GoogleProviderSpecificConfig extends ProviderSpecificConfig {
+  apiKey?: string;
+  model?: string; // Default model for this Google/Gemini instance, e.g., 'gemini-2.0-flash-001'
+  maxTokens?: number;
+  temperature?: number;
+  topK?: number;
+  topP?: number;
+  vertexAI?: boolean; // Whether to use Vertex AI instead of the Gemini Developer API
+  vertexProject?: string; // Google Cloud project ID for Vertex AI
+  vertexLocation?: string; // Google Cloud location for Vertex AI
+  // Add any other Google/Gemini-specific settings here
+}
+
+/**
  * Represents the overall application configuration structure.
  */
 export interface AppConfig {

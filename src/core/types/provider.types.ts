@@ -8,6 +8,58 @@ import { ProviderSpecificConfig } from './config.types';
 export type ProviderType = 'openai' | 'anthropic' | 'google'; // Add more as supported
 
 /**
+ * Represents a tool parameter schema
+ */
+export interface ToolParameterProperty {
+  type: string | string[];
+  description?: string;
+  enum?: string[];
+  [key: string]: unknown;
+}
+
+/**
+ * Represents a tool parameter schema
+ */
+export interface ToolParameterSchema {
+  type: string;
+  properties: Record<string, ToolParameterProperty>;
+  required?: string[];
+  additionalProperties?: boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * Represents a function/tool that can be called by a model
+ */
+export interface Tool {
+  type: 'function';
+  name: string;
+  description?: string;
+  parameters: ToolParameterSchema;
+  strict?: boolean;
+}
+
+/**
+ * Represents a tool call made by a model
+ */
+export interface ToolCall {
+  id: string;
+  call_id?: string;
+  type: 'function_call';
+  name: string;
+  arguments: string;
+}
+
+/**
+ * Represents a tool call response to be sent back to the model
+ */
+export interface ToolCallOutput {
+  type: 'function_call_output';
+  call_id: string;
+  output: string;
+}
+
+/**
  * Represents a generic request to an LLM provider.
  * This will be specialized by specific request types (e.g., chat, completion).
  */
@@ -19,6 +71,9 @@ export interface ProviderRequest {
   maxTokens?: number; // Max tokens to generate
   stopSequences?: string[]; // Sequences to stop generation at
   stream?: boolean; // Whether to stream the response
+  tools?: Tool[]; // Tools (functions) the model can call
+  toolChoice?: 'auto' | 'required' | 'none' | { type: 'function'; name: string }; // Control when tools are called
+  parallelToolCalls?: boolean; // Whether multiple tools can be called in parallel
   [key: string]: unknown; // Allow other provider-specific parameters
 }
 
@@ -29,6 +84,7 @@ export interface ProviderResponse {
   success: boolean;
   content?: string; // Generated text content
   choices?: Array<{ text?: string; message?: { role: string; content: string } }>; // For multiple choices or detailed chat messages
+  toolCalls?: ToolCall[]; // Tool calls requested by the model
   usage?: {
     promptTokens?: number;
     completionTokens?: number;
@@ -48,6 +104,9 @@ export interface ProviderResponse {
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  tool_calls?: ToolCall[]; // Tool calls made by the assistant
+  tool_call_id?: string; // For tool_call_output messages
+  name?: string; // For tool_call_output messages (function name)
 }
 
 /**
@@ -88,6 +147,14 @@ export interface LLMProvider {
    * @returns A promise that resolves to the provider's response.
    */
   chat(request: ProviderRequest): Promise<ProviderResponse>;
+
+  /**
+   * Executes a tool call and returns the result.
+   * @param toolCall - The tool call object from the model.
+   * @param availableTools - The available tools that can be called.
+   * @returns A promise that resolves to the tool call result.
+   */
+  executeToolCall?(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string>;
 
   // Future methods could include:
   // generateEmbedding(text: string): Promise<EmbeddingResponse>;
