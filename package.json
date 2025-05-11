@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "## Executive Summary",
   "main": "index.js",
+  "bin": {
+    "agenticmcp": "dist/index.js"
+  },
   "directories": {
     "doc": "docs",
     "test": "tests"
@@ -38,5 +41,9 @@
     "prettier": "^3.4.2",
     "ts-jest": "^29.3.2",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@types/commander": "^2.12.0",
+    "commander": "^13.1.0"
   }
 }
