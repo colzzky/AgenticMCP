@@ -4,8 +4,13 @@
 . (AgenticMCP.Typescript)
 ├── .aider.chat.history.md
 ├── .aider.tags.cache.v4/
+├── .eslintrc.js
 ├── .git/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── .gitignore
+├── .prettierrc.js
 ├── .vscode/
 ├── .windsurfrules
 ├── DIRECTORY.md
@@ -23,6 +28,7 @@
 ├── src/
 │   └── index.ts
 ├── tests/
+│   └── index.test.ts
 ├── tree.sh
 
 ## Key Directories:
@@ -43,4 +49,6 @@
 *   **`.gitignore`**: Specifies intentionally untracked files that Git should ignore.
 *   **`project-summary.md`**: (Purpose to be defined, seems project specific based on listing)
 *   **`tsconfig.json`**: TypeScript compiler configuration.
+*   **`.eslintrc.js`**: ESLint configuration file.
+*   **`.prettierrc.js`**: Prettier configuration file.
 *   **`tree.sh`**: (Purpose to be defined, seems project specific based on listing)
