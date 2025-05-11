@@ -26,6 +26,12 @@
 │   └── ARCHITECTURE.md
 ├── project-summary.md
 ├── src/
+│   ├── core/
+│   │   └── types/
+│   │       └── command.types.ts
+│   │       └── provider.types.ts
+│   │       └── context.types.ts
+│   │       └── index.ts
 │   └── index.ts
 ├── tests/
 │   └── index.test.ts
@@ -34,6 +40,7 @@
 ## Key Directories:
 
 *   **`src/`**: Contains the main source code for the AgenticMCP CLI application.
+*   **`src/core/types/`**: Contains core TypeScript type and interface definitions for the application.
 *   **`tests/`**: Houses all unit, integration, and end-to-end tests for the project.
 *   **`docs/`**: Includes all project documentation, such as requirements, design documents, and user guides.
 *   **`dist/`**: Contains the compiled JavaScript code output by the TypeScript compiler.
