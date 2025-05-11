@@ -2,12 +2,17 @@
 
 import { Command } from 'commander';
 import { version, description } from '../package.json'; // Assuming package.json is in the root
+import { configManager } from './core/config'; // Import the configManager
+import { registerConfigCommands } from './commands/configCommands';
 
 const program = new Command();
 
 program
   .version(version)
   .description(description);
+
+// Register command modules
+registerConfigCommands(program);
 
 // Example command (to be expanded later)
 program
@@ -17,9 +22,9 @@ program
     console.log('Hello from AgenticMCP CLI!');
   });
 
-program.parse(process.argv);
-
 // Handle cases where no command is specified
 if (!process.argv.slice(2).length) {
   program.outputHelp();
 }
+
+program.parse(process.argv);

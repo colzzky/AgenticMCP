@@ -8,3 +8,6 @@ export * from './provider.types';
 
 // Re-export types from context.types.ts
 export * from './context.types';
+
+// Re-export types from config.types.ts
+export * from './config.types';

@@ -28,10 +28,17 @@
 ├── src/
 │   ├── core/
 │   │   └── types/
-│   │       └── command.types.ts
-│   │       └── provider.types.ts
-│   │       └── context.types.ts
+│   │       ├── command.types.ts
+│   │       ├── provider.types.ts
+│   │       ├── context.types.ts
+│   │       ├── config.types.ts
 │   │       └── index.ts
+│   │   └── config/
+│   │       ├── configManager.ts
+│   │       └── index.ts
+│   │   └── utils/
+│   ├── commands/
+│   │   └── configCommands.ts
 │   └── index.ts
 ├── tests/
 │   └── index.test.ts
@@ -41,6 +48,12 @@
 
 *   **`src/`**: Contains the main source code for the AgenticMCP CLI application.
 *   **`src/core/types/`**: Contains core TypeScript type and interface definitions for the application.
+*   **`src/core/config/`**: Manages application configuration.
+    *   `configManager.ts`: Manages loading, saving, and accessing application configuration.
+    *   `index.ts`: Barrel file re-exporting all config utils within `src/core/config`.
+*   **`src/core/utils/`**: Utility functions and helper modules.
+*   **`src/commands/`**: Contains modules for different CLI command groups.
+    *   `configCommands.ts`: Defines and registers the 'config' command and its subcommands.
 *   **`tests/`**: Houses all unit, integration, and end-to-end tests for the project.
 *   **`docs/`**: Includes all project documentation, such as requirements, design documents, and user guides.
 *   **`dist/`**: Contains the compiled JavaScript code output by the TypeScript compiler.
@@ -59,3 +72,5 @@
 *   **`.eslintrc.js`**: ESLint configuration file.
 *   **`.prettierrc.js`**: Prettier configuration file.
 *   **`tree.sh`**: (Purpose to be defined, seems project specific based on listing)
+*   **`src/core/config/configManager.ts`**: Manages loading, saving, and accessing application configuration.
+*   **`src/core/config/index.ts`**: Barrel file re-exporting all config utils within `src/core/config`.

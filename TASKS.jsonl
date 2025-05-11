@@ -3,8 +3,8 @@
 {"taskNumber": "3", "title": "Create TypeScript Project Scaffold", "shortDescription": "Set up TypeScript project with tsconfig.json, directory structure, and build scripts", "assignedTo": "architect", "status": "complete"}
 {"taskNumber": "4", "title": "Configure Development Environment", "shortDescription": "Set up ESLint, Prettier, Jest, and CI/CD pipeline configurations", "assignedTo": "architect", "status": "complete"}
 {"taskNumber": "5", "title": "Define TypeScript Interfaces and Types", "shortDescription": "Create core type definitions for commands, providers, and context management", "assignedTo": "architect", "status": "complete"}
-{"taskNumber": "6", "title": "Implement Core CLI Framework", "shortDescription": "Build the basic command-line interface structure using Commander.js", "assignedTo": "coder", "status": "in progress"}
-{"taskNumber": "7", "title": "Create Configuration Management System", "shortDescription": "Implement configuration file handling with secure credential storage", "assignedTo": "coder", "status": "pending"}
+{"taskNumber": "6", "title": "Implement Core CLI Framework", "shortDescription": "Build the basic command-line interface structure using Commander.js", "assignedTo": "coder", "status": "complete"}
+{"taskNumber": "7", "title": "Create Configuration Management System", "shortDescription": "Implement configuration file handling with secure credential storage", "assignedTo": "coder", "status": "completed"}
 {"taskNumber": "8", "title": "Develop Secure Credential Storage", "shortDescription": "Implement keytar integration for secure API key management", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "9", "title": "Implement OpenAI Provider Adapter", "shortDescription": "Create adapter for OpenAI API with TypeScript interfaces", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "10", "title": "Implement Anthropic Provider Adapter", "shortDescription": "Create adapter for Anthropic Claude API with TypeScript interfaces", "assignedTo": "coder", "status": "pending"}
