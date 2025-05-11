@@ -5,7 +5,9 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import envPaths from 'env-paths';
-import { AppConfig } from '../types'; // Imports AppConfig from src/core/types/index.ts
+import { AppConfig, ProviderSpecificConfig } from '../types'; 
+import { CredentialManager } from '../credentials'; 
+import { CredentialIdentifier } from '../types/credentials.types'; 
 
 const APP_NAME = 'agenticmcp';
 const CONFIG_FILE_NAME = 'config.json';
@@ -99,6 +101,7 @@ class ConfigManager {
     if (!this.config) {
       await this.loadConfig();
     }
+    // Ensure config is not null before accessing its properties
     return this.config ? this.config[key] : undefined;
   }
 
@@ -113,6 +116,7 @@ class ConfigManager {
     if (!this.config) {
       await this.loadConfig();
     }
+    // Ensure config is not null before modifying and saving
     if (this.config) {
         this.config[key] = value;
         await this.saveConfig();
@@ -120,6 +124,57 @@ class ConfigManager {
         console.error('Configuration could not be loaded or initialized. Set operation failed.');
         // In a real app, might throw an error here
     }
+  }
+
+  /**
+   * Retrieves a provider's specific configuration.
+   * Loads config if not already loaded.
+   * @param providerType The type of the provider (e.g., 'openai').
+   * @returns {Promise<ProviderSpecificConfig | undefined>} The provider's configuration, or undefined if not found.
+   */
+  public async getProviderConfig(providerType: string): Promise<ProviderSpecificConfig | undefined> {
+    if (!this.config) {
+      await this.loadConfig();
+    }
+    return this.config?.providers?.[providerType];
+  }
+
+  /**
+   * Retrieves an API key for a given provider.
+   * It first checks the local configuration file (non-sensitive settings).
+   * If not found, it attempts to retrieve the key from the secure keychain.
+   * @param providerType The type of the provider (e.g., 'openai').
+   * @param apiKeyName The name of the key to look for in the keychain (e.g. 'apiKey', 'secretKey'). Defaults to 'apiKey'.
+   * @returns {Promise<string | null>} The API key string if found, otherwise null.
+   */
+  public async getResolvedApiKey(providerType: string, apiKeyName: string = 'apiKey'): Promise<string | null> {
+    if (!this.config) {
+      await this.loadConfig();
+    }
+
+    // 1. Check non-sensitive config first (e.g., if a user explicitly set it there for some reason)
+    // This is not recommended for sensitive keys but provides a fallback.
+    const providerConfig = this.config?.providers?.[providerType];
+    if (providerConfig && typeof providerConfig[apiKeyName] === 'string') {
+      console.warn(`API key for ${providerType} found in non-secure config. Consider moving to secure storage.`);
+      return providerConfig[apiKeyName] as string;
+    }
+
+    // 2. If not in config, try to get from secure storage
+    const credentialIdentifier: CredentialIdentifier = { providerType, accountName: apiKeyName };
+    try {
+      const secret = await CredentialManager.getSecret(credentialIdentifier);
+      if (secret) {
+        console.log(`API key for ${providerType} (key: ${apiKeyName}) resolved from secure storage.`);
+        return secret;
+      }
+    } catch (error) {
+      console.error(`Error retrieving API key for ${providerType} (key: ${apiKeyName}) from secure storage:`, error);
+      return null;
+    }
+    
+    console.log(`API key for ${providerType} (key: ${apiKeyName}) not found in config or secure storage.`);
+    return null;
   }
 
   /**

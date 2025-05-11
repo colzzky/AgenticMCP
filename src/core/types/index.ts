@@ -11,3 +11,6 @@ export * from './context.types';
 
 // Re-export types from config.types.ts
 export * from './config.types';
+
+// Re-export types from credentials.types.ts
+export * from './credentials.types';
