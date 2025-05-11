@@ -1,7 +1,8 @@
-import { promises as fs } from 'fs';
-import * as path from 'path';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import { Minimatch } from 'minimatch';
-
+import type { Logger } from '../core/types/logger.types';
+import type { DirectoryEntry, FileSearchResult } from '../core/types/cli.types';
 /**
  * Definition interfaces for exposing tool functions programmatically.
  */
@@ -29,13 +30,6 @@ export interface LocalCliToolConfig {
 /**
  * Simple logger interface. You can plug in winston or another logger.
  */
-export interface Logger {
-    debug(message: string, ...meta: any[]): void;
-    info(message: string, ...meta: any[]): void;
-    warn(message: string, ...meta: any[]): void;
-    error(message: string, ...meta: any[]): void;
-}
-
 /**
  * Main class providing controlled filesystem operations.
  */
@@ -64,9 +58,7 @@ export class LocalCliTool {
             find_files: this._findFiles.bind(this),
         };
 
-        this.logger.info(
-            `LocalCliTool initialized. Base directory: ${this.baseDir}, Allowed commands: ${[...this.allowedCommands]}`
-        );
+        this.logger.info(`LocalCliTool initialized. Base directory: ${this.baseDir}, Allowed commands: ${[...this.allowedCommands]}`);
     }
 
     /**
@@ -190,9 +182,9 @@ export class LocalCliTool {
             const result = await handler(cwd, kwargs);
             this.logger.debug(`Result for ${command}:`, result);
             return result;
-        } catch (err: any) {
-            this.logger.error(`Error in ${command}: ${err.message}`);
-            return { success: false, error: err.message };
+        } catch (error: any) {
+            this.logger.error(`Error in ${command}: ${error.message}`);
+            return { success: false, error: error.message };
         }
     }
 
@@ -214,8 +206,8 @@ export class LocalCliTool {
         try {
             await fs.mkdir(target, { recursive: true });
             return { success: true, path: target };
-        } catch (err: any) {
-            return { success: false, error: err.message, path: target };
+        } catch (error: any) {
+            return { success: false, error: error.message, path: target };
         }
     }
 
@@ -227,8 +219,8 @@ export class LocalCliTool {
             const bytes = Buffer.from(kwargs.content, 'utf8').length;
             await fs.writeFile(target, kwargs.content, 'utf8');
             return { success: true, path: target, bytes_written: bytes };
-        } catch (err: any) {
-            return { success: false, error: err.message, path: target };
+        } catch (error: any) {
+            return { success: false, error: error.message, path: target };
         }
     }
 
@@ -238,8 +230,8 @@ export class LocalCliTool {
         try {
             const content = await fs.readFile(target, 'utf8');
             return { success: true, path: target, content };
-        } catch (err: any) {
-            return { success: false, error: err.message, path: target };
+        } catch (error: any) {
+            return { success: false, error: error.message, path: target };
         }
     }
 
@@ -252,8 +244,8 @@ export class LocalCliTool {
         try {
             await fs.unlink(target);
             return { success: true, path: target };
-        } catch (err: any) {
-            return { success: false, error: err.message, path: target };
+        } catch (error: any) {
+            return { success: false, error: error.message, path: target };
         }
     }
 
@@ -265,14 +257,9 @@ export class LocalCliTool {
         const target = this.resolveAndValidatePath(kwargs.path, cwd);
         const recursive = kwargs.recursive ?? true;
         try {
-            if (recursive) {
-                await fs.rm(target, { recursive: true, force: true });
-            } else {
-                await fs.rmdir(target);
-            }
-            return { success: true, path: target };
-        } catch (err: any) {
-            return { success: false, error: err.message, path: target };
+            return recursive ? await fs.rm(target, { recursive: true, force: true }) : await fs.rmdir(target), { success: true, path: target };
+        } catch (error: any) {
+            return { success: false, error: error.message, path: target };
         }
     }
 
@@ -287,19 +274,19 @@ export class LocalCliTool {
         const recursive = kwargs.recursive ?? false;
         try {
             const entries: any[] = [];
-            async function walk(dir: string) {
+            const walk = async (dir: string) => {
                 const items = await fs.readdir(dir, { withFileTypes: true });
                 for (const item of items) {
                     if (!showHidden && item.name.startsWith('.')) continue;
                     const full = path.join(dir, item.name);
                     entries.push({ name: path.relative(this.baseDir, full), type: item.isDirectory() ? 'directory' : 'file' });
-                    if (recursive && item.isDirectory()) await walk.call(this, full);
+                    if (recursive && item.isDirectory()) await walk(full);
                 }
-            }
-            await walk.call(this, target);
+            };
+            await walk(target);
             return { success: true, path: target, entries };
-        } catch (err: any) {
-            return { success: false, error: err.message, path: target };
+        } catch (error: any) {
+            return { success: false, error: error.message, path: target };
         }
     }
 
@@ -312,6 +299,7 @@ export class LocalCliTool {
             file_patterns?: string[];
             case_sensitive?: boolean;
             max_results?: number;
+            recursive?: boolean;
         }
     ) {
         const dirRel = kwargs.directory || '.';
@@ -323,42 +311,40 @@ export class LocalCliTool {
         const results: any[] = [];
         let filesChecked = 0;
 
+        const recursive = kwargs.recursive ?? true; 
+
         const walk = async (dir: string) => {
             const items = await fs.readdir(dir, { withFileTypes: true });
             for (const item of items) {
                 if (['.git', '__pycache__', 'node_modules'].includes(item.name)) continue;
                 const full = path.join(dir, item.name);
-                if (item.isDirectory()) {
-                    await walk(full);
-                } else {
-                    filesChecked++;
-                    if (patterns.some(pat => new Minimatch(pat).match(item.name))) {
-                        const content = await fs.readFile(full, 'utf8').catch(() => null);
-                        if (content) {
-                            const lines = content.split(/\r?\n/);
-                            for (let i = 0; i < lines.length; i++) {
-                                if (regex.test(lines[i])) {
-                                    let line = lines[i].trim();
-                                    if (line.length > 200) line = line.slice(0, 197) + '...';
-                                    results.push({
-                                        file: path.relative(this.baseDir, full),
-                                        line_number: i + 1,
-                                        line_content: line,
-                                    });
-                                    if (results.length >= maxResults) return;
-                                }
+                if (patterns.some(pat => new Minimatch(pat).match(item.name))) {
+                    const content = await fs.readFile(full, 'utf8').catch(() => '');
+                    if (content) {
+                        const lines = content.split(/\r?\n/);
+                        for (const [i, lineRaw] of lines.entries()) {
+                            if (regex.test(lineRaw)) {
+                                let line = lineRaw.trim();
+                                if (line.length > 200) line = line.slice(0, 197) + '...';
+                                results.push({
+                                    file: path.relative(this.baseDir, full),
+                                    line_number: i + 1,
+                                    line_content: line,
+                                });
+                                if (results.length >= maxResults) return;
                             }
                         }
                     }
-                    if (results.length >= maxResults) return;
                 }
+                if (!recursive || !item.isDirectory()) return;
+                await walk(full);
             }
         };
         try {
-            await walk.call(this, targetDir);
-            return { success: true, results, files_checked: filesChecked, result_count: results.length, truncated: results.length >= maxResults };
-        } catch (err: any) {
-            return { success: false, error: err.message };
+            await walk(targetDir);
+            return { success: true, results, truncated: results.length >= maxResults };
+        } catch (error: any) {
+            return { success: false, error: error.message };
         }
     }
 
@@ -390,27 +376,30 @@ export class LocalCliTool {
                 if (['.git', 'dist', 'node_modules'].includes(item.name)) continue;
                 const full = path.join(dir, item.name);
                 const isDir = item.isDirectory();
-                if (patterns.some(pat => new Minimatch(pat).match(item.name))) {
-                    if (fileType === 'any' || (fileType === 'file' && !isDir) || (fileType === 'directory' && isDir)) {
-                        const info: any = { path: path.relative(this.baseDir, full), type: isDir ? 'directory' : 'file' };
-                        if (!isDir) {
-                            const stat = await fs.stat(full).catch(() => null);
-                            info.size_bytes = stat?.size;
+                if (patterns.some(pat => new Minimatch(pat).match(item.name)) &&
+                    (fileType === 'any' ||
+                        (fileType === 'file' && !isDir) ||
+                        (fileType === 'directory' && isDir))
+                ) {
+                    const info: any = { path: path.relative(this.baseDir, full), type: isDir ? 'directory' : 'file' };
+                    if (!isDir) {
+                        const stat = await fs.stat(full).catch(() => '');
+                        if (stat && typeof stat !== 'string') {
+                            info.size_bytes = stat.size;
                         }
-                        results.push(info);
-                        if (results.length >= maxResults) return;
                     }
+                    results.push(info);
+                    if (results.length >= maxResults) return;
                 }
-                if (recursive && isDir) await walk(full, depth + 1);
-                if (results.length >= maxResults) return;
+                if (!recursive || !isDir) return;
+                await walk(full, depth + 1);
             }
         };
-
         try {
-            await walk.call(this, targetDir);
+            await walk(targetDir, 0);
             return { success: true, results, truncated: results.length >= maxResults };
-        } catch (err: any) {
-            return { success: false, error: err.message };
+        } catch (error: any) {
+            return { success: false, error: error.message };
         }
     }
 }

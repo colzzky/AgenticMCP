@@ -32,13 +32,13 @@ export class AnthropicProvider implements LLMProvider {
       const model = request.model || this.providerConfig.model || 'claude-3-5-sonnet-latest';
       const max_tokens = request.maxTokens || this.providerConfig.maxTokens || 1024;
       // Only include 'user' and 'assistant' roles for Anthropic
-      const messages = (request.messages || []).filter(
-        (msg) => msg.role === 'user' || msg.role === 'assistant'
-      );
+      const messages: { role: 'user' | 'assistant'; content: string }[] = (request.messages || [])
+        .filter((msg): msg is { role: 'user' | 'assistant'; content: string } => msg.role === 'user' || msg.role === 'assistant')
+        .map(({ role, content }) => ({ role, content }));
       const params = {
         model,
         max_tokens,
-        messages,
+        messages: messages.map(({ role, content }) => ({ role, content })), // Ensure only valid roles and fields
         temperature: request.temperature || this.providerConfig.temperature,
         // Add any other supported params here
       };
@@ -60,12 +60,12 @@ export class AnthropicProvider implements LLMProvider {
         } : undefined,
         rawResponse: completion,
       };
-    } catch (err: any) {
-      logError(`AnthropicProvider chat error: ${err.message}`);
+    } catch (error: any) {
+      logError(`AnthropicProvider chat error: ${error.message}`);
       return {
         success: false,
-        error: { message: err.message, details: err },
-        rawResponse: err,
+        error: { message: error.message, details: error },
+        rawResponse: error,
       };
     }
   }

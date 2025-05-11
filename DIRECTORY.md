@@ -36,22 +36,27 @@
 │   │   ├── index.ts
 │   │   ├── types/
 │   │   │   ├── command.types.ts
-│   │   │   ├── config.types.ts +12
+│   │   │   ├── config.types.ts
 │   │   │   ├── context.types.ts
 │   │   │   ├── credentials.types.ts
 │   │   │   ├── index.ts
+│   │   │   ├── logger.types.ts
 │   │   │   └── provider.types.ts
 │   │   └── utils/
 │   │       ├── index.ts
 │   │       ├── logger.ts
 │   │       └── validation.ts
 │   ├── index.ts
-│   └── providers/
-│       ├── anthropic/
-│       ├── index.ts
-│       └── openai/
-│           ├── index.ts
-│           └── openaiProvider.ts
+│   ├── providers/
+│   │   ├── anthropic/
+│   │   │   ├── anthropicProvider.ts +8
+│   │   │   └── index.ts
+│   │   ├── index.ts
+│   │   └── openai/
+│   │       ├── index.ts
+│   │       └── openaiProvider.ts
+│   └── tools/
+│       └── localCliTool.ts
 ├── tests/
 │   ├── core/
 │   │   └── utils/
