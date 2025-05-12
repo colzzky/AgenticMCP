@@ -228,15 +228,9 @@ export class ConfigManager {
   public getDefaultMcpConfig(): McpServerConfig {
     return {
       enabled: false,
-      transport: 'stdio',
       name: 'AgenticMCP-MCP',
       version: '1.0.0',
       description: 'AgenticMCP MCP Server - Providing filesystem operations for LLMs',
-      http: {
-        port: 3000,
-        host: 'localhost',
-        cors: true
-      },
       tools: {
         namePrefix: ''
       }

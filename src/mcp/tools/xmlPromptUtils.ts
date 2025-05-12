@@ -23,7 +23,7 @@ export function constructXmlPrompt(
   }
   for (const [key, value] of Object.entries(specializedArgs)) {
     if (value !== undefined && value !== '') {
-      xmlPrompt += `<${key}>${value}</${key}>\n`;
+      xmlPrompt += `<${key}>${typeof value === 'string' ? value : JSON.stringify(value)}</${key}>\n`;
     }
   }
   xmlPrompt += `\n<available_tools>`

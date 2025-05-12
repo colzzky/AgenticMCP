@@ -58,23 +58,12 @@ export interface GoogleProviderSpecificConfig extends ProviderSpecificConfig {
 export interface McpServerConfig {
   /** Whether the MCP server is enabled */
   enabled?: boolean;
-  /** Transport type to use (stdio or http) */
-  transport?: 'stdio' | 'http';
   /** Server name */
   name?: string;
   /** Server version */
   version?: string;
   /** Server description */
   description?: string;
-  /** HTTP transport specific settings */
-  http?: {
-    /** Port to listen on */
-    port?: number;
-    /** Host to bind to */
-    host?: string;
-    /** Enable CORS */
-    cors?: boolean;
-  };
   /** Tool adapter settings */
   tools?: {
     /** Prefix to add to tool names */
