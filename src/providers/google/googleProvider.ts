@@ -89,9 +89,9 @@ export class GoogleProvider implements LLMProvider {
     
     // Initialize for Vertex AI
     this.client = new this.GoogleGenAIClass({
-      vertexai: true, 
       project: this.providerConfig.vertexProject,
       location: this.providerConfig.vertexLocation,
+      vertexai: true
     });
     
     info(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Vertex AI`);
