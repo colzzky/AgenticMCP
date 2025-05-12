@@ -39,18 +39,18 @@ describe('FilePathProcessor', () => {
 
     // Mock path.isAbsolute
     mockPath.isAbsolute = jest.fn() as unknown as jest.Mock;
-    (mockPath.isAbsolute as jest.Mock).mockImplementation((...args: unknown[]) => {
+    (mockPath.isAbsolute as any).mockImplementation((...args: unknown[]) => {
       const p = args[0] as string;
 
       // Mock path.resolve
       mockPath.resolve = jest.fn() as unknown as jest.Mock;
-      (mockPath.resolve as jest.Mock).mockImplementation((...args: unknown[]) => {
+      (mockPath.resolve as any).mockImplementation((...args: unknown[]) => {
         return (args as string[]).join('/').replace(/\/+/, '/');
       });
 
       // Mock path.basename
       mockPath.basename = jest.fn() as unknown as jest.Mock;
-      (mockPath.basename as jest.Mock).mockImplementation((...args: unknown[]) => {
+      (mockPath.basename as any).mockImplementation((...args: unknown[]) => {
         const p = args[0] as string;
         return p.split('/').pop() || '';
       });
@@ -59,7 +59,7 @@ describe('FilePathProcessor', () => {
 
     // Mock path.extname
     mockPath.extname = jest.fn() as unknown as jest.Mock;
-    (mockPath.extname as jest.Mock).mockImplementation((...args: unknown[]) => {
+    (mockPath.extname as any).mockImplementation((...args: unknown[]) => {
       const p = args[0] as string;
       const filename = p.split('/').pop() || '';
       const dotIndex = filename.lastIndexOf('.');

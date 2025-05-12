@@ -158,7 +158,7 @@ export function runOpenAIProviderTests({
     });
     
     it('should throw an error if API key is missing during configuration', async () => {
-      mockConfigManager.getResolvedApiKey.mockImplementation(() => Promise.resolve(undefined));
+      mockConfigManager.getResolvedApiKey.mockImplementation(() => Promise.resolve());
       await expect(provider.configure(baseConfig)).rejects.toThrow(
         `OpenAI API key not found for providerType: ${baseConfig.providerType}`
       );
@@ -203,7 +203,7 @@ export function runOpenAIProviderTests({
       });
       
       it('should throw an error if API key is missing during chat', async () => {
-        mockConfigManager.getResolvedApiKey.mockResolvedValueOnce(undefined);
+        mockConfigManager.getResolvedApiKey.mockResolvedValueOnce();
         
         await expect(provider.configure(baseConfig)).rejects.toThrow(
           `OpenAI API key not found for providerType: ${baseConfig.providerType}`

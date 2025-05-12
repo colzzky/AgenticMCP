@@ -87,7 +87,7 @@ describe('OpenAI Provider Basic Tests', () => {
     });
     
     it('should throw an error if API key is missing', async () => {
-      mockConfigManager.getResolvedApiKey.mockResolvedValueOnce(undefined);
+      mockConfigManager.getResolvedApiKey.mockResolvedValueOnce();
       
       const config = {
         providerType: 'openai-chat',
@@ -177,7 +177,7 @@ describe('OpenAI Provider Basic Tests', () => {
           {
             message: {
               role: 'assistant',
-              content: null,
+              content: undefined,
               tool_calls: [
                 {
                   id: 'call-123',

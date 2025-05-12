@@ -156,7 +156,7 @@ export class InMemoryFileSystem implements IFileSystem {
       throw new Error(`ENOTDIR: not a directory, scandir ${path}`);
     }
     
-    return Array.from(entry.children!.keys())
+    return [...entry.children!.keys()]
   }
   
   /**
@@ -297,11 +297,7 @@ export class InMemoryFileSystem implements IFileSystem {
     const result: Record<string, any> = {};
     
     for (const [name, entry] of this.root.entries()) {
-      if (entry.isDirectory) {
-        result[name] = this.dumpDirectory(entry.children!);
-      } else {
-        result[name] = entry.content;
-      }
+      result[name] = entry.isDirectory ? this.dumpDirectory(entry.children!) : entry.content;
     }
     
     return result;
@@ -314,11 +310,7 @@ export class InMemoryFileSystem implements IFileSystem {
     const result: Record<string, any> = {};
     
     for (const [name, entry] of dir.entries()) {
-      if (entry.isDirectory) {
-        result[name] = this.dumpDirectory(entry.children!);
-      } else {
-        result[name] = entry.content;
-      }
+      result[name] = entry.isDirectory ? this.dumpDirectory(entry.children!) : entry.content;
     }
     
     return result;

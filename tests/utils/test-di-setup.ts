@@ -22,7 +22,7 @@ export class TestLogger implements Logger {
   getLastLog(level: 'debug' | 'info' | 'warn' | 'error'): string {
     const calls = this[level].mock.calls;
     if (calls.length > 0) {
-      return calls[calls.length - 1][0] as string;
+      return calls.at(-1)[0] as string;
     }
     return '';
   }
@@ -44,11 +44,11 @@ export function createTestContainer(): DIContainer {
   const testLogger = new TestLogger();
   
   // Create or reuse the test file system instance
-  if (!sharedTestFileSystem) {
-    sharedTestFileSystem = new TestFileSystem();
-  } else {
+  if (sharedTestFileSystem) {
     // Reset the file system state for a fresh test
     sharedTestFileSystem.reset();
+  } else {
+    sharedTestFileSystem = new TestFileSystem();
   }
   
   // Register test implementations

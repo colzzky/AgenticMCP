@@ -60,11 +60,11 @@ describe('DIBaseCommand', () => {
     mockContainer = mock<DIContainer>();
     
     // Setup the container to return the mockFilePathProcessor
-    (mockContainer.get as jest.Mock).mockImplementation((token: string) => {
+    (mockContainer.get as any).mockImplementation((token: string) => {
       if (token === DI_TOKENS.FILE_PATH_PROCESSOR) {
         return mockFilePathProcessor;
       }
-      return undefined;
+      
     });
     
     // Create command with mocks
@@ -89,7 +89,7 @@ This is file 1 content
 --- file2.md ---
 # File 2 Markdown Content`;
     
-    (mockFilePathProcessor.processArgs as jest.Mock).mockResolvedValue({
+    (mockFilePathProcessor.processArgs as any).mockResolvedValue({
       context: mockFileContent,
       remainingArgs: ['some', 'regular', 'args']
     });
@@ -116,7 +116,7 @@ This is file 1 content
   
   it('should handle no file arguments', async () => {
     // Mock processor to return empty context
-    (mockFilePathProcessor.processArgs as jest.Mock).mockResolvedValue({
+    (mockFilePathProcessor.processArgs as any).mockResolvedValue({
       context: '',
       remainingArgs: ['arg1']
     });
@@ -134,7 +134,7 @@ This is file 1 content
   
   it('should handle non-string arguments', async () => {
     // Mock processor to return empty context
-    (mockFilePathProcessor.processArgs as jest.Mock).mockResolvedValue({
+    (mockFilePathProcessor.processArgs as any).mockResolvedValue({
       context: '',
       remainingArgs: ['arg1']
     });
@@ -152,7 +152,7 @@ This is file 1 content
   
   it('should use the FilePathProcessor from the DI container', async () => {
     // Mock the processor to return specific values
-    (mockFilePathProcessor.processArgs as jest.Mock).mockResolvedValue({
+    (mockFilePathProcessor.processArgs as any).mockResolvedValue({
       context: 'Mocked context',
       remainingArgs: ['mocked', 'args']
     });

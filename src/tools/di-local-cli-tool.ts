@@ -415,7 +415,8 @@ export class DILocalCliTool {
           if (stat.isDirectory()) {
             if (recursive) await walk(itemPath);
           } else {
-            if (matcher.test(itemName)) {
+            // eslint-disable-next-line unicorn/prefer-regexp-test
+            if (matcher.match(itemName)) {
               results.push(path.relative(this.baseDir, itemPath));
             }
           }

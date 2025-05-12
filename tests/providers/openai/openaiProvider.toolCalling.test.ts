@@ -191,7 +191,7 @@ describe('OpenAIProvider Tool Calling', () => {
         {
           message: {
             role: 'assistant',
-            content: null,
+            content: undefined,
             tool_calls: [
               {
                 id: 'call_123',

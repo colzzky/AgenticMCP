@@ -48,11 +48,11 @@ describe('DILLMCommand', () => {
     });
     
     // Setup the container to return our mocks
-    (mockContainer.get as jest.Mock).mockImplementation((...args: unknown[]) => {
+    (mockContainer.get as any).mockImplementation((...args: unknown[]) => {
       const token = args[0] as string;
       if (token === DI_TOKENS.FILE_PATH_PROCESSOR) return mockFilePathProcessor;
       if (token === DI_TOKENS.PROVIDER_FACTORY) return mockProviderFactory;
-      return undefined;
+      
     });
     
     // Create command with mocks

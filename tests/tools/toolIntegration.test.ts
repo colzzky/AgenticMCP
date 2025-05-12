@@ -85,7 +85,7 @@ describe('Tool System Integration', () => {
       const openaiProvider = providerFactory.getProvider('openai') as jest.Mocked<OpenAIProvider>;
 
       // Mock necessary methods
-      (openaiProvider.getAvailableTools as jest.Mock).mockReturnValue([
+      (openaiProvider.getAvailableTools as any).mockReturnValue([
         {
           name: 'test_tool',
           description: 'A test tool',

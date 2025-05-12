@@ -121,7 +121,7 @@ describe('ConversationManager', () => {
         },
       ];
 
-      (mockToolExecutor.executeToolCalls as jest.Mock).mockImplementation(async () => toolCallOutputs);
+      (mockToolExecutor.executeToolCalls as any).mockImplementation(async () => toolCallOutputs);
 
       // Mock LLM response with tool results
       mockProvider.generateTextWithToolResults.mockResolvedValueOnce({
@@ -272,7 +272,7 @@ describe('ConversationManager', () => {
       } as ProviderResponse);
 
       // Mock tool execution error
-      (mockToolExecutor.executeToolCalls as jest.Mock).mockImplementation(async () => { throw new Error('Tool execution failed'); });
+      (mockToolExecutor.executeToolCalls as any).mockImplementation(async () => { throw new Error('Tool execution failed'); });
 
       const initialMessages: Message[] = [
         { role: 'user', content: 'What\'s the weather in New York?' },
