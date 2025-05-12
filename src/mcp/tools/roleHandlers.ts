@@ -1,0 +1,135 @@
+import path from 'node:path';
+import { LocalCliTool } from '../../tools/localCliTool.js';
+import type { Logger } from '../../core/types/logger.types.js';
+import type { LLMProvider } from '../../core/types/provider.types.js';
+import { constructXmlPrompt, selectModelForRole } from './xmlPromptUtils';
+import { roleEnums } from './roleSchemas';
+
+/**
+ * Processes file operations found in the LLM response
+ */
+export async function processFileOperations(
+  response: string,
+  localCliTool: LocalCliTool,
+  logger: Logger
+): Promise<string> {
+  const fileOpRegex = /<file_operation>([^]*?)<\/file_operation>/g;
+  let match;
+  let processedResponse = response;
+  const matches = [];
+  while ((match = fileOpRegex.exec(response)) !== null) {
+    if (match && match.length >= 2) {
+      matches.push({ fullMatch: match[0], content: match[1] });
+    }
+  }
+  for (const match of matches) {
+    try {
+      const commandMatch = /command:\s*(\w+)/i.exec(match.content);
+      const pathMatch = /path:\s*([^\n]+)/i.exec(match.content);
+      const contentMatch = /content:\s*([^]*?)(?=<\/file_operation>|$)/i.exec(match.content);
+      if (commandMatch && pathMatch) {
+        const command = commandMatch[1];
+        const filePath = pathMatch[1].trim();
+        const content = contentMatch ? contentMatch[1].trim() : undefined;
+        logger.debug(`Executing file operation: ${command} on path: ${filePath}`);
+        let result;
+        switch (command) {
+          case 'read_file': { result = await localCliTool.execute('read_file', { path: filePath }); break; }
+          case 'write_file': {
+            // Check for allowOverwrite parameter in the file operation
+            const allowOverwriteMatch = /allowoverwrite:\s*(true|false)/i.exec(match.content);
+            const allowOverwrite = allowOverwriteMatch ? allowOverwriteMatch[1].toLowerCase() === 'true' : false;
+
+            // Make sure content is a string
+            const contentStr = content || '';
+
+            result = await localCliTool.execute('write_file', {
+              path: filePath,
+              content: contentStr,
+              allowOverwrite
+            });
+
+            // If file exists and we're not allowed to overwrite, provide a clear message in the result
+            if (result.fileExists && !result.success) {
+              logger.warn(`File exists at ${filePath} and allowOverwrite is false - confirmation required`);
+            }
+            break;
+          }
+          case 'create_directory': { result = await localCliTool.execute('create_directory', { path: filePath }); break; }
+          case 'delete_file': { result = await localCliTool.execute('delete_file', { path: filePath }); break; }
+          case 'delete_directory': { result = await localCliTool.execute('delete_directory', { path: filePath }); break; }
+          case 'list_directory': { result = await localCliTool.execute('list_directory', { path: filePath }); break; }
+          case 'search_codebase': { result = await localCliTool.execute('search_codebase', { query: content || filePath, recursive: true }); break; }
+          case 'find_files': { result = await localCliTool.execute('find_files', { pattern: filePath, recursive: true }); break; }
+          default: { throw new Error(`Unknown file operation command: ${command}`); }
+        }
+        const resultText = `<file_operation_result command="${command}" path="${filePath}">\n${JSON.stringify(result, undefined, 2)}\n</file_operation_result>`;
+        processedResponse = processedResponse.replace(match.fullMatch, resultText);
+        logger.debug(`File operation ${command} completed successfully`);
+      } else {
+        throw new Error('Invalid file operation format. Must include command and path.');
+      }
+    } catch (error) {
+      logger.error(`Error processing file operation: ${error instanceof Error ? error.message : String(error)}`);
+      const errorText = `<file_operation_error>\nError: ${error instanceof Error ? error.message : String(error)}\n</file_operation_error>`;
+      processedResponse = processedResponse.replace(match.fullMatch, errorText);
+    }
+  }
+  return processedResponse;
+}
+
+/**
+ * Handles execution of a role-based tool
+ */
+export async function handleRoleBasedTool(
+  args: any,
+  role: roleEnums,
+  logger: Logger,
+  llmProvider: LLMProvider
+): Promise<any> {
+  const { prompt, base_path, context, related_files, ...specializedArgs } = args;
+  // Create a dedicated LocalCliTool instance with the specified base path
+  // Set allowFileOverwrite to false by default for safety
+  const dedicatedLocalCliTool = new LocalCliTool({
+    baseDir: path.resolve(base_path),
+    allowFileOverwrite: false // Default to safe mode - require explicit allowOverwrite for existing files
+  }, logger);
+  const fileContents = [] as Array<{ path: string, content: string }>;
+  if (related_files && related_files.length > 0) {
+    for (const filePath of related_files) {
+      try {
+        const content = await dedicatedLocalCliTool.execute('read_file', { path: filePath });
+        fileContents.push({ path: filePath, content: content.content });
+      } catch (error) {
+        logger.warn(`Failed to read file ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  }
+  const systemPrompt = constructXmlPrompt(role, prompt, context, fileContents, specializedArgs);
+  const messages = [
+    { role: 'system' as const, content: systemPrompt },
+    { role: 'user' as const, content: `Please address the ${role === 'custom' ? args.role : role} task.` }
+  ];
+  try {
+    logger.info(`Executing ${role} role-based tool with prompt: ${prompt.slice(0, 100)}...`);
+    const providerResponse = await llmProvider.chat({
+      messages,
+      maxTokens: 4000,
+      temperature: 0.2,
+      model: selectModelForRole(role)
+    });
+    logger.debug(`Processing file operations in ${role} response`);
+    const responseContent = providerResponse.content || '';
+    const processedResponse = await processFileOperations(
+      responseContent,
+      dedicatedLocalCliTool,
+      logger
+    );
+    return {
+      content: [{ type: 'text', text: processedResponse }]
+    };
+  } catch (error) {
+    logger.error(`Error executing ${role} role-based tool:`, error);
+    throw error;
+  }
+}

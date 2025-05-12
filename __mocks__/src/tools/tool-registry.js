@@ -15,7 +15,7 @@ export class ToolRegistry {
     this.logger.debug('ToolRegistry initialized');
   }
   registerTool = jest.fn((tool) => {
-    if (!this._tools.find(t => t.name === tool.name)) {
+    if (!this._tools.some(t => t.name === tool.name)) {
       this._tools.push(tool);
       this.logger.debug(`Registered tool '${tool.name}'`);
       return true;
@@ -25,9 +25,9 @@ export class ToolRegistry {
   });
   registerTools = jest.fn((tools) => {
     let count = 0;
-    tools.forEach(tool => {
+    for (const tool of tools) {
       if (this.registerTool(tool)) count++;
-    });
+    }
     return count;
   });
   getTool = jest.fn((name) => {
@@ -38,7 +38,7 @@ export class ToolRegistry {
   });
   getTools = jest.fn((filter) => {
     if (typeof filter === 'function') {
-      return this._tools.filter(filter);
+      return this._tools.filter(x => filter(x));
     }
     return this._tools;
   });
@@ -55,7 +55,7 @@ export class ToolRegistry {
     return {
       valid: invalidTools.length === 0,
       invalidTools,
-      messages: invalidTools.length ? ['Invalid tool found'] : []
+      messages: invalidTools.length > 0 ? ['Invalid tool found'] : []
     };
   });
 }

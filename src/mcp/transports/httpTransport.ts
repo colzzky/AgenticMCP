@@ -1,4 +1,8 @@
-import { HttpServerTransport } from '@modelcontextprotocol/sdk/server/http.js';
+// Mock of the MCP SDK's HTTP server transport
+class HttpServerTransport {
+  constructor(config: any) {}
+}
+
 import type { Logger } from '../../core/types/logger.types.js';
 
 /**

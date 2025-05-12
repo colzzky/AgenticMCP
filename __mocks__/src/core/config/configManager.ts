@@ -1,7 +1,16 @@
 // __mocks__/src/core/config/configManager.ts
+async function getConfig() {
+  // ...
+}
+
+export { getConfig };
+
 export class ConfigManager {
-  getResolvedApiKey = jest.fn(() => 'mock-api-key');
-  get = jest.fn();
+  getResolvedApiKey() { return 'mock-api-key'; }
+  get: jest.Mock;
+  constructor() {
+    this.get = jest.fn();
+  }
 }
 
 export default ConfigManager;

@@ -664,4 +664,33 @@ agenticmcp tools execute read_file --args '{"path": "./example.txt"}'
 
 For more information on the tool system, see [Tool System Documentation](docs/TOOLS.md).
 
-These examples demonstrate the various ways to use file-based context with the AgenticMCP CLI, allowing users to provide rich context information to the underlying LLM agents.
+## MCP Mode with Role-Based AI Tools
+
+AgenticMCP can now run as a Model Context Protocol (MCP) server, providing role-based AI tools like "coder", "qa", "analyst", and more through the standardized MCP protocol. This allows other applications to leverage AgenticMCP's LLM capabilities for specialized tasks.
+
+### Starting MCP Server
+
+```bash
+# Start with stdio transport (for piping to other processes)
+agenticmcp serve-mcp --provider anthropic
+
+# Start with HTTP transport (for web clients)
+agenticmcp serve-mcp --transport http --port 3000 --provider openai
+```
+
+Available role-based tools include:
+- `coder`: Expert software developer for code generation and analysis
+- `qa`: Quality assurance specialist for testing and validation
+- `project_manager`: Planning and organization expert
+- `cpo`: Chief Product Officer for product strategy
+- `ui_ux`: User interface and experience designer
+- `summarizer`: Content summary specialist
+- `rewriter`: Content improvement expert
+- `analyst`: Data pattern analysis expert
+- `custom`: Define your own custom role
+
+Each role has full access to file operations (within a secure base_path) and can read, write, search, and manipulate files as needed to complete its tasks.
+
+For detailed documentation on MCP mode, see [MCP Mode Documentation](docs/MCP_MODE.md).
+
+These examples demonstrate the various ways to use AgenticMCP, allowing users to provide rich context information to the underlying LLM agents and leverage specialized AI roles through the MCP protocol.

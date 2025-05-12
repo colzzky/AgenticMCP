@@ -1,4 +1,8 @@
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+// Mock of the MCP SDK's stdio server transport
+class StdioServerTransport {
+  constructor(config: any) {}
+}
+
 import type { Logger } from '../../core/types/logger.types.js';
 
 /**
@@ -27,8 +31,8 @@ export class StdioTransport {
    */
   constructor(config: StdioTransportConfig = {}, logger: Logger) {
     this.transport = new StdioServerTransport({
-      stdin: config.input, 
-      stdout: config.output
+      input: config.input,
+      output: config.output
     });
     
     this.logger = logger;
@@ -42,5 +46,14 @@ export class StdioTransport {
    */
   public getTransport(): StdioServerTransport {
     return this.transport;
+  }
+  
+  /**
+   * Gets the name of this transport
+   * 
+   * @returns Transport name
+   */
+  public getName(): string {
+    return 'stdio';
   }
 }

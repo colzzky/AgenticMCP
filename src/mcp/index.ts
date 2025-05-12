@@ -9,9 +9,3 @@ export {
   type StdioTransportConfig, 
   type HttpTransportConfig 
 } from './transports/index.js';
-
-// Export adapters
-export {
-  LocalCliToolAdapter,
-  type LocalCliToolAdapterConfig
-} from './adapters/index.js';

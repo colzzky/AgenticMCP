@@ -3,9 +3,10 @@
 .
 ├── CLAUDE.md
 ├── DIRECTORY.md
+├── KNOWLEDGE.md
 ├── LICENSE
-├── PROGRESS.jsonl
-├── README.md
+├── PROGRESS.jsonl +66
+├── README.md +30
 ├── TASKS.jsonl
 ├── __mocks__/
 │   ├── @/
@@ -14,16 +15,36 @@
 │   │   └── sdk.ts
 │   ├── core/
 │   ├── openai.ts
+│   ├── path.js
 │   └── src/
-│       └── core/
-│           └── utils/
+│       ├── core/
+│       │   ├── config/
+│       │   │   ├── config-manager.js
+│       │   │   └── configManager.ts
+│       │   └── utils/
+│       ├── providers/
+│       │   ├── anthropic/
+│       │   │   └── anthropic-provider.js
+│       │   └── openai/
+│       │       └── openai-provider.js
+│       └── tools/
+│           ├── tool-executor.js
+│           ├── tool-registry.js
+│           └── toolRegistry.ts
+├── commands/
+│   └── turnover.txt
 ├── context/
 │   ├── anthropic-tool-use.md
 │   ├── gemini-tool-calling.md
-│   └── openai-tool-calling.md
+│   ├── mcp-typescript-sdk.md
+│   ├── openai-tool-calling.md
+│   └── xm-based-prompting.md
 ├── docs/
-│   └── ARCHITECTURE.md
+│   ├── ARCHITECTURE.md
+│   └── TOOLS.md
 ├── eslint.config.js
+├── examples/
+│   └── mcp/
 ├── jest.config.js
 ├── package-lock.json
 ├── package.json
@@ -32,22 +53,28 @@
 │   ├── commands/
 │   │   ├── configCommands.ts
 │   │   ├── credentialCommands.ts
-│   │   └── examples/
-│   │       ├── basicCommand.ts
-│   │       └── index.ts
+│   │   ├── examples/
+│   │   │   ├── basicCommand.ts
+│   │   │   └── index.ts
+│   │   ├── index.ts
+│   │   ├── llmCommand.ts
+│   │   ├── toolCommands.ts
+│   │   └── writerCommand.ts
 │   ├── context/
 │   │   ├── contextManager.ts
+│   │   ├── filePathProcessor.ts
 │   │   └── index.ts
 │   ├── conversation/
 │   │   └── conversationManager.ts
 │   ├── core/
 │   │   ├── commands/
+│   │   │   ├── baseCommand.ts
 │   │   │   ├── decorators.ts
 │   │   │   ├── index.ts
 │   │   │   ├── initializer.ts
 │   │   │   └── registry.ts
 │   │   ├── config/
-│   │   │   ├── configManager.ts
+│   │   │   ├── configManager.ts +46
 │   │   │   └── index.ts
 │   │   ├── credentials/
 │   │   │   ├── credentialManager.ts
@@ -56,7 +83,7 @@
 │   │   ├── types/
 │   │   │   ├── cli.types.ts
 │   │   │   ├── command.types.ts
-│   │   │   ├── config.types.ts
+│   │   │   ├── config.types.ts +35
 │   │   │   ├── context.types.ts
 │   │   │   ├── credentials.types.ts
 │   │   │   ├── index.ts
@@ -66,13 +93,31 @@
 │   │       ├── index.ts
 │   │       ├── logger.ts
 │   │       └── validation.ts
+│   ├── global.d.ts
 │   ├── index.ts
+│   ├── mcp/
+│   │   ├── adapters/
+│   │   │   ├── index.ts
+│   │   │   └── localCliToolAdapter.ts
+│   │   ├── index.ts
+│   │   ├── mcpServer.ts +134
+│   │   ├── tools/
+│   │   └── transports/
+│   │       ├── httpTransport.ts +5
+│   │       ├── index.ts
+│   │       └── stdioTransport.ts +16
 │   ├── providers/
 │   │   ├── anthropic/
 │   │   │   ├── anthropicProvider.ts
 │   │   │   └── index.ts
 │   │   ├── google/
+│   │   │   ├── googleMessageConversion.ts
 │   │   │   ├── googleProvider.ts
+│   │   │   ├── googleToolExtraction.ts
+│   │   │   ├── googleTypes.ts
+│   │   │   └── index.ts
+│   │   ├── grok/
+│   │   │   ├── grokProvider.ts
 │   │   │   └── index.ts
 │   │   ├── index.ts
 │   │   ├── openai/
@@ -91,17 +136,26 @@
 │       ├── toolRegistry.ts
 │       └── toolResultFormatter.ts
 ├── tests/
+│   ├── commands/
+│   │   ├── llmCommand.test.ts
+│   │   └── writerCommand.test.ts
 │   ├── context/
-│   │   └── contextManager.test.ts
+│   │   ├── contextManager.test.ts
+│   │   └── filePathProcessor.test.ts
 │   ├── conversation/
 │   │   └── conversationManager.test.ts
 │   ├── core/
 │   │   ├── commands/
+│   │   │   ├── baseCommand.test.ts
 │   │   │   └── registry.test.ts
 │   │   └── utils/
 │   │       └── logger.test.ts
 │   ├── index.test.ts
 │   ├── jest.setup.ts
+│   ├── mcp/
+│   │   ├── adapters/
+│   │   ├── tools/
+│   │   └── transports/
 │   ├── providers/
 │   │   ├── anthropic/
 │   │   │   ├── anthropicProvider.test.ts
@@ -109,23 +163,33 @@
 │   │   │   ├── anthropicProviderToolCalling2a.test.ts
 │   │   │   └── anthropicProviderToolCalling2b.test.ts
 │   │   ├── google/
+│   │   │   ├── googleProvider.sharedTestUtils.ts
 │   │   │   ├── googleProvider.test.ts
 │   │   │   ├── googleProviderBasicToolCalling.test.ts
 │   │   │   ├── googleProviderCompositionalCalling.test.ts
 │   │   │   ├── googleProviderToolCalling.test.ts
 │   │   │   └── importConfigManager.test.ts
+│   │   ├── grok/
+│   │   │   └── grokProvider.test.ts
 │   │   └── openai/
-│   │       ├── openaiProvider.test.ts
+│   │       ├── openaiProvider.chat.test.ts
+│   │       ├── openaiProvider.completion.test.ts
+│   │       ├── openaiProvider.completionTestUtils.ts
+│   │       ├── openaiProvider.constructor.test.ts
+│   │       ├── openaiProvider.errors.test.ts
+│   │       ├── openaiProvider.sharedTestUtils.ts
 │   │       └── openaiProviderToolCalling.test.ts
 │   └── tools/
 │       ├── localCliTool.test.ts
+│       ├── toolCommands.test.ts
 │       ├── toolExecutionManager.test.ts
 │       ├── toolExecutor.test.ts
+│       ├── toolIntegration.test.ts
 │       └── toolRegistry.test.ts
 ├── tree.sh
 ├── tsconfig.json
 ├── tsconfig.test.json
-└── turn-over.md
+└── turn-over-details.md +371
 ```
 
 This document outlines the directory structure of the AgenticMCP.Typescript project.

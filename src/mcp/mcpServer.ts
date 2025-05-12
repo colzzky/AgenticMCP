@@ -1,21 +1,13 @@
-import { McpServer as BaseMcpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { ServerTransport } from '@modelcontextprotocol/sdk/server/transport.js';
-import type { Tool } from '../core/types/provider.types.js';
+import { McpServer as BaseMcpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Implementation } from "@modelcontextprotocol/sdk/types.js";
+import { StdioServerTransport as ServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { Logger } from '../core/types/logger.types.js';
-import type { LocalCliTool } from '../tools/localCliTool.js';
-import { z } from 'zod';
+import { type ZodRawShape } from "zod";
 
 /**
  * Configuration options for the MCP server
  */
-export interface McpServerConfig {
-  /** Name of the MCP server */
-  name: string;
-  /** Version of the MCP server */
-  version: string;
-  /** Optional server description */
-  description?: string;
-}
+export type McpServerConfig = Implementation;
 
 /**
  * MCP Server class that wraps the MCP SDK server and provides integration
@@ -24,77 +16,26 @@ export interface McpServerConfig {
 export class McpServer {
   private server: BaseMcpServer;
   private logger: Logger;
-  private localCliTool: LocalCliTool;
   private isConnected = false;
   private registeredTools: Set<string> = new Set();
 
   /**
    * Creates a new MCP server instance
-   * 
+   *
    * @param config Server configuration options
-   * @param localCliTool Instance of LocalCliTool for handling filesystem operations
    * @param logger Logger instance for logging
    */
-  constructor(config: McpServerConfig, localCliTool: LocalCliTool, logger: Logger) {
+  constructor(config: McpServerConfig, logger: Logger) {
     this.server = new BaseMcpServer({
       name: config.name,
       version: config.version,
       description: config.description
     });
-    
-    this.localCliTool = localCliTool;
-    this.logger = logger;
-    
-    this.logger.info(`MCP Server initialized: ${config.name} v${config.version}`);
-    
-    // Register LocalCliTool commands as MCP tools
-    this.registerLocalCliTools();
-  }
 
-  /**
-   * Registers all LocalCliTool commands as MCP tools
-   */
-  private registerLocalCliTools(): void {
-    const commandMap = this.localCliTool.getCommandMap();
-    const toolDefinitions = this.localCliTool.getToolDefinitions();
-    
-    // Register each tool definition from LocalCliTool
-    for (const toolDef of toolDefinitions) {
-      const toolName = toolDef.function.name;
-      const handler = commandMap[toolName as keyof typeof commandMap];
-      
-      if (handler) {
-        this.logger.debug(`Registering MCP tool: ${toolName}`);
-        
-        // Register the tool with the MCP server
-        this.server.tool(
-          toolName,
-          toolDef.function.parameters,
-          async (args: any) => {
-            try {
-              this.logger.debug(`Executing tool ${toolName} with args:`, args);
-              const result = await this.localCliTool.execute(toolName as any, args);
-              
-              return {
-                content: [{ 
-                  type: 'text', 
-                  text: JSON.stringify(result, null, 2) 
-                }]
-              };
-            } catch (error) {
-              this.logger.error(`Error executing tool ${toolName}:`, error);
-              
-              return { 
-                content: [{ 
-                  type: 'text', 
-                  text: `Error executing ${toolName}: ${error instanceof Error ? error.message : String(error)}` 
-                }]
-              };
-            }
-          }
-        );
-      }
-    }
+    this.logger = logger;
+
+    this.logger.info(`MCP Server initialized: ${config.name} v${config.version}`);
+
   }
 
   /**
@@ -128,14 +69,77 @@ export class McpServer {
       this.logger.warn('MCP Server is not connected to any transport');
       return;
     }
-    
+
     try {
       this.logger.info('Disconnecting MCP Server from transport...');
-      await this.server.disconnect();
+      await this.server.close();
       this.isConnected = false;
-      this.logger.info('MCP Server successfully disconnected from transport');
+      this.logger.info('MCP Server successfully marked as disconnected');
     } catch (error) {
       this.logger.error('Failed to disconnect MCP Server from transport:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Register a new tool with the MCP server
+   *
+   * @param name Tool name
+   * @param description Tool description
+   * @param schema Tool input schema (using Zod)
+   * @param handler Function that executes the tool
+   */
+  public registerTool(
+    name: string,
+    description: string,
+    schema: ZodRawShape,
+    handler: (args: any) => Promise<any>
+  ): void {
+    if (this.registeredTools.has(name)) {
+      this.logger.warn(`Tool ${name} is already registered, skipping`);
+      return;
+    }
+
+    this.logger.debug(`Registering external MCP tool: ${name}`);
+    try {
+      this.server.tool(
+        name,
+        description,
+        schema,
+        async (args: any) => {
+          try {
+            this.logger.debug(`Executing tool ${name} with args:`, args);
+            const result = await handler(args);
+
+            // If the result is already in the expected format, return it directly
+            if (result?.content && Array.isArray(result.content)) {
+              return result;
+            }
+
+            // Otherwise, wrap it in the expected format
+            return {
+              content: [{
+                type: 'text',
+                text: typeof result === 'string' ? result : JSON.stringify(result, undefined, 2)
+              }]
+            };
+          } catch (error) {
+            this.logger.error(`Error executing tool ${name}:`, error);
+
+            return {
+              content: [{
+                type: 'text',
+                text: `Error executing ${name}: ${error instanceof Error ? error.message : String(error)}`
+              }]
+            };
+          }
+        }
+      );
+
+      this.registeredTools.add(name);
+      this.logger.info(`Tool ${name} successfully registered`);
+    } catch (error) {
+      this.logger.error(`Failed to register tool ${name}:`, error);
       throw error;
     }
   }

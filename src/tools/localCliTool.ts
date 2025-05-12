@@ -45,6 +45,8 @@ export interface LocalCliToolConfig {
     baseDir: string;
     /** Whitelisted shell commands (not implemented here) */
     allowedCommands?: string[];
+    /** Whether to allow overwriting existing files without confirmation (default: false) */
+    allowFileOverwrite?: boolean;
 }
 
 /**
@@ -56,6 +58,7 @@ export interface LocalCliToolConfig {
 export class LocalCliTool {
     private baseDir: string;
     private allowedCommands: Set<string>;
+    private allowFileOverwrite: boolean;
     private logger: Logger;
     private commandMap: LocalCliCommandMap;
 
@@ -69,11 +72,12 @@ export class LocalCliTool {
     }
 
     constructor(config: LocalCliToolConfig, logger: Logger) {
-        if (!config.baseDir) throw new Error("'baseDir' must be specified in the configuration.");
-        if (!path.isAbsolute(config.baseDir)) throw new Error("'baseDir' must be an absolute path.");
+        if (!config.baseDir) throw new TypeError("'baseDir' must be specified in the configuration.");
+        if (!path.isAbsolute(config.baseDir)) throw new TypeError("'baseDir' must be an absolute path.");
 
         this.baseDir = path.resolve(config.baseDir);
         this.allowedCommands = new Set(config.allowedCommands || []);
+        this.allowFileOverwrite = config.allowFileOverwrite ?? false;
         this.logger = logger;
 
         this.commandMap = {
@@ -87,7 +91,7 @@ export class LocalCliTool {
             find_files: this._findFiles.bind(this),
         };
 
-        this.logger.info(`LocalCliTool initialized. Base directory: ${this.baseDir}, Allowed commands: ${[...this.allowedCommands]}`);
+        this.logger.info(`LocalCliTool initialized. Base directory: ${this.baseDir}, Allow file overwrite: ${this.allowFileOverwrite}, Allowed commands: ${[...this.allowedCommands]}`);
     }
 
     /**
@@ -179,8 +183,9 @@ export class LocalCliTool {
             if (error instanceof Error) {
                 this.logger.error(`Error in ${String(command)}: ${error.message}`);
                 throw error;
+            } else {
+                throw new TypeError('Invalid operation');
             }
-            throw new Error('Unknown error occurred');
         }
     }
 
@@ -206,15 +211,52 @@ export class LocalCliTool {
         }
     }
 
-    /** Write text to file (overwrites) */
+    /**
+     * Write text to file (with overwrite protection)
+     * If allowOverwrite is false, checks if the file exists first and doesn't overwrite
+     * without explicit permission. Returns file content if it exists and needs confirmation.
+     */
     private async _writeFile(args: WriteFileArgs): Promise<WriteFileResult> {
         const target = this.resolveAndValidatePath(args.path);
+        const allowOverwrite = args.allowOverwrite ?? this.allowFileOverwrite;
+
         try {
+            // Create parent directories if they don't exist
             await fs.mkdir(path.dirname(target), { recursive: true });
+
+            // Check if file exists
+            try {
+                const stats = await fs.stat(target);
+
+                if (stats.isFile()) {
+                    // File exists - check if we're allowed to overwrite
+                    if (allowOverwrite) {
+                        // Otherwise proceed with overwrite
+                    } else {
+                        // Read existing content to return for confirmation
+                        const existingContent = await fs.readFile(target, 'utf8');
+                        this.logger.warn(`File already exists at ${args.path} and allowOverwrite is false`);
+                        return {
+                            success: false,
+                            fileExists: true,
+                            existingContent,
+                            message: "File exists and allowOverwrite is false. Set allowOverwrite to true to proceed."
+                        };
+                    }
+                }
+            } catch {
+                // File doesn't exist, which is fine - we'll create it
+            }
+
+            // Write file
             await fs.writeFile(target, args.content, 'utf8');
             return { success: true };
-        } catch {
-            return { success: false };
+        } catch (error) {
+            this.logger.error(`Error writing file ${args.path}: ${error instanceof Error ? error.message : String(error)}`);
+            return {
+                success: false,
+                message: `Error writing file: ${error instanceof Error ? error.message : String(error)}`
+            };
         }
     }
 

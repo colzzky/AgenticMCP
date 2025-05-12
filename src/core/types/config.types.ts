@@ -53,6 +53,36 @@ export interface GoogleProviderSpecificConfig extends ProviderSpecificConfig {
 }
 
 /**
+ * MCP Server configuration settings
+ */
+export interface McpServerConfig {
+  /** Whether the MCP server is enabled */
+  enabled?: boolean;
+  /** Transport type to use (stdio or http) */
+  transport?: 'stdio' | 'http';
+  /** Server name */
+  name?: string;
+  /** Server version */
+  version?: string;
+  /** Server description */
+  description?: string;
+  /** HTTP transport specific settings */
+  http?: {
+    /** Port to listen on */
+    port?: number;
+    /** Host to bind to */
+    host?: string;
+    /** Enable CORS */
+    cors?: boolean;
+  };
+  /** Tool adapter settings */
+  tools?: {
+    /** Prefix to add to tool names */
+    namePrefix?: string;
+  };
+}
+
+/**
  * Represents the overall application configuration structure.
  */
 export interface AppConfig {
@@ -69,6 +99,11 @@ export interface AppConfig {
   providers?: {
     [providerName: string]: ProviderSpecificConfig;
   };
+
+  /**
+   * MCP server configuration
+   */
+  mcp?: McpServerConfig;
 
   // Future general CLI settings can be added here.
   // Example: logLevel?: 'debug' | 'info' | 'warn' | 'error';

@@ -13,7 +13,7 @@ export interface FileSearchResult {
 
 // --- LocalCliTool Command Argument/Result Types ---
 export interface CreateDirectoryArgs { path: string; }
-export interface WriteFileArgs { path: string; content: string; }
+export interface WriteFileArgs { path: string; content: string; allowOverwrite?: boolean; }
 export interface ReadFileArgs { path: string; }
 export interface DeleteFileArgs { path: string; }
 export interface DeleteDirectoryArgs { path: string; }
@@ -23,7 +23,12 @@ export interface FindFilesArgs { pattern: string; recursive?: boolean; }
 
 export interface ListDirectoryResult { entries: DirectoryEntry[]; }
 export interface ReadFileResult { content: string; }
-export interface WriteFileResult { success: boolean; }
+export interface WriteFileResult { 
+  success: boolean;
+  existingContent?: string;
+  fileExists?: boolean;
+  message?: string;
+}
 export interface CreateDirectoryResult { success: boolean; }
 export interface DeleteFileResult { success: boolean; }
 export interface DeleteDirectoryResult { success: boolean; }

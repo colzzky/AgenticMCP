@@ -5,7 +5,7 @@
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import envPaths from 'env-paths';
-import { AppConfig, ProviderSpecificConfig, OpenAIProviderSpecificConfig } from '../types/config.types'; 
+import { AppConfig, ProviderSpecificConfig, OpenAIProviderSpecificConfig, McpServerConfig } from '../types/config.types'; 
 import { CredentialManager } from '../credentials/credentialManager'; 
 import { CredentialIdentifier } from '../types/credentials.types'; 
 import { logger } from '../utils/index';
@@ -117,6 +117,28 @@ export class ConfigManager {
   }
 
   /**
+   * Gets the current configuration without async loading
+   * @returns {AppConfig} The current configuration
+   */
+  public getConfig(): AppConfig {
+    if (!this.config) {
+      return this.getDefaults();
+    }
+    return this.config;
+  }
+
+  /**
+   * Gets the MCP server configuration
+   * @returns {McpServerConfig} The MCP server configuration
+   */
+  public getMcpConfig(): McpServerConfig {
+    if (!this.config?.mcp) {
+      return this.getDefaultMcpConfig();
+    }
+    return this.config.mcp;
+  }
+
+  /**
    * Sets a specific configuration value by key and saves the configuration.
    * Loads config if not already loaded.
    * @param key The key of the configuration value to set.
@@ -195,6 +217,29 @@ export class ConfigManager {
     return {
       defaultProvider: undefined,
       providers: {},
+      mcp: this.getDefaultMcpConfig(),
+    };
+  }
+
+  /**
+   * Returns the default MCP server configuration.
+   * @returns {McpServerConfig} The default MCP server configuration.
+   */
+  public getDefaultMcpConfig(): McpServerConfig {
+    return {
+      enabled: false,
+      transport: 'stdio',
+      name: 'AgenticMCP-MCP',
+      version: '1.0.0',
+      description: 'AgenticMCP MCP Server - Providing filesystem operations for LLMs',
+      http: {
+        port: 3000,
+        host: 'localhost',
+        cors: true
+      },
+      tools: {
+        namePrefix: ''
+      }
     };
   }
 

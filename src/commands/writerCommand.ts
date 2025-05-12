@@ -43,7 +43,7 @@ export class WriterCommand implements Command {
         (context as any).stdout.write(output);
       } else {
         // fallback
-        // eslint-disable-next-line no-console
+        
         console.log(output);
       }
       return { success: true, message: output };
