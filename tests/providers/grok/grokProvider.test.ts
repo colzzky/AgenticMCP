@@ -1,5 +1,5 @@
 // Reuse all OpenAIProvider tests for GrokProvider
-import { runOpenAIProviderTests } from '../openai/openaiProvider.sharedTestUtils';
+import { runOpenAIProviderTests } from '../openai/openaiProviderTestUtils';
 import { GrokProvider } from '../../../src/providers/grok/grokProvider';
 import { ConfigManager } from '../../../src/core/config/configManager';
 

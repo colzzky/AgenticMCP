@@ -8,29 +8,6 @@
 ├── PROGRESS.jsonl +66
 ├── README.md +30
 ├── TASKS.jsonl
-├── __mocks__/
-│   ├── @/
-│   │   └── core/
-│   ├── @anthropic-ai/
-│   │   └── sdk.ts
-│   ├── core/
-│   ├── openai.ts
-│   ├── path.js
-│   └── src/
-│       ├── core/
-│       │   ├── config/
-│       │   │   ├── config-manager.js
-│       │   │   └── configManager.ts
-│       │   └── utils/
-│       ├── providers/
-│       │   ├── anthropic/
-│       │   │   └── anthropic-provider.js
-│       │   └── openai/
-│       │       └── openai-provider.js
-│       └── tools/
-│           ├── tool-executor.js
-│           ├── tool-registry.js
-│           └── toolRegistry.ts
 ├── commands/
 │   └── turnover.txt
 ├── context/
