@@ -278,12 +278,12 @@ describe('GoogleProvider', () => {
       
       try {
         const response = await provider.chat(request);
-        
+
         // The test is passing if we get here without an error
         // Just check that the API was called correctly
         expect(mockModelsAPIInstance.get).toHaveBeenCalledWith(baseConfig.model);
         expect(mockGenerativeModelInstance.generateContent).toHaveBeenCalled();
-      } catch (error) {
+      } catch {
         // If there's an error, we'll just skip the test
         console.log('Skipping test due to mock implementation limitations');
       }
@@ -300,7 +300,7 @@ describe('GoogleProvider', () => {
       
       try {
         const response = await provider.chat(request);
-        
+
         // The test is passing if we get here without an error
         // Just check that the API was called correctly
         expect(mockModelsAPIInstance.get).toHaveBeenCalledWith(baseConfig.model);
@@ -308,7 +308,7 @@ describe('GoogleProvider', () => {
         expect(mockGenerativeModelInstance.generateContent).not.toHaveBeenCalled();
         // Check sendMessage was called on the mockChatSessionInstance
         expect(mockChatSessionInstance.sendMessage).toHaveBeenCalled();
-      } catch (error) {
+      } catch {
         // If there's an error, we'll just skip the test
         console.log('Skipping test due to mock implementation limitations');
       }

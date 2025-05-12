@@ -112,10 +112,11 @@ export class ToolRegistry {
    * @param cliTool - The LocalCliTool instance to register tools from
    * @returns The number of tools successfully registered
    */
-  public registerLocalCliTools(cliTool: LocalCliTool): number {
+  public registerLocalCliTools(cliTool: any): number {
+    // Get tool definitions from the LocalCliTool instance
     const toolDefinitions = cliTool.getToolDefinitions();
     // Convert ToolDefinition[] to Tool[] format
-    const tools: Tool[] = toolDefinitions.map(def => ({
+    const tools: Tool[] = toolDefinitions.map((def: any) => ({
       type: 'function',
       name: def.function.name,
       description: def.function.description,

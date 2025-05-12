@@ -7,7 +7,10 @@ import type {
   LLMProvider, 
   ProviderRequest, 
   ProviderResponse,
-  ChatMessage
+  ChatMessage,
+  Tool,
+  ToolCall,
+  ToolCallOutput
 } from '@/core/types/provider.types';
 import type { GoogleProviderSpecificConfig } from '@/core/types/config.types';
 import { ConfigManager } from '@/core/config/configManager';
@@ -174,8 +177,8 @@ export class GoogleProvider implements LLMProvider {
         temperature: request.temperature || this.providerConfig.temperature,
         topK: this.providerConfig.topK,
         topP: this.providerConfig.topP,
-        // candidateCount: this.providerConfig.candidateCount, // Example if you add this to config
       };
+      
       // Remove undefined values from generationConfig
       for (const key of Object.keys(generationConfig)) {
         if (generationConfig[key] === undefined) {
@@ -189,14 +192,24 @@ export class GoogleProvider implements LLMProvider {
           throw new Error(`Failed to get model instance for ${modelName}. Ensure client.models.get is correctly mocked or implemented.`);
       }
       
-      // Use modelInstance.generateContent for chat-like interactions with structured Content[]
-      const resultPromise = modelInstance.generateContent({
+      // Configure tools if provided
+      const config: any = {
         contents: sdkFormattedMessages,
-        generationConfig,
-        // safetySettings: this.providerConfig.safetySettings, // Pass if configured
-        // tools: this.providerConfig.tools, // Pass if tool calling is configured
-      });
-
+        generationConfig
+      };
+      
+      // Add tools if provided in the request
+      if (request.tools && request.tools.length > 0) {
+        config.tools = this.convertToolsToGoogleFormat(request.tools);
+      }
+      
+      // Add tool choice configuration if provided
+      if (request.toolChoice) {
+        config.toolConfig = this.convertToolChoiceToGoogleFormat(request.toolChoice);
+      }
+      
+      // Use modelInstance.generateContent for chat-like interactions with structured Content[]
+      const resultPromise = modelInstance.generateContent(config);
       const resultResponse = await resultPromise.response;
 
       const content = resultResponse.text; // Access as a property, not a method
@@ -211,15 +224,17 @@ export class GoogleProvider implements LLMProvider {
         };
       }
       
+      // Extract any tool calls from the response
+      const toolCalls = this.extractToolCallsFromResponse(resultResponse);
+      
       info(`Google Gemini chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${modelName}`);
       
       return {
         success: true,
         content,
+        toolCalls,
         choices: resultResponse.candidates?.map((candidate: any) => ({
           text: candidate.content?.parts?.map((part: Part) => part.text).join('') || '', // Ensure content and parts exist
-          // finishReason: candidate.finishReason, // Example: include if needed
-          // safetyRatings: candidate.safetyRatings, // Example: include if needed
         })) || [{ text: content }],
         usage: { 
           promptTokens: resultResponse.usageMetadata?.promptTokenCount || 0,
@@ -269,6 +284,216 @@ export class GoogleProvider implements LLMProvider {
       };
     // Filter out any messages that might have become empty or invalid after transformation
     }).filter(content => content.parts.every(part => typeof part.text === 'string' && part.text.length > 0));
+  }
+  
+  /**
+   * Converts the generic Tool interface to Google's function declaration format
+   * @param tools Array of Tool objects to convert
+   * @returns Google-specific function declaration format or undefined if no tools provided
+   */
+  private convertToolsToGoogleFormat(tools?: Tool[]): any {
+    if (!tools || tools.length === 0) {
+      return undefined;
+    }
+    
+    // Create a functionDeclarations array in the format Google Gemini expects
+    const functionDeclarations = tools.map(tool => ({
+      name: tool.name,
+      description: tool.description || '',
+      parameters: {
+        type: tool.parameters.type,
+        properties: tool.parameters.properties,
+        required: tool.parameters.required || []
+      }
+    }));
+    
+    // Return the tools array in Google's format
+    return [{
+      functionDeclarations
+    }];
+  }
+
+  /**
+   * Converts the toolChoice parameter to Google's function calling config format
+   * @param toolChoice The toolChoice parameter from the request
+   * @returns Google-specific function calling config format
+   */
+  private convertToolChoiceToGoogleFormat(toolChoice: 'auto' | 'required' | 'none' | { type: 'function'; name: string }): any {
+    const toolConfig: any = {
+      functionCallingConfig: {}
+    };
+    
+    if (typeof toolChoice === 'string') {
+      switch (toolChoice) {
+        case 'auto': {
+          // This is the default, so no need to specify
+          toolConfig.functionCallingConfig.mode = 'AUTO';
+          break;
+        }
+        case 'required': {
+          toolConfig.functionCallingConfig.mode = 'ANY';
+          break;
+        }
+        case 'none': {
+          toolConfig.functionCallingConfig.mode = 'NONE';
+          break;
+        }
+      }
+    } else if (toolChoice && typeof toolChoice === 'object' && toolChoice.type === 'function') {
+      // Specific tool requested
+      toolConfig.functionCallingConfig.mode = 'ANY';
+      toolConfig.functionCallingConfig.allowedFunctionNames = [toolChoice.name];
+    }
+    
+    return toolConfig;
+  }
+  
+  /**
+   * Extracts tool/function calls from the Google Gemini response
+   * @param response The response from the Google Gemini API
+   * @returns An array of tool calls in the standardized format, or undefined if no calls
+   */
+  private extractToolCallsFromResponse(response: any): ToolCall[] | undefined {
+    // Early return if no candidates or content
+    if (!response?.candidates?.[0]?.content?.parts) {
+      return undefined;
+    }
+    
+    const toolCalls: ToolCall[] = [];
+    const parts = response.candidates[0].content.parts;
+    
+    // Look for function call parts in the response
+    for (const part of parts) {
+      if (part.functionCall) {
+        toolCalls.push({
+          id: part.functionCall.name + '_' + Date.now(), // Create unique ID since Gemini doesn't provide one
+          call_id: part.functionCall.name + '_' + Date.now(), 
+          type: 'function_call',
+          name: part.functionCall.name,
+          arguments: JSON.stringify(part.functionCall.args)
+        });
+      }
+    }
+    
+    // Also check for functionCalls property which may be present in some response formats
+    if (response.functionCalls && response.functionCalls.length > 0) {
+      for (const call of response.functionCalls) {
+        toolCalls.push({
+          id: call.name + '_' + Date.now(),
+          call_id: call.name + '_' + Date.now(),
+          type: 'function_call',
+          name: call.name,
+          arguments: JSON.stringify(call.args)
+        });
+      }
+    }
+    
+    return toolCalls.length > 0 ? toolCalls : undefined;
+  }
+  
+  /**
+   * Executes a tool call and returns the result
+   * @param toolCall The tool call object from the model
+   * @param availableTools Map of tool functions that can be called
+   * @returns Promise with the tool call result as a string
+   */
+  public async executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
+    if (!availableTools) {
+      throw new Error('No tools available to execute');
+    }
+
+    const { name, arguments: argsStr } = toolCall;
+    const toolFunction = availableTools[name];
+
+    if (!toolFunction) {
+      throw new Error(`Tool not found: ${name}`);
+    }
+
+    try {
+      // Parse the arguments string to an object
+      const args = JSON.parse(argsStr);
+
+      // Execute the function with the parsed arguments
+      const result = await toolFunction(args);
+
+      // Convert the result to a string if it's not already
+      return typeof result === 'string' ? result : JSON.stringify(result);
+    } catch (error_: unknown) {
+      const errorMessage = error_ instanceof Error ? error_.message : String(error_);
+      logError(`Error executing tool call ${name}: ${errorMessage}`);
+      return JSON.stringify({ error: errorMessage });
+    }
+  }
+  
+  /**
+   * Continues a conversation with tool call results
+   * @param initialRequest The original request that generated the tool calls
+   * @param initialResponse The response containing the tool calls
+   * @param toolResults The results of executing the tool calls
+   * @returns Promise with the follow-up response from the model
+   */
+  public async continueWithToolResults(
+    initialRequest: ProviderRequest,
+    initialResponse: ProviderResponse,
+    toolResults: ToolCallOutput[]
+  ): Promise<ProviderResponse> {
+    if (!initialRequest.messages) {
+      throw new Error('Initial request must contain messages');
+    }
+
+    if (!initialResponse.toolCalls || initialResponse.toolCalls.length === 0) {
+      throw new Error('Initial response does not contain any tool calls');
+    }
+
+    // Create a new messages array with all previous messages
+    const newMessages = [...initialRequest.messages];
+
+    // Add the assistant's response with tool calls (as a model message)
+    if (initialResponse.toolCalls) {
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: initialResponse.content || '',
+      };
+      // Add tool_calls as a separate property if they exist
+      if (initialResponse.toolCalls && initialResponse.toolCalls.length > 0) {
+        assistantMessage.tool_calls = initialResponse.toolCalls;
+      }
+      newMessages.push(assistantMessage);
+    } else {
+      newMessages.push({
+        role: 'assistant',
+        content: initialResponse.content || ''
+      });
+    }
+
+    // Add tool results as user messages with tool_call_id
+    for (const toolResult of toolResults) {
+      const userResponseMessage: ChatMessage = {
+        role: 'user',
+        content: toolResult.output,
+      };
+
+      // Add tool_call_id if provided
+      if (toolResult.call_id) {
+        userResponseMessage.tool_call_id = toolResult.call_id;
+      }
+
+      // Add function name if this is a function call output
+      if (toolResult.type === 'function_call_output') {
+        userResponseMessage.name = toolResult.call_id.split('_')[0];
+      }
+
+      newMessages.push(userResponseMessage);
+    }
+
+    // Create a new request with the updated messages and the same tools
+    const newRequest: ProviderRequest = {
+      ...initialRequest,
+      messages: newMessages,
+    };
+
+    // Call the chat method with the new request
+    return this.chat(newRequest);
   }
 }
 
