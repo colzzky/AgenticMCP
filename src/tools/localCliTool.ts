@@ -2,6 +2,8 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { Minimatch } from 'minimatch';
 import type { Logger } from '../core/types/logger.types';
+import { getLocalCliToolDefinitions } from './localCliToolDefinitions';
+import type { Tool } from '../core/types/provider.types';
 import type {
     DirectoryEntry,
     FileSearchResult,
@@ -81,101 +83,23 @@ export class LocalCliTool {
 
     /**
      * Returns JSON-schema-like definitions for each allowed command.
+     * Uses the standardized tool definitions from localCliToolDefinitions.ts
+     * 
+     * @returns An array of tool definitions compatible with LLM providers
      */
     public getToolDefinitions(): ToolDefinition[] {
-        const schemas: Record<string, any> = {
-            create_directory: {
-                description: 'Creates a new directory at the specified path.',
-                parameters: {
-                    type: 'object',
-                    properties: { path: { type: 'string', description: 'Relative path for directory.' } },
-                    required: ['path'],
-                },
+        // Get the standardized tool definitions
+        const toolDefinitions = getLocalCliToolDefinitions();
+        
+        // Convert to the format expected by this class's interface
+        return toolDefinitions.map((tool: Tool) => ({
+            type: 'function',
+            function: {
+                name: tool.name,
+                description: tool.description || '',
+                parameters: tool.parameters,
             },
-            write_file: {
-                description: 'Writes content to a specified file.',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        path: { type: 'string', description: 'Relative path for file.' },
-                        content: { type: 'string', description: 'Text content to write.' },
-                    },
-                    required: ['path', 'content'],
-                },
-            },
-            read_file: {
-                description: 'Reads the content of a specified file.',
-                parameters: {
-                    type: 'object',
-                    properties: { path: { type: 'string', description: 'Relative path for file.' } },
-                    required: ['path'],
-                },
-            },
-            delete_file: {
-                description: 'Deletes a specified file (needs confirm flag).',
-                parameters: {
-                    type: 'object',
-                    properties: { path: { type: 'string' }, confirm: { type: 'boolean', default: false } },
-                    required: ['path'],
-                },
-            },
-            delete_directory: {
-                description: 'Deletes a specified directory.',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        path: { type: 'string' },
-                        recursive: { type: 'boolean', default: true },
-                    },
-                    required: ['path'],
-                },
-            },
-            list_directory: {
-                description: 'Lists the contents of a specified directory.',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        path: { type: 'string', default: '.' },
-                        recursive: { type: 'boolean', default: false },
-                        show_hidden: { type: 'boolean', default: false },
-                    },
-                    required: [],
-                },
-            },
-            search_codebase: {
-                description: 'Searches for a text or regex within files.',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        query: { type: 'string' },
-                        directory: { type: 'string', default: '.' },
-                        file_patterns: { type: 'array', items: { type: 'string' }, default: ['*'] },
-                        case_sensitive: { type: 'boolean', default: false },
-                        max_results: { type: 'number', default: 50 },
-                    },
-                    required: ['query'],
-                },
-            },
-            find_files: {
-                description: 'Finds files or directories matching glob patterns.',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        patterns: { type: 'array', items: { type: 'string' }, default: ['*'] },
-                        directory: { type: 'string', default: '.' },
-                        file_type: { type: 'string', enum: ['file', 'directory', 'any'], default: 'any' },
-                        recursive: { type: 'boolean', default: true },
-                        max_depth: { type: 'number' },
-                        max_results: { type: 'number', default: 50 },
-                    },
-                    required: ['patterns'],
-                },
-            },
-        };
-
-        return Object.entries(schemas)
-            .filter(([name]) => name in this.commandMap)
-            .map(([name, schema]) => ({ type: 'function', function: { name, description: schema.description, parameters: schema.parameters } }));
+        }));
     }
 
     /**

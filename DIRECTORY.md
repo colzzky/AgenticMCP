@@ -2,7 +2,7 @@
 ```markdown
 .
 ├── CLAUDE.md
-├── DIRECTORY.md
+├── DIRECTORY.md +27
 ├── LICENSE
 ├── PROGRESS.jsonl
 ├── README.md
@@ -18,6 +18,8 @@
 │       └── core/
 │           └── utils/
 ├── context/
+│   ├── anthropic-tool-use.md
+│   └── openai-tool-calling.md
 ├── docs/
 │   └── ARCHITECTURE.md
 ├── eslint.config.js
@@ -29,8 +31,18 @@
 │   ├── commands/
 │   │   ├── configCommands.ts
 │   │   ├── credentialCommands.ts
-│   │   └── mcpCommands.ts
+│   │   └── examples/
+│   │       ├── basicCommand.ts
+│   │       └── index.ts
+│   ├── context/
+│   │   ├── contextManager.ts
+│   │   └── index.ts
 │   ├── core/
+│   │   ├── commands/
+│   │   │   ├── decorators.ts
+│   │   │   ├── index.ts
+│   │   │   ├── initializer.ts
+│   │   │   └── registry.ts
 │   │   ├── config/
 │   │   │   ├── configManager.ts
 │   │   │   └── index.ts
@@ -56,18 +68,26 @@
 │   │   ├── anthropic/
 │   │   │   ├── anthropicProvider.ts
 │   │   │   └── index.ts
+│   │   ├── google/
+│   │   │   ├── googleProvider.ts
+│   │   │   └── index.ts
 │   │   ├── index.ts
-│   │   └── openai/
-│   │       ├── index.ts
-│   │       └── openaiProvider.ts
+│   │   ├── openai/
+│   │   │   ├── index.ts
+│   │   │   └── openaiProvider.ts
+│   │   ├── providerFactory.ts
+│   │   └── providerInitializer.ts
 │   └── tools/
 │       ├── localCliTool.ts
-│       └── mcpTool.ts
+│       ├── localCliToolDefinitions.ts
+│       ├── toolDefinitions.md
+│       ├── toolRegistry.ts
 ├── tests/
 │   ├── context/
 │   │   └── contextManager.test.ts
 │   ├── core/
 │   │   ├── commands/
+│   │   │   └── registry.test.ts
 │   │   └── utils/
 │   │       └── logger.test.ts
 │   ├── index.test.ts
@@ -75,18 +95,21 @@
 │   ├── providers/
 │   │   ├── anthropic/
 │   │   │   ├── anthropicProvider.test.ts
+│   │   │   ├── anthropicProviderToolCalling.test.ts
 │   │   │   ├── anthropicProviderToolCalling2a.test.ts
 │   │   │   └── anthropicProviderToolCalling2b.test.ts
 │   │   ├── google/
+│   │   │   ├── googleProvider.test.ts
+│   │   │   └── importConfigManager.test.ts
 │   │   └── openai/
 │   │       ├── openaiProvider.test.ts
 │   │       └── openaiProviderToolCalling.test.ts
 │   └── tools/
-│       └── localCliTool.test.ts
+│       ├── localCliTool.test.ts
+│       ├── toolRegistry.test.ts
 ├── tree.sh
 ├── tsconfig.json
-└── tsconfig.test.json
-```
+└── ts
 
 This document outlines the directory structure of the AgenticMCP.Typescript project.
 
