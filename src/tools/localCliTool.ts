@@ -59,6 +59,15 @@ export class LocalCliTool {
     private logger: Logger;
     private commandMap: LocalCliCommandMap;
 
+    /**
+     * Gets the available commands in this LocalCliTool instance.
+     * Used for tool registration and integration with LLM providers.
+     * @returns The command map with available commands and their handlers.
+     */
+    public getCommandMap(): Readonly<LocalCliCommandMap> {
+        return this.commandMap;
+    }
+
     constructor(config: LocalCliToolConfig, logger: Logger) {
         if (!config.baseDir) throw new Error("'baseDir' must be specified in the configuration.");
         if (!path.isAbsolute(config.baseDir)) throw new Error("'baseDir' must be an absolute path.");

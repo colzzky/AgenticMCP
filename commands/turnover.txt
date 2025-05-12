@@ -1,0 +1,30 @@
+**Prompt: Turnover Summary for LLM Continuity**
+
+I want to offload your working memory and save it to `./turn-over-details.md` so the next LLM agent can seamlessly continue where you left off.
+
+Please generate a **structured, concise turnover summary** based on our full conversation. This should serve as a high-fidelity knowledge handoff to preserve context, decisions, and next steps.
+
+### 📌 Deliverables:
+
+#### ✅ Part 1: Action Evaluation
+
+* **What Worked:** List key actions, code implementations, or decisions that were correct or effective.
+* **What Didn’t Work:** List actions or ideas that failed, were corrected, or led to dead ends, including any debugging trails.
+
+#### 🧠 Part 2: Advice for the Next Agent
+
+* Provide advice, watch-outs, and any assumptions or constraints that should be remembered.
+* Include relevant technical tips or domain knowledge useful for future decision-making.
+
+#### 📝 Part 3: Structured Conversation Summary
+
+Create a structured summary that fulfills the following:
+
+1. **Main Topics Covered:** What high-level themes or problems were discussed?
+2. **Critical Technical Details:** Code, settings, architectural choices, frameworks used, paths, parameters, etc.
+3. **Chronological Flow:** Outline the conversation in the order it evolved, showing how each decision or question progressed.
+4. **Summarized Explanations:** Compress complex reasoning into clear, accurate summaries.
+5. **Pending Items:** Clearly mark any unresolved questions, TODOs, or decisions deferred.
+6. **Format:** Use clear headings, bullet points, and chronological segmentation for readability.
+
+> 🎯 This turnover summary should be self-contained, comprehensive, and optimized for a new LLM to fully understand the past context without needing to see the raw message history.

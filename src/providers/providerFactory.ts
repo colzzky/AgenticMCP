@@ -1,6 +1,7 @@
 import type { LLMProvider, ProviderType } from '../core/types/provider.types';
 import type { ProviderSpecificConfig } from '../core/types/config.types';
 import type { ConfigManager } from '../core/config/configManager';
+import type { ToolRegistry } from '../tools/toolRegistry';
 import { info, error } from '../core/utils/logger';
 
 /**
@@ -11,6 +12,7 @@ export class ProviderFactory {
   private providerMap: Map<string, new (...args: any[]) => LLMProvider> = new Map();
   private instanceMap: Map<string, LLMProvider> = new Map();
   private configManager: ConfigManager;
+  private toolRegistry?: ToolRegistry;
 
   /**
    * Creates a new ProviderFactory.
@@ -53,14 +55,20 @@ export class ProviderFactory {
     
     // Create new instance
     let providerInstance: LLMProvider;
-    
+
     // Use different constructor patterns depending on the provider type
     providerInstance = type === 'openai'
       // OpenAI provider requires configManager
       ? new ProviderClass(this.configManager)
       // Other providers use a simpler constructor
       : new ProviderClass();
-    
+
+    // If tool registry is set, attach it to the provider if supported
+    if (this.toolRegistry && typeof (providerInstance as any).setToolRegistry === 'function') {
+      (providerInstance as any).setToolRegistry(this.toolRegistry);
+      info(`Attached tool registry to provider: ${type} (${instanceName})`);
+    }
+
     // Cache and return the instance
     this.instanceMap.set(cacheKey, providerInstance);
     info(`Created provider instance: ${type} (${instanceName})`);
@@ -120,6 +128,23 @@ export class ProviderFactory {
   clearInstances(): void {
     this.instanceMap.clear();
     info('Cleared all provider instances');
+  }
+
+  /**
+   * Sets the tool registry to be used by providers.
+   * @param toolRegistry - The tool registry to use
+   */
+  setToolRegistry(toolRegistry: ToolRegistry): void {
+    this.toolRegistry = toolRegistry;
+    info('Set tool registry for provider factory');
+  }
+
+  /**
+   * Gets the tool registry if set.
+   * @returns The tool registry or undefined if not set
+   */
+  getToolRegistry(): ToolRegistry | undefined {
+    return this.toolRegistry;
   }
 }
 

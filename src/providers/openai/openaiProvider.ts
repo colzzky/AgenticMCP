@@ -20,10 +20,32 @@ export class OpenAIProvider implements LLMProvider {
   private providerConfig?: OpenAIProviderSpecificConfig;
   private configManager: ConfigManager;
   private OpenAIClass: typeof OpenAI;
+  private toolRegistry?: object;
 
   constructor(configManager: ConfigManager, OpenAIClass: typeof OpenAI = OpenAI) {
     this.configManager = configManager;
     this.OpenAIClass = OpenAIClass;
+  }
+
+  /**
+   * Sets the tool registry for the provider.
+   * @param toolRegistry - The tool registry to use.
+   */
+  public setToolRegistry(toolRegistry: object): void {
+    this.toolRegistry = toolRegistry;
+    info(`Tool registry set for OpenAI provider`);
+  }
+
+  /**
+   * Gets the available tools from the registry.
+   * @returns The available tools.
+   */
+  public getAvailableTools(): Tool[] {
+    if (!this.toolRegistry || typeof (this.toolRegistry as any).getAllTools !== 'function') {
+      return [];
+    }
+
+    return (this.toolRegistry as any).getAllTools();
   }
 
   get name(): string {
@@ -166,9 +188,21 @@ export class OpenAIProvider implements LLMProvider {
         max_tokens: request.maxTokens ?? this.providerConfig.maxTokens ?? 150,
       };
 
-      // Add tool-related parameters if tools are provided
-      if (request.tools && request.tools.length > 0) {
-        openAIParams.tools = this.convertToolsToOpenAIFormat(request.tools);
+      // Determine which tools to use - prioritize request tools over registry tools
+      let toolsToUse: Tool[] | undefined = request.tools;
+
+      // If no tools in request but we have a registry with tools, use those
+      if ((!toolsToUse || toolsToUse.length === 0) && this.toolRegistry) {
+        const availableTools = this.getAvailableTools();
+        if (availableTools.length > 0) {
+          debug(`Using ${availableTools.length} tools from registry for OpenAI request`);
+          toolsToUse = availableTools;
+        }
+      }
+
+      // Add tool-related parameters if tools are available
+      if (toolsToUse && toolsToUse.length > 0) {
+        openAIParams.tools = this.convertToolsToOpenAIFormat(toolsToUse);
 
         // Add tool_choice if specified
         if (request.toolChoice) {

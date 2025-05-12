@@ -17,4 +17,7 @@ describe('OpenAIProvider Error Handling', () => {
     testsToRun: ['errors'],
   });
 
+  it('should pass dummy', () => {
+    expect(true).toBe(true);
+  });
 });

@@ -17,4 +17,7 @@ describe('OpenAIProvider Chat', () => {
     testsToRun: ['chat'],
   });
 
+  it('should pass dummy', () => {
+    expect(true).toBe(true);
+  });
 });

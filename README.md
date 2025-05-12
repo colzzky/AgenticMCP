@@ -641,8 +641,27 @@ $ agenticmcp analyst --context data.csv --augment-with related_terms.txt "Analyz
 # This uses the CSV as primary context but enhances it with related terms
 ```
 
-## Tool Calling
+## Tool System
 
-Tool calling allows LLMs to interact with external tools and data sources. This feature enables the integration of specialized tools and services, enhancing the capabilities of the LLM agents. For more information on tool calling, see [Tool Calling Documentation](docs/tool_calling.md).
+AgenticMCP includes a robust tool system that allows LLMs to interact with external tools and data sources. This feature enables the integration of specialized tools and services, enhancing the capabilities of the LLM agents.
+
+### Available Tools
+
+- **File System Operations**: read_file, write_file, create_directory, delete_file, etc.
+- **Code and Codebase Tools**: search_codebase, find_files, etc.
+
+### Using Tools
+
+Tools can be accessed in various ways:
+
+```bash
+# List all available tools
+agenticmcp tools list
+
+# Execute a specific tool
+agenticmcp tools execute read_file --args '{"path": "./example.txt"}'
+```
+
+For more information on the tool system, see [Tool System Documentation](docs/TOOLS.md).
 
 These examples demonstrate the various ways to use file-based context with the AgenticMCP CLI, allowing users to provide rich context information to the underlying LLM agents.

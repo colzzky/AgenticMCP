@@ -228,4 +228,45 @@ export class ToolExecutor {
   public getToolImplementations(): Record<string, Function> {
     return { ...this.toolImplementations };
   }
+
+  /**
+   * Executes a tool directly by name with arguments
+   * @param name - Name of the tool to execute
+   * @param args - Arguments to pass to the tool
+   * @returns Promise resolving to the tool execution result
+   *
+   * @example
+   * ```typescript
+   * const result = await toolExecutor.executeTool('read_file', { path: './example.txt' });
+   * console.log(result);
+   * ```
+   */
+  public async executeTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+    this.logger.debug(`Executing tool: ${name}`);
+
+    // Check if the tool exists in our implementations
+    if (!this.toolImplementations[name]) {
+      this.logger.error(`Tool not found: ${name}`);
+      throw new Error(`Tool not found: ${name}`);
+    }
+
+    try {
+      // Get the tool implementation
+      const toolFunction = this.toolImplementations[name];
+
+      // Execute the tool with timeout
+      const output = await this.executeWithTimeout(
+        () => toolFunction(args),
+        this.config.toolTimeoutMs!
+      );
+
+      this.logger.debug(`Tool ${name} executed successfully`);
+
+      return output;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error executing tool ${name}: ${errorMessage}`);
+      throw error;
+    }
+  }
 }

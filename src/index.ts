@@ -4,10 +4,67 @@ import { Command } from 'commander';
 import pkg from '../package.json' with { type: 'json' };
 import { registerConfigCommands } from './commands/configCommands';
 import { registerCredentialCommands } from './commands/credentialCommands';
+import { ToolCommands } from './commands/toolCommands';
+import { LLMCommand } from './commands/llmCommand';
 import { logger } from './core/utils/index';
+import { configManager } from './core/config/configManager';
+import { LocalCliTool } from './tools/localCliTool';
+import { ToolRegistry } from './tools/toolRegistry';
+import { ToolExecutor } from './tools/toolExecutor';
+import { ToolResultFormatter } from './tools/toolResultFormatter';
+import { ProviderInitializer } from './providers/providerInitializer';
+import path from 'node:path';
 
 async function main(): Promise<void> {
   const program = new Command();
+
+  // Initialize tool system
+  const baseDir = process.cwd();
+  const localCliToolConfig = {
+    baseDir,
+    allowedCommands: [] // Can be configured from settings later
+  };
+
+  logger.info(`Initializing LocalCliTool with base directory: ${baseDir}`);
+  const localCliTool = new LocalCliTool(localCliToolConfig, logger);
+
+  // Create tool registry and register local CLI tools
+  const toolRegistry = new ToolRegistry(logger);
+  const registeredToolCount = toolRegistry.registerLocalCliTools(localCliTool);
+  logger.info(`Registered ${registeredToolCount} local CLI tools`);
+
+  // Get command map from LocalCliTool using the public getter
+  const commandMap = localCliTool.getCommandMap();
+
+  // Create tool implementations map for execution
+  const toolImplementations: Record<string, Function> = {};
+  for (const cmdName of Object.keys(commandMap)) {
+    toolImplementations[cmdName] = (args: any) => localCliTool.execute(cmdName as any, args);
+  }
+
+  // Create tool execution components
+  const toolExecutor = new ToolExecutor(
+    toolRegistry,
+    toolImplementations,
+    logger
+  );
+
+  const toolResultFormatter = new ToolResultFormatter(logger);
+
+  // Initialize provider system with tool registry
+  logger.info('Initializing provider system');
+  const providerInitializer = new ProviderInitializer(configManager);
+  const providerFactory = providerInitializer.getFactory();
+
+  // Connect provider factory with tool registry
+  providerFactory.setToolRegistry(toolRegistry);
+  logger.info('Connected tool registry with provider factory');
+
+  // Store tool components in globalThis for later use by providers and commands
+  globalThis.toolRegistry = toolRegistry;
+  globalThis.toolExecutor = toolExecutor;
+  globalThis.toolResultFormatter = toolResultFormatter;
+  globalThis.providerFactory = providerFactory;
 
   program
     .version(pkg.version)
@@ -16,6 +73,95 @@ async function main(): Promise<void> {
   // Register command groups
   registerConfigCommands(program);
   registerCredentialCommands(program);
+
+  // Register LLM command with file path context support
+  const llmCommand = new LLMCommand();
+  program
+    .command(llmCommand.name)
+    .description(llmCommand.description)
+    .option('-p, --provider <provider>', 'LLM provider to use (default: openai)')
+    .option('-m, --model <model>', 'Model to use with the provider')
+    .allowUnknownOption(true) // Allow file paths to be passed as args
+    .action(async (options, command) => {
+      try {
+        // Get remaining args (after the command and options)
+        const args = command.args;
+        const result = await llmCommand.execute({ options }, ...args);
+
+        // Output the result
+        if (result.success) {
+          console.log(result.message);
+        } else {
+          console.error(result.message);
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          logger.error(`Error executing LLM command: ${error.message}`);
+          console.error(`Error: ${error.message}`);
+        }
+      }
+    });
+
+  // Register tool commands
+  const toolCommands = new ToolCommands();
+  program
+    .command(toolCommands.name)
+    .description(toolCommands.description)
+    .action(async (options) => {
+      try {
+        const result = await toolCommands.execute({ options }, options);
+        console.log(JSON.stringify(result, undefined, 2));
+      } catch (error) {
+        if (error instanceof Error) {
+          logger.error(`Error executing tool commands: ${error.message}`);
+        }
+      }
+    });
+
+  // Add subcommands for tool commands
+  const toolsCommand = program.commands.find(cmd => cmd.name() === toolCommands.name);
+  if (toolsCommand) {
+    toolsCommand
+      .command('list')
+      .description('List all registered tools')
+      .action(async (options) => {
+        try {
+          // @ts-ignore - We know this method exists on the class
+          const result = await toolCommands.listTools();
+          console.log(JSON.stringify(result, undefined, 2));
+        } catch (error) {
+          if (error instanceof Error) {
+            logger.error(`Error listing tools: ${error.message}`);
+          }
+        }
+      });
+
+    toolsCommand
+      .command('execute <name>')
+      .description('Execute a specific tool')
+      .option('-a, --args <json>', 'JSON-formatted arguments for the tool')
+      .action(async (name, options) => {
+        try {
+          let args = {};
+          if (options.args) {
+            try {
+              args = JSON.parse(options.args);
+            } catch (parseError) {
+              logger.error(`Invalid JSON arguments: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+              return;
+            }
+          }
+
+          // @ts-ignore - We know this method exists on the class
+          const result = await toolCommands.executeTool(name, args);
+          console.log(JSON.stringify(result, undefined, 2));
+        } catch (error) {
+          if (error instanceof Error) {
+            logger.error(`Error executing tool: ${error.message}`);
+          }
+        }
+      });
+  }
 
   // Default help and error handling
   program.on('--help', () => {

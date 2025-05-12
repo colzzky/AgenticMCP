@@ -153,6 +153,18 @@ export interface LLMProvider {
   configure(config: ProviderConfig): Promise<void> | void;
 
   /**
+   * Sets the tool registry for the provider.
+   * @param toolRegistry - The tool registry to use.
+   */
+  setToolRegistry?(toolRegistry: object): void;
+
+  /**
+   * Gets the available tools from the registry.
+   * @returns The available tools.
+   */
+  getAvailableTools?(): Tool[];
+
+  /**
    * Generates a text completion based on a prompt.
    * @param request - The request object containing the prompt and other parameters.
    * @returns A promise that resolves to the provider's response.
