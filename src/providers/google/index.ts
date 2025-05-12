@@ -3,4 +3,7 @@
  */
 
 export * from './googleProvider';
+export * from './googleTypes';
+export * from './googleToolExtraction';
+export * from './googleMessageConversion';
 export { default as GoogleProvider } from './googleProvider';

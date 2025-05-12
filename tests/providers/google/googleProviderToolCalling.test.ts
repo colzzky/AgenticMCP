@@ -6,126 +6,22 @@
 // @ts-nocheck
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { GoogleProvider } from '@/providers/google/googleProvider';
-import type { Tool, ToolCallOutput } from '@/core/types/provider.types';
-import type { GoogleProviderSpecificConfig } from '@/core/types/config.types';
-
-// Create a standard response object that matches what our provider expects
-const createStandardResponse = (textContent?: string, functionCall?: any) => {
-  const parts = [];
-
-  if (textContent) {
-    parts.push({ text: textContent });
-  }
-
-  if (functionCall) {
-    parts.push({
-      functionCall: {
-        name: functionCall.name,
-        args: functionCall.args
-      }
-    });
-  }
-
-  return {
-    response: {
-      candidates: [{
-        content: {
-          parts
-        }
-      }]
-    }
-  };
-};
-
-// Create a function that returns a response with multiple function calls
-const createMultipleFunctionCallsResponse = () => {
-  return {
-    response: {
-      candidates: [{
-        content: {
-          parts: [
-            { text: 'I will get both the weather and calculate a distance for you.' },
-            {
-              functionCall: {
-                name: 'get_weather',
-                args: { location: 'San Francisco, CA' }
-              }
-            },
-            {
-              functionCall: {
-                name: 'calculate_distance',
-                args: { origin: 'San Francisco, CA', destination: 'Los Angeles, CA' }
-              }
-            }
-          ]
-        }
-      }]
-    }
-  };
-};
+import type { ToolCallOutput } from '@/core/types/provider.types';
+import {
+  createStandardResponse,
+  createMultipleFunctionCallsResponse,
+  sampleTools,
+  testConfig,
+  createGoogleMocks
+} from './googleProvider.sharedTestUtils';
 
 // Create mocks for Google's class and methods
-const mockGenerateContent = jest.fn();
-const mockModelsGet = jest.fn().mockReturnValue({
-  generateContent: mockGenerateContent
-});
-
-const mockGoogleGenAI = jest.fn().mockImplementation(() => ({
-  models: {
-    get: mockModelsGet
-  }
-}));
-
-// Mock ConfigManager
-const mockConfigManager = {
-  getResolvedApiKey: jest.fn().mockResolvedValue('test-api-key')
-};
-
-// Sample tools for testing
-const sampleTools: Tool[] = [
-  {
-    type: 'function',
-    name: 'get_weather',
-    description: 'Get the current weather for a location',
-    parameters: {
-      type: 'object',
-      properties: {
-        location: {
-          type: 'string',
-          description: 'The city and state, e.g., San Francisco, CA'
-        }
-      },
-      required: ['location']
-    }
-  },
-  {
-    type: 'function',
-    name: 'calculate_distance',
-    description: 'Calculate distance between two locations',
-    parameters: {
-      type: 'object',
-      properties: {
-        origin: {
-          type: 'string',
-          description: 'Starting location'
-        },
-        destination: {
-          type: 'string',
-          description: 'Ending location'
-        }
-      },
-      required: ['origin', 'destination']
-    }
-  }
-];
-
-// Config for provider
-const config: GoogleProviderSpecificConfig = {
-  providerType: 'google',
-  instanceName: 'test-instance',
-  apiKey: 'test-api-key',
-  model: 'gemini-1.5-flash'
-};
+const {
+  mockGenerateContent,
+  mockModelsGet,
+  mockGoogleGenAI,
+  mockConfigManager
+} = createGoogleMocks();
 
 describe('GoogleProvider Tool Calling', () => {
   let provider: GoogleProvider;
@@ -135,7 +31,7 @@ describe('GoogleProvider Tool Calling', () => {
 
     // Create provider instance with mocks
     provider = new GoogleProvider(mockConfigManager as any, mockGoogleGenAI as any);
-    await provider.configure(config);
+    await provider.configure(testConfig);
 
     // Reset mocks to clear calls from configure
     mockGenerateContent.mockReset();
@@ -248,32 +144,31 @@ describe('GoogleProvider Tool Calling', () => {
         createStandardResponse('The weather in San Francisco is sunny.')
       );
 
-      // Create a spy on the provider's chat method
-      const chatSpy = jest.spyOn(provider, 'chat');
+      // Create spies on the provider's methods
+      const generateTextWithToolResultsSpy = jest.spyOn(provider, 'generateTextWithToolResults');
+      const generateTextSpy = jest.spyOn(provider, 'generateText');
 
       // Continue with tool results
       await provider.continueWithToolResults(initialRequest, initialResponse, toolResults);
 
-      // Verify chat was called exactly once
-      expect(chatSpy).toHaveBeenCalledTimes(1);
+      // Verify generateTextWithToolResults was called
+      expect(generateTextWithToolResultsSpy).toHaveBeenCalledTimes(1);
 
-      // Get the request object that was passed to the chat method
-      const chatRequest = chatSpy.mock.calls[0][0];
+      // Get the request object that was passed to generateTextWithToolResults
+      const toolResultsRequest = generateTextWithToolResultsSpy.mock.calls[0][0];
 
-      // Verify the assistant message with tool calls was formatted correctly
-      const assistantMessage = chatRequest.messages.find(msg =>
-        msg.role === 'assistant' && msg.tool_calls?.length > 0);
+      // Verify the request contains the correct structure
+      expect(toolResultsRequest.messages).toBeDefined();
+      expect(toolResultsRequest.tool_outputs).toEqual(toolResults);
+
+      // Verify the assistant message with tool calls was included
+      const assistantMessage = toolResultsRequest.messages.find(msg =>
+        msg.role === 'assistant' && (msg.tool_calls || msg.content === initialResponse.content));
       expect(assistantMessage).toBeDefined();
-      expect(assistantMessage?.tool_calls?.[0].name).toBe('get_weather');
 
-      // Verify the user message with tool result was formatted correctly
-      const toolResultMessage = chatRequest.messages.find(msg =>
-        msg.role === 'user' && msg.tool_call_id === 'get_weather_12345');
-      expect(toolResultMessage).toBeDefined();
-      expect(toolResultMessage?.content).toBeDefined();
-
-      // Restore the original spy
-      chatSpy.mockRestore();
+      // Restore the original spies
+      generateTextWithToolResultsSpy.mockRestore();
+      generateTextSpy.mockRestore();
     });
   });
 

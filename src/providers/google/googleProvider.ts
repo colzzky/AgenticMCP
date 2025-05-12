@@ -8,6 +8,20 @@ import type { GoogleProviderSpecificConfig } from '@/core/types/config.types';
 import { ConfigManager } from '@/core/config/configManager';
 import { info, error as logError, debug } from '@/core/utils/logger';
 
+import {
+  GoogleGenAIResponse,
+  GoogleResponseCandidate,
+  GoogleResponsePart,
+  GoogleGenerateContentConfig,
+  GoogleGenAIModelInstance,
+  GenerationConfig,
+  GoogleToolConfig,
+  GoogleToolCallingConfig
+} from './googleTypes';
+import { convertToolsToGoogleFormat, convertToolChoiceToGoogleFormat } from './googleTypes';
+import { extractToolCallsFromGenAIResponse } from './googleToolExtraction';
+import { convertMessagesToGenAIFormat } from './googleMessageConversion';
+
 /**
  * GoogleProvider adapter for the Google Gemini API
  * Supports both the Gemini Developer API and Vertex AI
@@ -174,7 +188,7 @@ export class GoogleProvider implements LLMProvider {
 
     try {
       const modelName = request.model || this.providerConfig.model || 'gemini-1.5-flash-latest';
-      const sdkFormattedMessages = this.convertMessagesToGenAIFormat(request.messages || []);
+      const sdkFormattedMessages = convertMessagesToGenAIFormat(request.messages || []);
 
       if (sdkFormattedMessages.length === 0) {
         return {
@@ -187,56 +201,58 @@ export class GoogleProvider implements LLMProvider {
         };
       }
 
-      const generationConfig: any = {
+      const generationConfig: GenerationConfig = {
         maxOutputTokens: request.maxTokens || this.providerConfig.maxTokens,
         temperature: request.temperature || this.providerConfig.temperature,
         topK: this.providerConfig.topK,
         topP: this.providerConfig.topP,
       };
-      
+
       // Remove undefined values from generationConfig
       for (const key of Object.keys(generationConfig)) {
-        if (generationConfig[key] === undefined) {
-          delete generationConfig[key];
+        if (generationConfig[key as keyof GenerationConfig] === undefined) {
+          delete generationConfig[key as keyof GenerationConfig];
         }
       }
 
       // Get the model instance using the pattern that aligns with current mocks
-      const modelInstance = (this.client as any).models.get(modelName);
+      // Type assertion is necessary for the Google API structure
+      const modelInstance = (this.client as any).models.get(modelName) as GoogleGenAIModelInstance;
       if (!modelInstance) {
           throw new Error(`Failed to get model instance for ${modelName}. Ensure client.models.get is correctly mocked or implemented.`);
       }
-      
+
       // Configure tools if provided
-      const config: any = {
+      const config: GoogleGenerateContentConfig = {
         contents: sdkFormattedMessages,
         generationConfig
       };
       
       // Add tools if provided in the request
       if (request.tools && request.tools.length > 0) {
-        config.tools = this.convertToolsToGoogleFormat(request.tools);
+        config.tools = convertToolsToGoogleFormat(request.tools);
       }
-      
+
       // Add tool choice configuration if provided
       if (request.toolChoice) {
-        config.toolConfig = this.convertToolChoiceToGoogleFormat(request.toolChoice);
+        config.toolConfig = convertToolChoiceToGoogleFormat(request.toolChoice);
       }
       
       // Use modelInstance.generateContent for chat-like interactions with structured Content[]
       const resultPromise = modelInstance.generateContent(config);
 
       // For tests, the mock might return the response directly rather than a promise with a response property
-      let resultResponse: any;
+      let resultResponse: GoogleGenAIResponse;
       try {
-        // For real API - try to get the response property
-        resultResponse = await resultPromise.response;
+        const response = await resultPromise;
+        // Handle both the actual Google API response format and our test format
+        resultResponse = ('response' in response ? response.response : response) as unknown as GoogleGenAIResponse;
       } catch {
-        // For tests - when response property doesn't exist or isn't a promise, use the result directly
-        resultResponse = resultPromise;
+        // For other formats or test scenarios
+        resultResponse = resultPromise as unknown as GoogleGenAIResponse;
 
-        // Special handling for tests - if we have a response property on the result but it's not a promise
-        if (resultResponse.response && !resultResponse.response.then) {
+        // Special handling for tests - if we have a response property but it's not a promise
+        if (resultResponse.response && typeof resultResponse.response !== 'function') {
           resultResponse = resultResponse.response;
         }
       }
@@ -252,8 +268,8 @@ export class GoogleProvider implements LLMProvider {
 
         // Extract text from parts that have text property
         content = resultResponse.candidates[0].content.parts
-          .filter((part: any) => part.text && typeof part.text === 'string')
-          .map((part: any) => part.text)
+          .filter((part: GoogleResponsePart) => part.text && typeof part.text === 'string')
+          .map((part: GoogleResponsePart) => part.text as string)
           .join(' ');
       }
 
@@ -273,7 +289,7 @@ export class GoogleProvider implements LLMProvider {
       }
       
       // Extract tool calls from the response
-      const toolCalls = this.extractToolCallsFromGenAIResponse(resultResponse);
+      const toolCalls = extractToolCallsFromGenAIResponse(resultResponse);
       
       info(`Google Gemini chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${modelName}`);
       
@@ -281,12 +297,12 @@ export class GoogleProvider implements LLMProvider {
         success: true,
         content,
         toolCalls,
-        choices: resultResponse.candidates?.map((candidate: any) => ({
-          text: candidate.content?.parts?.map((part: Part) => part.text).join('') || '', // Ensure content and parts exist
+        choices: resultResponse.candidates?.map((candidate: GoogleResponseCandidate) => ({
+          text: candidate.content?.parts?.map((part: GoogleResponsePart) => part.text || '').join('') || '',
         })) || [{ text: content }],
-        usage: { 
+        usage: {
           promptTokens: resultResponse.usageMetadata?.promptTokenCount || 0,
-          completionTokens: resultResponse.usageMetadata?.candidatesTokenCount || 0, 
+          completionTokens: resultResponse.usageMetadata?.candidatesTokenCount || 0,
           totalTokens: resultResponse.usageMetadata?.totalTokenCount || 0,
         }
       };
@@ -329,7 +345,7 @@ export class GoogleProvider implements LLMProvider {
       for (const output of request.tool_outputs) {
         // Add the tool output as a message from the 'tool' role
         messages.push({
-          role: 'tool' as any, // Cast to any since Google might not directly support 'tool' role
+          role: 'tool', // Using 'tool' role as defined in Message type
           content: output.output,
           tool_call_id: output.call_id
         });
@@ -343,113 +359,11 @@ export class GoogleProvider implements LLMProvider {
   /**
    * Convert messages from the common format to Google GenAI specific format
    */
-  private convertMessagesToGenAIFormat(messages: ChatMessage[] | Message[]): Content[] {
-    if (!messages || messages.length === 0) return [];
-    
-    return messages.map((msg) => ({
-      // Gemini only supports 'user' and 'model' roles
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content || "" }]
-    }))
-    // Filter out empty messages
-    .filter(content => content.parts.every(part => typeof part.text === 'string' && part.text.length > 0));
-  }
-  
-  /**
-   * Converts the generic Tool interface to Google's function declaration format
-   * @param tools Array of Tool objects to convert
-   * @returns Google-specific function declaration format or undefined if no tools provided
-   */
-  private convertToolsToGoogleFormat(tools?: Tool[]): any {
-    if (!tools || tools.length === 0) {
-      return undefined;
-    }
-    
-    // Create a functionDeclarations array in the format Google Gemini expects
-    const functionDeclarations = tools.map(tool => ({
-      name: tool.name,
-      description: tool.description || '',
-      parameters: {
-        type: tool.parameters.type,
-        properties: tool.parameters.properties,
-        required: tool.parameters.required || []
-      }
-    }));
-    
-    // Return the tools array in Google's format
-    return [{
-      functionDeclarations
-    }];
-  }
+  // Method moved to googleMessageConversion.ts
 
-  /**
-   * Converts the toolChoice parameter to Google's function calling config format
-   * @param toolChoice The toolChoice parameter from the request
-   * @returns Google-specific function calling config format
-   */
-  private convertToolChoiceToGoogleFormat(toolChoice: 'auto' | 'required' | 'none' | { type: 'function'; name: string }): any {
-    const toolConfig: any = {
-      functionCallingConfig: {}
-    };
-    
-    if (typeof toolChoice === 'string') {
-      switch (toolChoice) {
-        case 'auto': {
-          // This is the default, so no need to specify
-          toolConfig.functionCallingConfig.mode = 'AUTO';
-          break;
-        }
-        case 'required': {
-          toolConfig.functionCallingConfig.mode = 'ANY';
-          break;
-        }
-        case 'none': {
-          toolConfig.functionCallingConfig.mode = 'NONE';
-          break;
-        }
-      }
-    } else if (toolChoice && typeof toolChoice === 'object' && toolChoice.type === 'function') {
-      // Specific tool requested
-      toolConfig.functionCallingConfig.mode = 'ANY';
-      toolConfig.functionCallingConfig.allowedFunctionNames = [toolChoice.name];
-    }
-    
-    return toolConfig;
-  }
-  
-  /**
-   * Extracts tool/function calls from the Google Gemini response
-   */
-  private extractToolCallsFromGenAIResponse(response: any): ToolCall[] | undefined {
-    if (!response?.candidates?.[0]?.content?.parts) return undefined;
+  // Method for converting tools to Google format moved to googleTypes.ts
 
-    const toolCalls: ToolCall[] = [];
-    const parts = response.candidates[0].content.parts;
-    
-    // Process function call parts
-    for (const part of parts) {
-      if (part.functionCall) {
-        const uniqueId = `${part.functionCall.name}_${Date.now()}`;
-        toolCalls.push({
-          id: uniqueId, call_id: uniqueId, type: 'function_call',
-          name: part.functionCall.name, arguments: JSON.stringify(part.functionCall.args)
-        });
-      }
-    }
-    
-    // Check for functionCalls property in some response formats
-    if (response.functionCalls?.length > 0) {
-      for (const call of response.functionCalls) {
-        const uniqueId = `${call.name}_${Date.now()}`;
-        toolCalls.push({
-          id: uniqueId, call_id: uniqueId, type: 'function_call',
-          name: call.name, arguments: JSON.stringify(call.args)
-        });
-      }
-    }
-    
-    return toolCalls.length > 0 ? toolCalls : undefined;
-  }
+  // Helper utility methods moved to separate files
   
   /**
    * Executes a tool call and returns the result
@@ -477,6 +391,7 @@ export class GoogleProvider implements LLMProvider {
    * @param initialResponse The response containing the tool calls
    * @param toolResults The results of executing the tool calls
    * @returns Promise with the follow-up response from the model
+   * @deprecated Use generateTextWithToolResults instead
    */
   public async continueWithToolResults(
     initialRequest: ProviderRequest,
@@ -512,34 +427,15 @@ export class GoogleProvider implements LLMProvider {
       });
     }
 
-    // Add tool results as user messages with tool_call_id
-    for (const toolResult of toolResults) {
-      const userResponseMessage: ChatMessage = {
-        role: 'user',
-        content: toolResult.output,
-      };
-
-      // Add tool_call_id if provided
-      if (toolResult.call_id) {
-        userResponseMessage.tool_call_id = toolResult.call_id;
-      }
-
-      // Add function name if this is a function call output
-      if (toolResult.type === 'function_call_output') {
-        userResponseMessage.name = toolResult.call_id.split('_')[0];
-      }
-
-      newMessages.push(userResponseMessage);
-    }
-
-    // Create a new request with the updated messages and the same tools
-    const newRequest: ProviderRequest = {
+    // Create a tool results request
+    const toolResultsRequest: ToolResultsRequest = {
       ...initialRequest,
       messages: newMessages,
+      tool_outputs: toolResults
     };
 
-    // Call the chat method with the new request
-    return this.chat(newRequest);
+    // Use the generateTextWithToolResults method
+    return this.generateTextWithToolResults(toolResultsRequest);
   }
 }
 

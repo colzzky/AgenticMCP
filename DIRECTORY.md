@@ -167,7 +167,7 @@ This document outlines the directory structure of the AgenticMCP.Typescript proj
             *   `openaiProvider.ts`: Class implementing `LLMProvider` for OpenAI with tool calling support.
             *   `index.ts`: Barrel file for the OpenAI provider module.
         *   **`src/providers/anthropic/`**: Anthropic provider specific implementations.
-            *   `anthropicProvider.ts`: Class implementing `LLMProvider` for Anthropic.
+            *   `anthropicProvider.ts (imports ToolResultsRequest)`: Class implementing `LLMProvider` for Anthropic.
             *   `index.ts`: Barrel file for the Anthropic provider module.
         *   `index.ts`: Barrel file re-exporting all provider modules.
     *   **`src/commands/`**: Contains modules for different CLI command groups.

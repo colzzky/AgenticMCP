@@ -244,24 +244,15 @@ export class OpenAIProvider implements LLMProvider {
     };
     newMessages.push(assistantMessage);
 
-    // Add tool results as messages
-    for (const toolResult of toolResults) {
-      const toolResultMessage: ChatMessage = {
-        role: 'user',
-        content: toolResult.output,
-        tool_call_id: toolResult.call_id,
-      };
-      newMessages.push(toolResultMessage);
-    }
-
-    // Create a new request with the updated messages and the same tools
-    const newRequest: ProviderRequest = {
+    // Create a new request with the updated messages and tool outputs
+    const toolResultsRequest: ToolResultsRequest = {
       ...initialRequest,
       messages: newMessages,
+      tool_outputs: toolResults
     };
 
-    // Call the chat method with the new request
-    return this.chat(newRequest);
+    // Use the newer generateTextWithToolResults method
+    return this.generateTextWithToolResults(toolResultsRequest);
   }
 
   public async generateCompletion(request: ProviderRequest): Promise<ProviderResponse> {

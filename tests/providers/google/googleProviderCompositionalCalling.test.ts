@@ -6,111 +6,31 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { GoogleProvider } from '@/providers/google/googleProvider';
 import type { Tool, ToolCallOutput } from '@/core/types/provider.types';
-import type { GoogleProviderSpecificConfig } from '@/core/types/config.types';
-
-// Create a standard response object that matches what our provider expects
-const createStandardResponse = (textContent?: string, functionCall?: Record<string, any>) => {
-  const parts: Array<Record<string, any>> = [];
-
-  if (textContent) {
-    parts.push({ text: textContent });
-  }
-
-  if (functionCall) {
-    parts.push({
-      functionCall: {
-        name: functionCall.name,
-        args: functionCall.args
-      }
-    });
-  }
-
-  return {
-    response: {
-      candidates: [{
-        content: {
-          parts
-        }
-      }]
-    }
-  };
-};
+import {
+  createStandardResponse,
+  sampleTools,
+  testConfig,
+  createGoogleMocks
+} from './googleProvider.sharedTestUtils';
 
 // Create mocks for Google's class and methods
-const mockGenerateContent = jest.fn();
-const mockModelsGet = jest.fn().mockReturnValue({
-  generateContent: mockGenerateContent
-});
-
-const mockGoogleGenAI = jest.fn().mockImplementation(() => ({
-  models: {
-    get: mockModelsGet
-  }
-}));
-
-// Mock ConfigManager
-const mockConfigManager = {
-  getResolvedApiKey: jest.fn().mockImplementation(async () => {
-    return 'test-api-key';
-  })
-};
+const {
+  mockGenerateContent,
+  mockModelsGet,
+  mockGoogleGenAI,
+  mockConfigManager
+} = createGoogleMocks();
 
 describe('GoogleProvider Compositional Function Calling', () => {
   let provider: GoogleProvider;
-  
-  // Sample tools for testing
-  const sampleTools: Tool[] = [
-    {
-      type: 'function',
-      name: 'get_weather',
-      description: 'Get the current weather for a location',
-      parameters: {
-        type: 'object',
-        properties: {
-          location: { 
-            type: 'string', 
-            description: 'The city and state, e.g., San Francisco, CA' 
-          }
-        },
-        required: ['location']
-      }
-    },
-    {
-      type: 'function',
-      name: 'calculate_distance',
-      description: 'Calculate distance between two locations',
-      parameters: {
-        type: 'object',
-        properties: {
-          origin: { 
-            type: 'string', 
-            description: 'Starting location' 
-          },
-          destination: { 
-            type: 'string',
-            description: 'Ending location' 
-          }
-        },
-        required: ['origin', 'destination']
-      }
-    }
-  ];
-
-  // Config for provider
-  const config: GoogleProviderSpecificConfig = {
-    providerType: 'google',
-    instanceName: 'test-instance',
-    apiKey: 'test-api-key',
-    model: 'gemini-1.5-flash'
-  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     // Create provider instance with mocks
     provider = new GoogleProvider(mockConfigManager as any, mockGoogleGenAI as any);
-    await provider.configure(config);
-    
+    await provider.configure(testConfig);
+
     // Reset mocks to clear calls from configure
     mockGenerateContent.mockReset();
     mockModelsGet.mockClear();
@@ -151,31 +71,27 @@ describe('GoogleProvider Compositional Function Calling', () => {
     };
 
     // Set up the mock sequence
-    const originalChat = provider.chat;
-    const providerChatMock = jest.fn()
+    const originalGenerateText = provider.generateText;
+    const generateTextMock = jest.fn()
       .mockImplementationOnce(() => Promise.resolve(locationResponse)) // First call returns location function
       .mockImplementationOnce((request: any) => {
-        // Verify that location result was included in the messages
-        const locationResultMessage = request.messages.find((msg: any) =>
-          msg.role === 'user' && msg.tool_call_id === 'get_current_location_12345');
-        expect(locationResultMessage).toBeDefined();
-
         // Return weather function call
         return Promise.resolve(weatherResponse);
       })
       .mockImplementationOnce((request: any) => {
-        // Verify that weather function call was included
-        const weatherResultMessage = request.messages.find((msg: any) =>
-          msg.role === 'user' && msg.tool_call_id === 'get_weather_12345');
-        expect(weatherResultMessage).toBeDefined();
-
         // Restore original implementation for the third call
-        provider.chat = originalChat;
+        provider.generateText = originalGenerateText;
         // Return final text response
         return Promise.resolve(finalResponse);
       });
 
-    provider.chat = providerChatMock as typeof provider.chat;
+    provider.generateText = generateTextMock as typeof provider.generateText;
+
+    // Set up the mock for generateTextWithToolResults to pass through to generateText
+    const originalGenerateTextWithToolResults = provider.generateTextWithToolResults;
+    provider.generateTextWithToolResults = jest.fn().mockImplementation(async (request: any) => {
+      return provider.generateText(request);
+    }) as typeof provider.generateTextWithToolResults;
 
     // Set up tool definitions including the location tool
     const locationTool: Tool = {

@@ -28,7 +28,7 @@
   "include": [
     "src/**/*.ts",
     "tests/**/*.ts"
-  ],
+, "tests/providers/openai/openaiProvider.test.ts.bkp"  ],
   "exclude": [
     "node_modules",
     "dist",

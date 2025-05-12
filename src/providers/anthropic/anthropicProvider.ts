@@ -13,6 +13,7 @@ import type {
 } from '@/core/types/provider.types';
 import type { AnthropicProviderSpecificConfig } from '@/core/types/config.types';
 import { info, error as logError } from '@/core/utils/logger';
+import { ToolResultsRequest } from '../../core/types/provider.types';
 
 export class AnthropicProvider implements LLMProvider {
   private providerConfig?: AnthropicProviderSpecificConfig;
@@ -276,6 +277,7 @@ export class AnthropicProvider implements LLMProvider {
 
   /**
    * Continues a conversation with tool call results
+   * @deprecated Use generateTextWithToolResults instead
    */
   public async continueWithToolResults(
     initialRequest: ProviderRequest,
@@ -301,24 +303,15 @@ export class AnthropicProvider implements LLMProvider {
     };
     newMessages.push(assistantMessage);
 
-    // Add tool results as messages
-    for (const toolResult of toolResults) {
-      const toolResultMessage: ChatMessage = {
-        role: 'user',
-        content: toolResult.output,
-        tool_call_id: toolResult.call_id,
-      };
-      newMessages.push(toolResultMessage);
-    }
-
-    // Create a new request with the updated messages and the same tools
-    const newRequest: ProviderRequest = {
+    // Create a tool results request
+    const toolResultsRequest: ToolResultsRequest = {
       ...initialRequest,
       messages: newMessages,
+      tool_outputs: toolResults
     };
 
-    // Call the chat method with the new request
-    return this.chat(newRequest);
+    // Use the generateTextWithToolResults method
+    return this.generateTextWithToolResults(toolResultsRequest);
   }
 
   /**
