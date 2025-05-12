@@ -2,6 +2,7 @@
  * @file Tests for the ToolExecutionManager class
  */
 
+import { jest } from '@jest/globals';
 import { ToolExecutionManager, ToolExecutionResult } from '../../src/tools/toolExecutionManager';
 import { ToolRegistry } from '../../src/tools/toolRegistry';
 import { Tool, ToolCall, Message, ProviderResponse } from '../../src/core/types/provider.types';
@@ -15,14 +16,14 @@ const mockLogger = {
 };
 
 // Mock tool implementations
-const mockToolImplementations = {
-  'get-weather': jest.fn().mockResolvedValue({
+const mockToolImplementations: Record<string, jest.Mock> = {
+  'get-weather': jest.fn().mockImplementation(async () => ({
     temperature: 72,
     condition: 'sunny',
     humidity: 45,
-  }),
-  'search-web': jest.fn().mockResolvedValue('Search results for query'),
-  'error-tool': jest.fn().mockRejectedValue(new Error('Tool execution failed')),
+  })),
+  'search-web': jest.fn().mockImplementation(async () => 'Search results for query'),
+  'error-tool': jest.fn().mockImplementation(async () => { throw new Error('Tool execution failed'); }),
 };
 
 // Mock tool registry
@@ -73,10 +74,13 @@ const mockToolRegistry = {
 // Mock LLM provider
 const mockProvider = {
   get name() { return 'mock-provider'; },
-  chat: jest.fn(),
-  generateCompletion: jest.fn(),
+  chat: jest.fn<(request: any) => Promise<ProviderResponse>>(),
+  generateCompletion: jest.fn<(request: any) => Promise<ProviderResponse>>(),
+  generateText: jest.fn<(request: any) => Promise<ProviderResponse>>(),
+  generateTextWithToolResults: jest.fn<(request: any) => Promise<ProviderResponse>>(),
   configure: jest.fn(),
   executeToolCall: jest.fn(),
+  continueWithToolResults: jest.fn(),
 };
 
 describe('ToolExecutionManager', () => {
@@ -229,7 +233,9 @@ describe('ToolExecutionManager', () => {
       mockProvider.chat.mockResolvedValueOnce({
         success: true,
         content: 'The weather in New York is sunny and 72 degrees with 45% humidity.',
-      });
+        choices: [{ text: 'The weather in New York is sunny and 72 degrees with 45% humidity.' }],
+        usage: { promptTokens: 20, completionTokens: 30, totalTokens: 50 }
+      } as ProviderResponse);
 
       // Process the tool calls
       const finalResponse = await toolExecutionManager.processToolCalls(
@@ -243,7 +249,7 @@ describe('ToolExecutionManager', () => {
 
       // Check that the provider was called with the updated messages
       expect(mockProvider.chat).toHaveBeenCalled();
-      const chatCall = mockProvider.chat.mock.calls[0][0];
+      const chatCall = mockProvider.chat.mock.calls[0][0] as { messages: Message[] };
       expect(chatCall.messages.length).toBe(3); // user + assistant + tool
       expect(chatCall.messages[0].role).toBe('user');
       expect(chatCall.messages[1].role).toBe('assistant');
@@ -292,6 +298,8 @@ describe('ToolExecutionManager', () => {
       const finalResponse: ProviderResponse = {
         success: true,
         content: 'The weather in New York is sunny and 72 degrees. TypeScript is a programming language.',
+        choices: [{ text: 'The weather in New York is sunny and 72 degrees. TypeScript is a programming language.' }],
+        usage: { promptTokens: 25, completionTokens: 35, totalTokens: 60 }
       };
 
       // Mock the chat method to return the responses in sequence
@@ -363,7 +371,7 @@ describe('ToolExecutionManager', () => {
       };
 
       // Mock the chat method to throw an error
-      mockProvider.chat.mockRejectedValueOnce(new Error('Provider error'));
+      mockProvider.chat.mockRejectedValueOnce(new Error('Provider error') as any);
 
       // Process the tool calls
       const result = await toolExecutionManager.processToolCalls(

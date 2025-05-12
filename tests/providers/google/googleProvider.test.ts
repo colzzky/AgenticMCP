@@ -27,34 +27,30 @@ interface MockGoogleGenAIConstructorConfig {
 
 // Define the structure for the mock response of generateContent/sendMessage
 const mockChatGenerateContentResponse = {
-  response: {
-    candidates: [{ content: { parts: [{ text: 'This is a mock response from Gemini AI' }], role: 'model' as const } }],
-    text: 'This is a mock response from Gemini AI',
-    usageMetadata: {
-      promptTokenCount: 10,
-      candidatesTokenCount: 20,
-      totalTokenCount: 30
-    }
-  },
+  candidates: [{ content: { parts: [{ text: 'This is a mock response from Gemini AI' }], role: 'model' as const } }],
+  text: 'This is a mock response from Gemini AI',
+  usageMetadata: {
+    promptTokenCount: 10,
+    candidatesTokenCount: 20,
+    totalTokenCount: 30
+  }
 };
 
 // Make sure the mock response has the text property directly accessible
-mockChatGenerateContentResponse.response.text = 'This is a mock response from Gemini AI';
+mockChatGenerateContentResponse.text = 'This is a mock response from Gemini AI';
 
 const mockChatSendMessageResponse = {
-  response: {
-    candidates: [{ content: { parts: [{ text: 'This is a mock response from Gemini AI' }], role: 'model' as const } }],
-    text: 'This is a mock response from Gemini AI',
-    usageMetadata: {
-      promptTokenCount: 10,
-      candidatesTokenCount: 20,
-      totalTokenCount: 30
-    }
-  },
+  candidates: [{ content: { parts: [{ text: 'This is a mock response from Gemini AI' }], role: 'model' as const } }],
+  text: 'This is a mock response from Gemini AI',
+  usageMetadata: {
+    promptTokenCount: 10,
+    candidatesTokenCount: 20,
+    totalTokenCount: 30
+  }
 };
 
 // Make sure the mock response has the text property directly accessible
-mockChatSendMessageResponse.response.text = 'This is a mock response from Gemini AI';
+mockChatSendMessageResponse.text = 'This is a mock response from Gemini AI';
 
 // For the object returned by startChat
 interface MockChatSession {
@@ -86,17 +82,9 @@ interface MockGoogleGenAIInstance {
 // Create a mock that will properly return the expected structure
 const mockGenerativeModelInstance: MockGenerativeModelInstance = {
   generateContent: jest.fn().mockImplementation(() => {
-    return Promise.resolve({
-      response: {
-        text: 'This is a mock response from Gemini AI',
-        candidates: [{ content: { parts: [{ text: 'This is a mock response from Gemini AI' }], role: 'model' } }],
-        usageMetadata: {
-          promptTokenCount: 10,
-          candidatesTokenCount: 20,
-          totalTokenCount: 30
-        }
-      }
-    });
+    return {
+      response: Promise.resolve(mockChatGenerateContentResponse)
+    };
   }),
   startChat: jest.fn().mockReturnValue(mockChatSessionInstance),
 };

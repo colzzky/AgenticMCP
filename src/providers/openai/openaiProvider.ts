@@ -9,6 +9,7 @@ import {
   Tool,
   ToolCall,
   ToolCallOutput,
+  ToolResultsRequest,
 } from '../../core/types/provider.types';
 import { ConfigManager } from '../../core/config/configManager';
 import { ProviderSpecificConfig, OpenAIProviderSpecificConfig } from '../../core/types/config.types';
@@ -115,7 +116,39 @@ export class OpenAIProvider implements LLMProvider {
     }
   }
 
+  /**
+   * Continues a conversation with tool results
+   * @param request - The request object containing messages, tool calls, and tool outputs
+   * @returns Promise resolving to the provider's response
+   */
+  async generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse> {
+    // For OpenAI, we use the tool_outputs parameter in the API request
+    
+    // Extract messages and tool outputs
+    const messages = [...(request.messages || [])];
+    const toolOutputs = request.tool_outputs || [];
+    
+    // Create a new request with the tool outputs
+    const newRequest: ProviderRequest = {
+      ...request,
+      messages,
+      tool_outputs: toolOutputs,
+    };
+    
+    // Continue the conversation with the updated request
+    return this.generateText(newRequest);
+  }
+
+  /**
+   * Generates text with optional tools
+   * @param request - The request object containing messages and other parameters
+   * @returns Promise resolving to the provider's response
+   */
   public async chat(request: ProviderRequest): Promise<ProviderResponse> {
+    return this.generateText(request);
+  }
+
+  public async generateText(request: ProviderRequest): Promise<ProviderResponse> {
     if (!this.client || !this.providerConfig) {
       throw new Error('OpenAIProvider not configured. Call configure() first.');
     }
@@ -184,7 +217,8 @@ export class OpenAIProvider implements LLMProvider {
   }
 
   /**
-   * Continues a conversation with tool call results
+   * Legacy method for continuing with tool results
+   * @deprecated Use generateTextWithToolResults instead
    */
   public async continueWithToolResults(
     initialRequest: ProviderRequest,

@@ -321,6 +321,43 @@ export class AnthropicProvider implements LLMProvider {
     return this.chat(newRequest);
   }
 
+  /**
+   * Generates text with optional tools
+   * @param request - The request object containing messages and other parameters
+   * @returns Promise resolving to the provider's response
+   */
+  public async generateText(request: ProviderRequest): Promise<ProviderResponse> {
+    return this.chat(request);
+  }
+
+  /**
+   * Continues a conversation with tool results
+   * @param request - The request object containing messages, tool calls, and tool outputs
+   * @returns Promise resolving to the provider's response
+   */
+  public async generateTextWithToolResults(request: any): Promise<ProviderResponse> {
+    // For Anthropic, we handle tool results by adding them to the conversation history
+    // and then continuing the conversation with a new chat request
+    
+    // Extract tool outputs and add them to the messages
+    const messages = [...(request.messages || [])];
+    
+    // If there are tool outputs, add them to the conversation
+    if (request.tool_outputs && request.tool_outputs.length > 0) {
+      for (const output of request.tool_outputs) {
+        // Add the tool output as a message with tool_call_id
+        messages.push({
+          role: 'user',
+          content: output.output,
+          tool_call_id: output.call_id
+        });
+      }
+    }
+    
+    // Continue the conversation with the updated messages
+    return this.generateText({ ...request, messages });
+  }
+
   async generateCompletion(request: ProviderRequest): Promise<ProviderResponse> {
     // For Claude, completion is similar to chat with a single user prompt
     if (!request.messages && request.prompt) {

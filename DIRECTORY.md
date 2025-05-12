@@ -2,11 +2,11 @@
 ```markdown
 .
 ├── CLAUDE.md
-├── DIRECTORY.md +27
+├── DIRECTORY.md
 ├── LICENSE
-├── PROGRESS.jsonl
+├── PROGRESS.jsonl +1
 ├── README.md
-├── TASKS.jsonl
+├── TASKS.jsonl +1
 ├── __mocks__/
 │   ├── @/
 │   │   └── core/
@@ -19,6 +19,7 @@
 │           └── utils/
 ├── context/
 │   ├── anthropic-tool-use.md
+│   ├── gemini-tool-calling.md
 │   └── openai-tool-calling.md
 ├── docs/
 │   └── ARCHITECTURE.md
@@ -37,6 +38,8 @@
 │   ├── context/
 │   │   ├── contextManager.ts
 │   │   └── index.ts
+│   ├── conversation/
+│   │   └── conversationManager.ts
 │   ├── core/
 │   │   ├── commands/
 │   │   │   ├── decorators.ts
@@ -66,25 +69,32 @@
 │   ├── index.ts
 │   ├── providers/
 │   │   ├── anthropic/
-│   │   │   ├── anthropicProvider.ts
+│   │   │   ├── anthropicProvider.ts +37
 │   │   │   └── index.ts
 │   │   ├── google/
-│   │   │   ├── googleProvider.ts
+│   │   │   ├── googleProvider.ts +68
 │   │   │   └── index.ts
 │   │   ├── index.ts
 │   │   ├── openai/
 │   │   │   ├── index.ts
-│   │   │   └── openaiProvider.ts
+│   │   │   └── openaiProvider.ts +35
 │   │   ├── providerFactory.ts
 │   │   └── providerInitializer.ts
 │   └── tools/
 │       ├── localCliTool.ts
 │       ├── localCliToolDefinitions.ts
 │       ├── toolDefinitions.md
+│       ├── toolEvents.ts
+│       ├── toolExecutionFlow.md
+│       ├── toolExecutionManager.ts +1
+│       ├── toolExecutor.ts
 │       ├── toolRegistry.ts
+│       └── toolResultFormatter.ts
 ├── tests/
 │   ├── context/
 │   │   └── contextManager.test.ts
+│   ├── conversation/
+│   │   └── conversationManager.test.ts +57
 │   ├── core/
 │   │   ├── commands/
 │   │   │   └── registry.test.ts
@@ -99,17 +109,21 @@
 │   │   │   ├── anthropicProviderToolCalling2a.test.ts
 │   │   │   └── anthropicProviderToolCalling2b.test.ts
 │   │   ├── google/
-│   │   │   ├── googleProvider.test.ts
+│   │   │   ├── googleProvider.test.ts +19
+│   │   │   ├── googleProviderToolCalling.test.ts +163
 │   │   │   └── importConfigManager.test.ts
 │   │   └── openai/
 │   │       ├── openaiProvider.test.ts
 │   │       └── openaiProviderToolCalling.test.ts
 │   └── tools/
 │       ├── localCliTool.test.ts
-│       ├── toolRegistry.test.ts
+│       ├── toolExecutionManager.test.ts +18
+│       ├── toolExecutor.test.ts +6
+│       └── toolRegistry.test.ts
 ├── tree.sh
 ├── tsconfig.json
-└── ts
+├── tsconfig.test.json
+```
 
 This document outlines the directory structure of the AgenticMCP.Typescript project.
 

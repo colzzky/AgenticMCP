@@ -6,7 +6,7 @@
 // @ts-nocheck
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { GoogleProvider } from '@/providers/google/googleProvider';
-import type { Tool, ToolCall, ToolCallOutput } from '@/core/types/provider.types';
+import type { Tool, ToolCallOutput } from '@/core/types/provider.types';
 import type { GoogleProviderSpecificConfig } from '@/core/types/config.types';
 
 // Create a standard response object that matches what our provider expects
@@ -37,6 +37,33 @@ const createStandardResponse = (textContent?: string, functionCall?: any) => {
   };
 };
 
+// Create a function that returns a response with multiple function calls
+const createMultipleFunctionCallsResponse = () => {
+  return {
+    response: {
+      candidates: [{
+        content: {
+          parts: [
+            { text: 'I will get both the weather and calculate a distance for you.' },
+            {
+              functionCall: {
+                name: 'get_weather',
+                args: { location: 'San Francisco, CA' }
+              }
+            },
+            {
+              functionCall: {
+                name: 'calculate_distance',
+                args: { origin: 'San Francisco, CA', destination: 'Los Angeles, CA' }
+              }
+            }
+          ]
+        }
+      }]
+    }
+  };
+};
+
 // Create mocks for Google's class and methods
 const mockGenerateContent = jest.fn();
 const mockModelsGet = jest.fn().mockReturnValue({
@@ -54,256 +81,143 @@ const mockConfigManager = {
   getResolvedApiKey: jest.fn().mockResolvedValue('test-api-key')
 };
 
-// Mock Logger
-const mockLogger = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn()
+// Sample tools for testing
+const sampleTools: Tool[] = [
+  {
+    type: 'function',
+    name: 'get_weather',
+    description: 'Get the current weather for a location',
+    parameters: {
+      type: 'object',
+      properties: {
+        location: {
+          type: 'string',
+          description: 'The city and state, e.g., San Francisco, CA'
+        }
+      },
+      required: ['location']
+    }
+  },
+  {
+    type: 'function',
+    name: 'calculate_distance',
+    description: 'Calculate distance between two locations',
+    parameters: {
+      type: 'object',
+      properties: {
+        origin: {
+          type: 'string',
+          description: 'Starting location'
+        },
+        destination: {
+          type: 'string',
+          description: 'Ending location'
+        }
+      },
+      required: ['origin', 'destination']
+    }
+  }
+];
+
+// Config for provider
+const config: GoogleProviderSpecificConfig = {
+  providerType: 'google',
+  instanceName: 'test-instance',
+  apiKey: 'test-api-key',
+  model: 'gemini-1.5-flash'
 };
 
 describe('GoogleProvider Tool Calling', () => {
   let provider: GoogleProvider;
-  
-  // Sample tools for testing
-  const sampleTools: Tool[] = [
-    {
-      type: 'function',
-      name: 'get_weather',
-      description: 'Get the current weather for a location',
-      parameters: {
-        type: 'object',
-        properties: {
-          location: { 
-            type: 'string', 
-            description: 'The city and state, e.g., San Francisco, CA' 
-          }
-        },
-        required: ['location']
-      }
-    },
-    {
-      type: 'function',
-      name: 'calculate_distance',
-      description: 'Calculate distance between two locations',
-      parameters: {
-        type: 'object',
-        properties: {
-          origin: { 
-            type: 'string', 
-            description: 'Starting location' 
-          },
-          destination: { 
-            type: 'string',
-            description: 'Ending location' 
-          }
-        },
-        required: ['origin', 'destination']
-      }
-    }
-  ];
-
-  // Config for provider
-  const config: GoogleProviderSpecificConfig = {
-    providerType: 'google',
-    instanceName: 'test-instance',
-    apiKey: 'test-api-key',
-    model: 'gemini-1.5-flash'
-  };
-
-  // We'll move the function to the outer scope as per linting rules
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     // Create provider instance with mocks
     provider = new GoogleProvider(mockConfigManager as any, mockGoogleGenAI as any);
     await provider.configure(config);
-    
+
     // Reset mocks to clear calls from configure
     mockGenerateContent.mockReset();
     mockModelsGet.mockClear();
   });
 
-  describe('Tool format conversion', () => {
-    it('should convert tools to Google function declaration format', async () => {
-      // Mock a successful response
-      mockGenerateContent.mockReturnValueOnce(createStandardResponse('This is a test response'));
-
-      // Call chat with tools
-      await provider.chat({
-        messages: [{ role: 'user' as const, content: 'Hello' }],
-        tools: sampleTools
-      });
-
-      // Check that the tools were correctly converted
-      expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-      const callArgs = mockGenerateContent.mock.calls[0][0];
-      
-      // Verify tools were passed correctly
-      expect(callArgs.tools).toBeDefined();
-      expect(callArgs.tools).toHaveLength(1);
-      expect(callArgs.tools[0].functionDeclarations).toHaveLength(2);
-      
-      // Verify first tool was converted correctly
-      const firstTool = callArgs.tools[0].functionDeclarations[0];
-      expect(firstTool.name).toBe('get_weather');
-      expect(firstTool.parameters.type).toBe('object');
-      expect(firstTool.parameters.properties.location).toBeDefined();
-      expect(firstTool.parameters.required).toContain('location');
-    });
-
-    it('should handle tool choice parameter', async () => {
-      // Mock a successful response
-      mockGenerateContent.mockReturnValueOnce(createStandardResponse('This is a test response'));
-
-      // Call chat with tools and toolChoice
-      await provider.chat({
-        messages: [{ role: 'user' as const, content: 'Hello' }],
-        tools: sampleTools,
-        toolChoice: 'required'
-      });
-
-      // Check that toolConfig was correctly set
-      expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-      const callArgs = mockGenerateContent.mock.calls[0][0];
-      
-      // Verify toolConfig was included
-      expect(callArgs.toolConfig).toBeDefined();
-      expect(callArgs.toolConfig.functionCallingConfig.mode).toBe('ANY');
-    });
-
-    it('should handle specific tool choice', async () => {
-      // Mock a successful response
-      mockGenerateContent.mockReturnValueOnce(createStandardResponse('This is a test response'));
-
-      // Call chat with tools and specific tool choice
-      await provider.chat({
-        messages: [{ role: 'user' as const, content: 'Hello' }],
-        tools: sampleTools,
-        toolChoice: { type: 'function', name: 'get_weather' }
-      });
-
-      // Check that toolConfig was correctly set
-      expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-      const callArgs = mockGenerateContent.mock.calls[0][0];
-      
-      // Verify toolConfig was included with specific tool
-      expect(callArgs.toolConfig).toBeDefined();
-      expect(callArgs.toolConfig.functionCallingConfig.mode).toBe('ANY');
-      expect(callArgs.toolConfig.functionCallingConfig.allowedFunctionNames).toContain('get_weather');
-    });
-  });
-
-  describe('Tool call extraction', () => {
-    it('should extract tool calls from response', async () => {
-      // Mock a response with a function call
-      mockGenerateContent.mockReturnValueOnce(
-        createStandardResponse(
-          'I will get the weather for you',
-          { name: 'get_weather', args: { location: 'San Francisco, CA' } }
-        )
-      );
+  describe('Parallel function calling', () => {
+    it('should extract multiple tool calls from a single response', async () => {
+      // Mock a response with multiple function calls
+      mockGenerateContent.mockReturnValueOnce(createMultipleFunctionCallsResponse());
 
       // Call chat with tools
       const response = await provider.chat({
-        messages: [{ role: 'user' as const, content: 'What is the weather in San Francisco?' }],
+        messages: [{ role: 'user' as const, content: 'What is the weather in San Francisco and how far is it from LA?' }],
         tools: sampleTools
       });
 
-      // Verify tool calls were extracted
+      // Verify multiple tool calls were extracted
       expect(response.toolCalls).toBeDefined();
-      expect(response.toolCalls).toHaveLength(1);
+      expect(response.toolCalls).toHaveLength(2);
+
+      // Verify the first tool call is for the weather
       expect(response.toolCalls[0].name).toBe('get_weather');
       expect(response.toolCalls[0].type).toBe('function_call');
       expect(JSON.parse(response.toolCalls[0].arguments)).toEqual({ location: 'San Francisco, CA' });
+
+      // Verify the second tool call is for distance calculation
+      expect(response.toolCalls[1].name).toBe('calculate_distance');
+      expect(response.toolCalls[1].type).toBe('function_call');
+      expect(JSON.parse(response.toolCalls[1].arguments)).toEqual({
+        origin: 'San Francisco, CA',
+        destination: 'Los Angeles, CA'
+      });
     });
 
-    it('should handle responses with no tool calls', async () => {
-      // Mock a response without tool calls
-      mockGenerateContent.mockReturnValueOnce(
-        createStandardResponse('This is a regular response without tool calls')
-      );
+    it('should handle responses with an array of functionCalls', async () => {
+      // Create response with functionCalls array format
+      const responseWithFunctionCallsArray = {
+        response: {
+          candidates: [{
+            content: {
+              parts: [{ text: 'I will process your request.' }]
+            }
+          }],
+          functionCalls: [
+            {
+              name: 'get_weather',
+              args: { location: 'San Francisco, CA' }
+            },
+            {
+              name: 'calculate_distance',
+              args: { origin: 'San Francisco, CA', destination: 'Los Angeles, CA' }
+            }
+          ]
+        }
+      };
+
+      // Mock a response with functionCalls array
+      mockGenerateContent.mockReturnValueOnce(responseWithFunctionCallsArray);
 
       // Call chat with tools
       const response = await provider.chat({
-        messages: [{ role: 'user' as const, content: 'Hello' }],
+        messages: [{ role: 'user' as const, content: 'What is the weather in San Francisco and how far is it from LA?' }],
         tools: sampleTools
       });
 
-      // Verify no tool calls were extracted
-      expect(response.toolCalls).toBeUndefined();
+      // Verify multiple tool calls were extracted
+      expect(response.toolCalls).toBeDefined();
+      expect(response.toolCalls).toHaveLength(2);
+
+      // Verify both tool calls were correctly extracted
+      expect(response.toolCalls[0].name).toBe('get_weather');
+      expect(response.toolCalls[1].name).toBe('calculate_distance');
     });
   });
 
-  describe('Tool call execution', () => {
-    it('should execute a tool call with provided function', async () => {
-      // Sample tool call
-      const toolCall: ToolCall = {
-        id: 'call_1234',
-        call_id: 'call_1234',
-        type: 'function_call',
-        name: 'get_weather',
-        arguments: JSON.stringify({ location: 'San Francisco, CA' })
-      };
-
-      // Mock tool function
-      const mockWeatherFunction = jest.fn().mockResolvedValue({
-        temperature: 72,
-        condition: 'sunny',
-        humidity: 45
-      });
-
-      // Execute tool call
-      const result = await provider.executeToolCall(toolCall, {
-        get_weather: mockWeatherFunction
-      });
-
-      // Verify function was called with correct args
-      expect(mockWeatherFunction).toHaveBeenCalledWith({ location: 'San Francisco, CA' });
-      
-      // Verify result was converted to string
-      const parsedResult = JSON.parse(result);
-      expect(parsedResult).toEqual({
-        temperature: 72,
-        condition: 'sunny',
-        humidity: 45
-      });
-    });
-
-    it('should handle errors during tool execution', async () => {
-      // Sample tool call
-      const toolCall: ToolCall = {
-        id: 'call_1234',
-        call_id: 'call_1234',
-        type: 'function_call',
-        name: 'get_weather',
-        arguments: JSON.stringify({ location: 'San Francisco, CA' })
-      };
-
-      // Mock tool function that throws error
-      const mockErrorFunction = jest.fn().mockRejectedValue(new Error('API error'));
-
-      // Execute tool call
-      const result = await provider.executeToolCall(toolCall, {
-        get_weather: mockErrorFunction
-      });
-
-      // Verify function was called
-      expect(mockErrorFunction).toHaveBeenCalledWith({ location: 'San Francisco, CA' });
-      
-      // Verify error was handled and returned in JSON
-      const parsedResult = JSON.parse(result);
-      expect(parsedResult.error).toBe('API error');
-    });
-  });
-
-  describe('Continue with tool results', () => {
-    it('should continue conversation with tool results', async () => {
-      // First create a sample tool call response for first chat() call
-      const weatherToolCallResponse = {
+  describe('Function response format', () => {
+    it('should properly format function responses when continuing a conversation', async () => {
+      // Sample initial response with a tool call
+      const initialResponse = {
         success: true,
-        content: 'I will check the weather for you',
+        content: 'I will get the weather for you',
         toolCalls: [{
           id: 'get_weather_12345',
           call_id: 'get_weather_12345',
@@ -312,20 +226,6 @@ describe('GoogleProvider Tool Calling', () => {
           arguments: JSON.stringify({ location: 'San Francisco, CA' })
         }]
       };
-      
-      // Mock first response with tool calls - directly mock the chat method
-      const originalChat = provider.chat;
-      provider.chat = jest.fn()
-        .mockImplementationOnce(() => Promise.resolve(weatherToolCallResponse))
-        .mockImplementationOnce((request) => {
-          // Restore the original implementation for the second call
-          provider.chat = originalChat;
-          // Use mock for the actual response
-          mockGenerateContent.mockReturnValueOnce(
-            createStandardResponse('The weather in San Francisco is 72°F and sunny with 45% humidity.')
-          );
-          return originalChat.call(provider, request);
-        });
 
       // Initial request with tools
       const initialRequest = {
@@ -333,32 +233,51 @@ describe('GoogleProvider Tool Calling', () => {
         tools: sampleTools
       };
 
-      // Get initial response with tool call
-      const initialResponse = await provider.chat(initialRequest);
-      expect(initialResponse.toolCalls).toHaveLength(1);
-
       // Prepare tool results
-      const toolResults: ToolCallOutput[] = [{
+      const toolResults = [{
         type: 'function_call_output',
-        call_id: initialResponse.toolCalls[0].call_id,
+        call_id: 'get_weather_12345',
         output: JSON.stringify({
           temperature: 72,
-          condition: 'sunny',
-          humidity: 45
+          condition: 'sunny'
         })
       }];
 
-      // Continue the conversation with tool results
-      const finalResponse = await provider.continueWithToolResults(
-        initialRequest,
-        initialResponse,
-        toolResults
+      // Setup mock for the generated response
+      mockGenerateContent.mockReturnValueOnce(
+        createStandardResponse('The weather in San Francisco is sunny.')
       );
 
-      // Verify tool results were incorporated
-      expect(finalResponse.success).toBe(true);
-      expect(finalResponse.content).toContain('San Francisco');
-      expect(finalResponse.content).toContain('sunny');
+      // Create a spy on the provider's chat method
+      const chatSpy = jest.spyOn(provider, 'chat');
+
+      // Continue with tool results
+      await provider.continueWithToolResults(initialRequest, initialResponse, toolResults);
+
+      // Verify chat was called exactly once
+      expect(chatSpy).toHaveBeenCalledTimes(1);
+
+      // Get the request object that was passed to the chat method
+      const chatRequest = chatSpy.mock.calls[0][0];
+
+      // Verify the assistant message with tool calls was formatted correctly
+      const assistantMessage = chatRequest.messages.find(msg =>
+        msg.role === 'assistant' && msg.tool_calls?.length > 0);
+      expect(assistantMessage).toBeDefined();
+      expect(assistantMessage?.tool_calls?.[0].name).toBe('get_weather');
+
+      // Verify the user message with tool result was formatted correctly
+      const toolResultMessage = chatRequest.messages.find(msg =>
+        msg.role === 'user' && msg.tool_call_id === 'get_weather_12345');
+      expect(toolResultMessage).toBeDefined();
+      expect(toolResultMessage?.content).toBeDefined();
+
+      // Restore the original spy
+      chatSpy.mockRestore();
     });
   });
+
+  // Additional test sections are in these files:
+  // - Basic tool calling: tests/providers/google/googleProviderBasicToolCalling.test.ts
+  // - Compositional function calling: tests/providers/google/googleProviderCompositionalCalling.test.ts
 });

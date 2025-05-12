@@ -3,15 +3,7 @@
  */
 
 import { GoogleGenAI, Content, GenerateContentResponse, Part } from '@google/genai';
-import type { 
-  LLMProvider, 
-  ProviderRequest, 
-  ProviderResponse,
-  ChatMessage,
-  Tool,
-  ToolCall,
-  ToolCallOutput
-} from '@/core/types/provider.types';
+import type { LLMProvider, ProviderRequest, ProviderResponse, Tool, ToolCall, ChatMessage, ToolResultsRequest, Message, ToolCallOutput } from '../../core/types/provider.types';
 import type { GoogleProviderSpecificConfig } from '@/core/types/config.types';
 import { ConfigManager } from '@/core/config/configManager';
 import { info, error as logError, debug } from '@/core/utils/logger';
@@ -23,8 +15,9 @@ import { info, error as logError, debug } from '@/core/utils/logger';
 export class GoogleProvider implements LLMProvider {
   private configManager?: ConfigManager;
   private GoogleGenAIClass: typeof GoogleGenAI;
-  private genAI?: GoogleGenAI;
-  private apiKey?: string;
+
+  private providerConfig?: GoogleProviderSpecificConfig;
+  private client?: GoogleGenAI;
   private model?: string;
   private temperature?: number;
   private maxTokens?: number;
@@ -158,6 +151,15 @@ export class GoogleProvider implements LLMProvider {
    * @returns Provider response with content and metadata
    */
   async chat(request: ProviderRequest): Promise<ProviderResponse> {
+    return this.generateText(request);
+  }
+
+  /**
+   * Generates text with optional tools
+   * @param request - The request object containing messages and other parameters
+   * @returns Promise resolving to the provider's response
+   */
+  async generateText(request: ProviderRequest): Promise<ProviderResponse> {
     if (!this.providerConfig) {
       throw new Error('GoogleProvider not configured. Call configure() first.');
     }
@@ -270,8 +272,8 @@ export class GoogleProvider implements LLMProvider {
         };
       }
       
-      // Extract any tool calls from the response
-      const toolCalls = this.extractToolCallsFromResponse(resultResponse);
+      // Extract tool calls from the response
+      const toolCalls = this.extractToolCallsFromGenAIResponse(resultResponse);
       
       info(`Google Gemini chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${modelName}`);
       
@@ -311,25 +313,46 @@ export class GoogleProvider implements LLMProvider {
   }
 
   /**
+   * Continues a conversation with tool results
+   * @param request - The request object containing messages, tool calls, and tool outputs
+   * @returns Promise resolving to the provider's response
+   */
+  async generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse> {
+    // For Google/Gemini, we handle tool results by adding them to the conversation history
+    // and then continuing the conversation with a new chat request
+    
+    // Extract tool outputs and add them to the messages
+    const messages = [...(request.messages || [])];
+    
+    // If there are tool outputs, add them to the conversation
+    if (request.tool_outputs && request.tool_outputs.length > 0) {
+      for (const output of request.tool_outputs) {
+        // Add the tool output as a message from the 'tool' role
+        messages.push({
+          role: 'tool' as any, // Cast to any since Google might not directly support 'tool' role
+          content: output.output,
+          tool_call_id: output.call_id
+        });
+      }
+    }
+    
+    // Continue the conversation with the updated messages
+    return this.generateText({ ...request, messages });
+  }
+
+  /**
    * Convert messages from the common format to Google GenAI specific format
    */
-  private convertMessagesToGenAIFormat(messages: ChatMessage[]): Content[] {
-    if (!messages || messages.length === 0) {
-      return [];
-    }
-    return messages.map((msg) => {
-      let role: 'user' | 'model';
-      // Gemini only supports 'user' and 'model' roles.
-      // 'system' messages need to be handled carefully.
-      // For 'generateContent', system messages are often converted to a 'user' message
-      // or handled via `systemInstruction` in `getGenerativeModel`.
-      role = msg.role === 'assistant' ? 'model' : 'user'; // If it was a system message, its content is now part of a user message.
-      return {
-        role,
-        parts: [{ text: msg.content || "" }], // Ensure text is always a string
-      };
-    // Filter out any messages that might have become empty or invalid after transformation
-    }).filter(content => content.parts.every(part => typeof part.text === 'string' && part.text.length > 0));
+  private convertMessagesToGenAIFormat(messages: ChatMessage[] | Message[]): Content[] {
+    if (!messages || messages.length === 0) return [];
+    
+    return messages.map((msg) => ({
+      // Gemini only supports 'user' and 'model' roles
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content || "" }]
+    }))
+    // Filter out empty messages
+    .filter(content => content.parts.every(part => typeof part.text === 'string' && part.text.length > 0));
   }
   
   /**
@@ -396,40 +419,31 @@ export class GoogleProvider implements LLMProvider {
   
   /**
    * Extracts tool/function calls from the Google Gemini response
-   * @param response The response from the Google Gemini API
-   * @returns An array of tool calls in the standardized format, or undefined if no calls
    */
-  private extractToolCallsFromResponse(response: any): ToolCall[] | undefined {
-    // Early return if no candidates or content
-    if (!response?.candidates?.[0]?.content?.parts) {
-      return undefined;
-    }
+  private extractToolCallsFromGenAIResponse(response: any): ToolCall[] | undefined {
+    if (!response?.candidates?.[0]?.content?.parts) return undefined;
 
     const toolCalls: ToolCall[] = [];
     const parts = response.candidates[0].content.parts;
     
-    // Look for function call parts in the response
+    // Process function call parts
     for (const part of parts) {
       if (part.functionCall) {
+        const uniqueId = `${part.functionCall.name}_${Date.now()}`;
         toolCalls.push({
-          id: part.functionCall.name + '_' + Date.now(), // Create unique ID since Gemini doesn't provide one
-          call_id: part.functionCall.name + '_' + Date.now(), 
-          type: 'function_call',
-          name: part.functionCall.name,
-          arguments: JSON.stringify(part.functionCall.args)
+          id: uniqueId, call_id: uniqueId, type: 'function_call',
+          name: part.functionCall.name, arguments: JSON.stringify(part.functionCall.args)
         });
       }
     }
     
-    // Also check for functionCalls property which may be present in some response formats
-    if (response.functionCalls && response.functionCalls.length > 0) {
+    // Check for functionCalls property in some response formats
+    if (response.functionCalls?.length > 0) {
       for (const call of response.functionCalls) {
+        const uniqueId = `${call.name}_${Date.now()}`;
         toolCalls.push({
-          id: call.name + '_' + Date.now(),
-          call_id: call.name + '_' + Date.now(),
-          type: 'function_call',
-          name: call.name,
-          arguments: JSON.stringify(call.args)
+          id: uniqueId, call_id: uniqueId, type: 'function_call',
+          name: call.name, arguments: JSON.stringify(call.args)
         });
       }
     }
@@ -444,29 +458,15 @@ export class GoogleProvider implements LLMProvider {
    * @returns Promise with the tool call result as a string
    */
   public async executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
-    if (!availableTools) {
-      throw new Error('No tools available to execute');
-    }
-
-    const { name, arguments: argsStr } = toolCall;
-    const toolFunction = availableTools[name];
-
-    if (!toolFunction) {
-      throw new Error(`Tool not found: ${name}`);
-    }
+    if (!availableTools || !availableTools[toolCall.name]) throw new Error(`Tool ${toolCall.name} not found`);
 
     try {
-      // Parse the arguments string to an object
-      const args = JSON.parse(argsStr);
-
-      // Execute the function with the parsed arguments
-      const result = await toolFunction(args);
-
-      // Convert the result to a string if it's not already
+      const args = JSON.parse(toolCall.arguments);
+      const result = await availableTools[toolCall.name](args);
       return typeof result === 'string' ? result : JSON.stringify(result);
     } catch (error_: unknown) {
       const errorMessage = error_ instanceof Error ? error_.message : String(error_);
-      logError(`Error executing tool call ${name}: ${errorMessage}`);
+      logError(`Error executing tool call ${toolCall.name}: ${errorMessage}`);
       return JSON.stringify({ error: errorMessage });
     }
   }

@@ -2,6 +2,7 @@
  * @file Tests for the ToolExecutor class
  */
 
+import { jest } from '@jest/globals';
 import { ToolExecutor, ToolExecutionResult } from '../../src/tools/toolExecutor';
 import { ToolRegistry } from '../../src/tools/toolRegistry';
 import { Tool, ToolCall } from '../../src/core/types/provider.types';
@@ -15,14 +16,14 @@ const mockLogger = {
 };
 
 // Mock tool implementations
-const mockToolImplementations = {
-  'get-weather': jest.fn().mockResolvedValue({
+const mockToolImplementations: Record<string, jest.Mock> = {
+  'get-weather': jest.fn().mockImplementation(async () => ({
     temperature: 72,
     condition: 'sunny',
     humidity: 45,
-  }),
-  'search-web': jest.fn().mockResolvedValue('Search results for query'),
-  'error-tool': jest.fn().mockRejectedValue(new Error('Tool execution failed')),
+  })),
+  'search-web': jest.fn().mockImplementation(async () => 'Search results for query'),
+  'error-tool': jest.fn().mockImplementation(async () => { throw new Error('Tool execution failed'); }),
 };
 
 // Mock tool registry

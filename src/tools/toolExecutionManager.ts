@@ -31,7 +31,7 @@ export interface ToolExecutionManagerConfig {
  * Default configuration for the ToolExecutionManager
  */
 const DEFAULT_CONFIG: ToolExecutionManagerConfig = {
-  toolTimeoutMs: 30000, // 30 seconds
+  toolTimeoutMs: 30_000, // 30 seconds
   maxRetries: 2,
   parallelExecution: true,
 };

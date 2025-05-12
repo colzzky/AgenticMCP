@@ -1,0 +1,12 @@
+ M	DIRECTORY.md
+ M	PROGRESS.jsonl
+ M	TASKS.jsonl
+ M	src/providers/anthropic/anthropicProvider.ts
+ M	src/providers/google/googleProvider.ts
+ M	src/providers/openai/openaiProvider.ts
+ M	src/tools/toolExecutionManager.ts
+ M	tests/conversation/conversationManager.test.ts
+ M	tests/providers/google/googleProvider.test.ts
+ M	tests/providers/google/googleProviderToolCalling.test.ts
+ M	tests/tools/toolExecutionManager.test.ts
+ M	tests/tools/toolExecutor.test.ts
