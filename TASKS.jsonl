@@ -15,6 +15,7 @@
 {"taskNumber": "53", "title": "Implement Tool Calling Interfaces", "shortDescription": "Develop TypeScript interfaces for LLM tool calling", "assignedTo": "coder", "status": "complete"}
 {"taskNumber": "54", "title": "Implement OpenAI Provider Tool Calling", "shortDescription": "Add tool calling support to the OpenAI provider", "assignedTo": "coder", "status": "complete"}
 {"taskNumber": "55", "title": "Implement LocalCliTool Definition", "shortDescription": "Create tool definitions for LocalCliTool operations", "assignedTo": "coder", "status": "complete"}
+{"taskNumber": "92", "title": "Implement Tool Registry", "shortDescription": "Create centralized registry for tool definitions with provider-specific validation", "assignedTo": "coder", "status": "complete"}
 {"taskNumber": "56", "title": "Implement Tool Execution Flow", "shortDescription": "Create system for executing tool calls and feeding results back to LLMs", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "57", "title": "Create MCP Command with Tool Support", "shortDescription": "Implement CLI command that supports model-driven tool calling", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "58", "title": "Implement Anthropic Provider Tool Calling", "shortDescription": "Add tool calling support to the Anthropic provider", "assignedTo": "coder", "status": "complete"}

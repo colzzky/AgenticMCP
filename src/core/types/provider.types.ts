@@ -65,7 +65,7 @@ export interface ToolCallOutput {
  */
 export interface ProviderRequest {
   prompt?: string; // For completion-style requests
-  messages?: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>; // For chat-style requests
+  messages?: Message[] | Array<{ role: 'user' | 'assistant' | 'system'; content: string }>; // For chat-style requests
   model?: string; // Override provider's default model
   temperature?: number; // Sampling temperature (0-1)
   maxTokens?: number; // Max tokens to generate
@@ -99,6 +99,17 @@ export interface ProviderResponse {
 }
 
 /**
+ * Represents a message in a conversation
+ */
+export interface Message {
+  role: 'user' | 'assistant' | 'system' | 'tool';
+  content: string;
+  tool_call_id?: string;
+  tool_calls?: ToolCall[];
+  name?: string;
+}
+
+/**
  * Defines the structure for a chat message, which includes the role and content.
  */
 export interface ChatMessage {
@@ -119,6 +130,13 @@ export interface ProviderConfig extends ProviderSpecificConfig {
   maxTokens?: number;
   timeout?: number;
   maxRetries?: number;
+}
+
+/**
+ * Represents a tool results request
+ */
+export interface ToolResultsRequest extends ProviderRequest {
+  tool_outputs?: ToolCallOutput[];
 }
 
 /**
@@ -154,9 +172,23 @@ export interface LLMProvider {
    * @param availableTools - The available tools that can be called.
    * @returns A promise that resolves to the tool call result.
    */
-  executeToolCall?(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string>;
+  executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string>;
 
-  // Future methods could include:
-  // generateEmbedding(text: string): Promise<EmbeddingResponse>;
-  // listModels(): Promise<ModelListResponse>;
+  /**
+   * Generates text with optional tools.
+   * @param request - The request object containing messages and other parameters.
+   * @returns A promise that resolves to the provider's response.
+   */
+  generateText(request: ProviderRequest): Promise<ProviderResponse>;
+
+  /**
+   * Continues a conversation with tool results.
+   * @param request - The request object containing messages, tool calls, and tool outputs.
+   * @returns A promise that resolves to the provider's response.
+   */
+  generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse>;
 }
+
+// Future methods could include:
+// generateEmbedding(text: string): Promise<EmbeddingResponse>;
+// listModels(): Promise<ModelListResponse>;
