@@ -1,4 +1,7 @@
 import { jest } from '@jest/globals';
+jest.mock('../../../src/mcp/mcpServer', () => ({
+  McpServer: jest.fn().mockImplementation(() => ({})),
+}));
 import { Command } from 'commander';
 
 // Patch process.exit type for test

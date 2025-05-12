@@ -256,7 +256,7 @@ export function capitalize(str) {
 }
 
 export function truncate(str, length = 50) {
-  return str.length > length ? str.substring(0, length) + '...' : str;
+  return str.length > length ? str.slice(0, length) + '...' : str;
 }
 </file>
 </related_files>

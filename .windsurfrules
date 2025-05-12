@@ -1,4 +1,6 @@
-1. Always log your Progress to PROGRESS.jsonl - each line should be a valid JSON object and should contain the following fields:
+1. Write robust and testable code by fully adopting dependency injection
+
+2. Always log your Progress to PROGRESS.jsonl - each line should be a valid JSON object and should contain the following fields:
     - timestamp: the current time in ISO 8601 format
     - action: the action you are taking
     - file: the file you are working on
@@ -11,7 +13,7 @@
     - task_assigned_to: the person assigned to the task you are working on
     - task_status: the status of the task you are working on
 
-2. Always update task status in TASKS.jsonl - each line should be a valid JSON object and should contain the following fields:
+3. Always update task status in TASKS.jsonl - each line should be a valid JSON object and should contain the following fields:
     - task_number: the task number
     - title: the task title
     - description: the task description
@@ -19,32 +21,32 @@
     - status: the status of the task
 
 
-3. For Any new files added, run the "bash tree.sh" CLI command to list all the files and directories and update DIRECTORY.md
+4. For Any new files added, run the "bash tree.sh" CLI command to list all the files and directories and update DIRECTORY.md
 
-4. Always read the DIRECTORY.md to understand the project structure before working on a task
- - 4.1 when looking for files, always first refer to the DIRECTORY.md before using filesystem search tool
- - 4.2 if DIRECTORY.md is not helpful, only then should you use the filesystem search tool
+5. Always read the DIRECTORY.md to understand the project structure before working on a task
+ - 5.1 when looking for files, always first refer to the DIRECTORY.md before using filesystem search tool
+ - 5.2 if DIRECTORY.md is not helpful, only then should you use the filesystem search tool
 
 
-5. Always read the TASKS.jsonl to understand the task list, and to understand the current task and its status before working on a task
+6. Always read the TASKS.jsonl to understand the task list, and to understand the current task and its status before working on a task
 
-6. Always read the PROGRESS.jsonl to understand the progress made on the project before working on a task
+7. Always read the PROGRESS.jsonl to understand the progress made on the project before working on a task
 
-7. Always read the README.md to understand the project requirements before working on a task
+8. Always read the README.md to understand the project requirements before working on a task
 
-8. Before marketing the task as complete, make sure to run tests and ensure that the code works as expected - only if test is applicable
+9. Before marketing the task as complete, make sure to run tests and ensure that the code works as expected - only if test is applicable
 
-9. For every completed task, do a "git add --all", "git commit" and "git push"
+10. For every completed task, do a "git add --all", "git commit" and "git push"
 
-10. Everytime you need to use a library or third-party package/SDK/API, always make sure that you look-out for the latest documentation and use the latest version of the library or third-party package by using the tool "Context7" - if the library or third-party package is not available in the tool, use the web to search for the latest documentation and use the latest version of the library or third-party package
+11. Everytime you need to use a library or third-party package/SDK/API, always make sure that you look-out for the latest documentation and use the latest version of the library or third-party package by using the tool "Context7" - if the library or third-party package is not available in the tool, use the web to search for the latest documentation and use the latest version of the library or third-party package
 
-11. After creating a file, always run "npm run lint --fix" to see any type/linting errors, and proceed to fix if errors are found - then run "npm run lint" to ensure that there are no errors - repeat process until there are no errors
+12. After creating or editing a file, always run "npm run lint --fix" to see any type/linting errors, and proceed to fix if errors are found - then run "npm run lint" to ensure that there are no errors - repeat process until there are no errors
 
-12. Always run "npm run type-check" to ensure that there are no type errors - repeat process until there are no errors
+13. Always run "npm run type-check" to ensure that there are no type errors - repeat process until there are no errors
 
-13. when creating/editing a javascript or typescript file, check the line count of the file and make sure it does not exceed the ideal line count per file. you can use tools such as "wc -l filename" to check the line count of the file of an existing file or count lines of a string using the tool "wc -l <(echo "string")" before creating a new file to make sure it does not exceed the ideal line count per file
+14. when creating/editing a javascript or typescript file, check the line count of the file and make sure it does not exceed the ideal line count per file. you can use tools such as "wc -l filename" to check the line count of the file of an existing file or count lines of a string using the tool "wc -l <(echo "string")" before creating a new file to make sure it does not exceed the ideal line count per file
 
-14. If the file lines number exceeds the suggested number of lines based on "Rules: Ideal Line Count per File", then split the file into multiple files, just use "import" and "export" to share code between files, or use composables
+15. If the file lines number exceeds the suggested number of lines based on "Rules: Ideal Line Count per File", then split the file into multiple files, just use "import" and "export" to share code between files, or use composables
 
 ### ✅ **Rules: Ideal Line Count per File**
 
@@ -85,3 +87,202 @@
  - 1.1 Import types/interfaces from the revelant modules types directory
  
 2. Consult Context7 tool to get the latest documentation of the library or third-party package before creating/mocking tests
+
+Yes — based on your directive to use a **single opinionated paradigm**, here's the **updated Jest mocking guide**, now **fully incorporating `jest-mock-extended`** as the only mocking standard. This version is production-ready and meant to be handed off to junior developers without ambiguity.
+
+---
+
+# ✅ Jest Mocking Standard for TypeScript Projects
+
+This document defines the **only approved method** for mocking and testing in our TypeScript project using [`jest-mock-extended`](https://www.npmjs.com/package/jest-mock-extended). All mocks must follow this structure.
+
+## ⚙️ TypeScript Config
+
+### `tsconfig.test.json`
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": false,
+    "noImplicitAny": false,
+    "strictFunctionTypes": false,
+    "skipLibCheck": true
+  },
+  "include": ["tests/**/*.ts"]
+}
+```
+
+---
+
+## ⚙️ Jest Config
+
+### `jest.config.ts`
+
+```ts
+import type { Config } from 'jest';
+
+const config: Config = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  testMatch: ['**/tests/**/*.test.ts'],
+  moduleFileExtensions: ['ts', 'js'],
+  rootDir: '.',
+};
+
+export default config;
+```
+
+---
+
+## 📦 Install Dev Dependencies
+
+```bash
+npm install --save-dev jest ts-jest typescript jest-mock-extended
+```
+
+---
+
+## ✅ Approved Mocking Pattern (Simple Class or Interface)
+
+### `src/services/fileService.ts`
+
+```ts
+export class FileService {
+  read(path: string): string {
+    return `file content from ${path}`;
+  }
+}
+```
+
+---
+
+### `tests/services/fileService.test.ts`
+
+```ts
+import { MockProxy, mock, mockReset } from 'jest-mock-extended';
+import { FileService } from '../../../src/services/fileService';
+
+describe('FileService', () => {
+  let fileServiceMock: MockProxy<FileService>;
+
+  beforeEach(() => {
+    fileServiceMock = mock<FileService>();
+    mockReset(fileServiceMock);
+  });
+
+  test('should return mocked file content', () => {
+    fileServiceMock.read.mockReturnValue('mocked content');
+    expect(fileServiceMock.read('foo.txt')).toBe('mocked content');
+  });
+});
+```
+
+---
+
+## ✅ Advanced Mocking with `calledWith()` Matchers
+
+```ts
+import { MockProxy, mock } from 'jest-mock-extended';
+
+interface PartyProvider {
+  getSongs: (type: string) => string[];
+}
+
+const provider: MockProxy<PartyProvider> = mock<PartyProvider>();
+
+provider.getSongs.calledWith('disco party').mockReturnValue([
+  'Dance the night away',
+  'Stayin Alive',
+]);
+
+expect(provider.getSongs('disco party')).toEqual([
+  'Dance the night away',
+  'Stayin Alive',
+]);
+```
+
+---
+
+## ✅ Deep Mocks for Nested Interfaces/Classes
+
+```ts
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+
+interface Service {
+  inner: {
+    fetchData: (id: number) => string;
+  };
+}
+
+const serviceMock: DeepMockProxy<Service> = mockDeep<Service>();
+
+serviceMock.inner.fetchData.calledWith(1).mockReturnValue('data-1');
+
+expect(serviceMock.inner.fetchData(1)).toBe('data-1');
+```
+
+---
+
+## ✅ Enforcing Return Values (Fallback Error)
+
+```ts
+import { mock } from 'jest-mock-extended';
+
+interface StrictAPI {
+  fetch: () => string;
+}
+
+const strictMock = mock<StrictAPI>({}, {
+  fallbackMockImplementation: () => {
+    throw new Error('missing return value');
+  }
+});
+
+expect(() => strictMock.fetch()).toThrowError('missing return value');
+```
+
+---
+
+## ✅ Resetting Mocks
+
+Always use `mockReset()` inside `beforeEach` to avoid state leaks:
+
+```ts
+import { mockReset } from 'jest-mock-extended';
+
+beforeEach(() => {
+  mockReset(myMock);
+});
+```
+
+---
+
+## 🔐 Rules & Conventions
+
+| Rule                                               | Description                              |
+| -------------------------------------------------- | ---------------------------------------- |
+| ✅ Use `mock<T>()` or `mockDeep<T>()`               | Always use `jest-mock-extended` helpers  |
+| ✅ Use `MockProxy<T>` or `DeepMockProxy<T>`         | Ensures correct mock typings             |
+| ✅ Reset mocks with `mockReset()` in `beforeEach`   | Prevents stale state                     |
+| ✅ Use `calledWith()` for argument matching         | Improves readability and type safety     |
+| ❌ Do not use `jest.mock(...)` manually             | We standardize on type-safe mocking only |
+| ❌ Do not use `any`, `@ts-ignore`, or untyped mocks | Type safety must be preserved            |
+
+---
+
+## 🧼 Cleanup Notes
+
+* Always use one mock object per test file
+* Do not reuse mock instances across tests
+* All return values must be explicitly defined or throw
+
+## ✅ Developer Checklist
+
+| Task                                        | Done? |
+| ------------------------------------------- | ----- |
+| `tsconfig.test.json` present and used?      | ✅    |
+| `jest-mock-extended` used for all mocks?    | ✅    |
+| `jest.resetModules()` used in `beforeEach`? | ✅    |
+| No hardcoded fake structures?               | ✅    |
+| All mock types inferred from real classes?  | ✅    |

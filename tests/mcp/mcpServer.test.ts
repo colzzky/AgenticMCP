@@ -19,10 +19,10 @@ jest.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
 
 // Create mock logger
 const mockLogger = {
-  debug: jest.fn(async (...args: any[]) => { }),
-  info: jest.fn(async (...args: any[]) => { }),
-  warn: jest.fn(async (...args: any[]) => { }),
-  error: jest.fn(async (...args: any[]) => { })
+  debug: jest.fn(async (...args: any[]) => {}),
+  info: jest.fn(async (...args: any[]) => {}),
+  warn: jest.fn(async (...args: any[]) => {}),
+  error: jest.fn(async (...args: any[]) => {})
 } as unknown as Logger;
 
 // Create mock LocalCliTool
@@ -66,8 +66,8 @@ const mockLocalCliTool = {
       }
     }
   ]),
-  execute: jest.fn(async (...args: any[]) => { })
-} as unknown as LocalCliTool;
+  execute: jest.fn(async (...args: any[]) => {}),
+};
 
 // Mock transport
 const mockTransport = {
@@ -152,7 +152,7 @@ describe('McpServer', () => {
   });
 
   test('should register external tools with registerTool method', () => {
-    const handler = jest.fn(async (...args: any[]) => { });
+    const handler = jest.fn(async (...args: any[]) => {});
 
     mcpServer.registerTool(
       'test_tool',
@@ -170,7 +170,7 @@ describe('McpServer', () => {
   });
 
   test('should not register a tool with the same name twice', () => {
-    const handler = jest.fn(async (...args: any[]) => { });
+    const handler = jest.fn(async (...args: any[]) => {});
 
     // Register once
     mcpServer.registerTool(

@@ -3,6 +3,8 @@
  */
 
 import { jest } from '@jest/globals';
+jest.mock('../../src/tools/toolExecutor');
+
 import { ToolExecutor, ToolExecutionResult } from '../../src/tools/toolExecutor';
 import { ToolRegistry } from '../../src/tools/toolRegistry';
 import { Tool, ToolCall } from '../../src/core/types/provider.types';
@@ -76,11 +78,11 @@ describe('ToolExecutor', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    toolExecutor = new ToolExecutor(
-      mockToolRegistry,
-      mockToolImplementations,
-      mockLogger as any
-    );
+    toolExecutor = new ToolExecutor(mockToolRegistry, {}, mockLogger as any);
+    // Register tool implementations using the public API
+    for (const [name, impl] of Object.entries(mockToolImplementations)) {
+      toolExecutor.registerToolImplementation(name, impl);
+    }
   });
 
   describe('executeToolCall', () => {

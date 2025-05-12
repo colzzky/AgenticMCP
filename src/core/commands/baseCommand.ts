@@ -4,7 +4,25 @@
 
 import type { Command, CommandContext, CommandOutput } from '../types/command.types';
 import type { Logger } from '../types/logger.types';
-import { FilePathProcessor } from '../../context/filePathProcessor';
+import type { FilePathProcessor } from '../../context/filePathProcessor';
+
+/**
+ * Factory interface for creating FilePathProcessors
+ */
+export interface FilePathProcessorFactory {
+  create(logger: Logger): FilePathProcessor;
+}
+
+/**
+ * Default implementation of the FilePathProcessorFactory
+ */
+export class DefaultFilePathProcessorFactory implements FilePathProcessorFactory {
+  create(logger: Logger): FilePathProcessor {
+    // Import is done here to avoid circular dependency
+    const { FilePathProcessor } = require('../../context/filePathProcessor');
+    return new FilePathProcessor(logger);
+  }
+}
 
 /**
  * Base class for commands that need to process file paths as context
@@ -20,9 +38,14 @@ export abstract class BaseCommand implements Command {
   }>;
   
   protected logger: Logger;
+  protected filePathProcessorFactory: FilePathProcessorFactory;
 
-  constructor(logger: Logger) {
+  constructor(
+    logger: Logger,
+    filePathProcessorFactory?: FilePathProcessorFactory
+  ) {
     this.logger = logger;
+    this.filePathProcessorFactory = filePathProcessorFactory || new DefaultFilePathProcessorFactory();
   }
 
   /**
@@ -36,8 +59,8 @@ export abstract class BaseCommand implements Command {
     // Convert args to strings, filtering out non-string values
     const stringArgs = args.filter(arg => typeof arg === 'string') as string[];
     
-    // Create a file path processor
-    const processor = new FilePathProcessor(this.logger);
+    // Create a file path processor using the factory (for better testability)
+    const processor = this.filePathProcessorFactory.create(this.logger);
     
     // Process the arguments
     return processor.processArgs(stringArgs);

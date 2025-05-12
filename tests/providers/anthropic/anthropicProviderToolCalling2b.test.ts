@@ -1,8 +1,8 @@
-// @ts-nocheck
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { AnthropicProviderSpecificConfig } from '../../../src/core/types/config.types';
 import { ProviderRequest, Tool } from '../../../src/core/types/provider.types';
 import { AnthropicProvider } from '../../../src/providers/anthropic/anthropicProvider';
+import { Anthropic } from '@anthropic-ai/sdk';
 
 describe('AnthropicProvider Tool Calling Batch 2 (Part B)', () => {
   let provider;
@@ -24,7 +24,7 @@ describe('AnthropicProvider Tool Calling Batch 2 (Part B)', () => {
         content: [
           { type: 'text', text: 'Hello! How can I help you today?' }
         ],
-        model: params.model || 'claude-3-5-sonnet-latest',
+        model: (params as { model: string }).model || 'claude-3-5-sonnet-latest',
         usage: {
           input_tokens: 10,
           output_tokens: 15,
@@ -39,7 +39,7 @@ describe('AnthropicProvider Tool Calling Batch 2 (Part B)', () => {
     const MockAnthropicClass = jest.fn().mockImplementation(() => mockAnthropicClient);
     mockInfo = jest.spyOn(console, 'log').mockImplementation(() => {});
     mockError = jest.spyOn(console, 'error').mockImplementation(() => {});
-    provider = new AnthropicProvider(MockAnthropicClass);
+    provider = new AnthropicProvider(MockAnthropicClass as unknown as typeof Anthropic);
     baseConfig = {
       instanceName: 'test-anthropic',
       apiKey: 'test-anthropic-key',

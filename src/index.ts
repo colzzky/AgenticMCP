@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import pkg from '../package.json' with { type: 'json' };
 import { registerConfigCommands } from './commands/configCommands';
 import { registerCredentialCommands } from './commands/credentialCommands';
+import { McpCommands } from './commands/mcpCommands';
 import { ToolCommands } from './commands/toolCommands';
 import { LLMCommand } from './commands/llmCommand';
 import { logger } from './core/utils/index';
@@ -73,6 +74,10 @@ async function main(): Promise<void> {
   // Register command groups
   registerConfigCommands(program);
   registerCredentialCommands(program);
+
+  // Register MCP commands
+  const mcpCommands = new McpCommands(configManager, logger);
+  mcpCommands.registerCommands(program);
 
   // Register LLM command with file path context support
   const llmCommand = new LLMCommand();

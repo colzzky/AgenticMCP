@@ -39,32 +39,32 @@ describe('FilePathProcessor', () => {
 
     // Mock path.isAbsolute
     mockPath.isAbsolute = jest.fn() as unknown as jest.Mock;
-(mockPath.isAbsolute as jest.Mock).mockImplementation((...args: unknown[]) => {
-  const p = args[0] as string;
-
-    // Mock path.resolve
-    mockPath.resolve = jest.fn() as unknown as jest.Mock;
-    (mockPath.resolve as jest.Mock).mockImplementation((...args: unknown[]) => {
-      return (args as string[]).join('/').replace(/\/+/, '/');
-    });
-
-    // Mock path.basename
-    mockPath.basename = jest.fn() as unknown as jest.Mock;
-    (mockPath.basename as jest.Mock).mockImplementation((...args: unknown[]) => {
+    (mockPath.isAbsolute as jest.Mock).mockImplementation((...args: unknown[]) => {
       const p = args[0] as string;
+
+      // Mock path.resolve
+      mockPath.resolve = jest.fn() as unknown as jest.Mock;
+      (mockPath.resolve as jest.Mock).mockImplementation((...args: unknown[]) => {
+        return (args as string[]).join('/').replace(/\/+/, '/');
+      });
+
+      // Mock path.basename
+      mockPath.basename = jest.fn() as unknown as jest.Mock;
+      (mockPath.basename as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const p = args[0] as string;
+        return p.split('/').pop() || '';
+      });
       return p.split('/').pop() || '';
     });
-  return p.split('/').pop() || '';
-});
 
     // Mock path.extname
     mockPath.extname = jest.fn() as unknown as jest.Mock;
-(mockPath.extname as jest.Mock).mockImplementation((...args: unknown[]) => {
-  const p = args[0] as string;
-  const filename = p.split('/').pop() || '';
-  const dotIndex = filename.lastIndexOf('.');
-  return dotIndex === -1 ? '' : filename.slice(dotIndex);
-});
+    (mockPath.extname as jest.Mock).mockImplementation((...args: unknown[]) => {
+      const p = args[0] as string;
+      const filename = p.split('/').pop() || '';
+      const dotIndex = filename.lastIndexOf('.');
+      return dotIndex === -1 ? '' : filename.slice(dotIndex);
+    });
 
     // Setup mock logger
     mockLogger = {
@@ -73,11 +73,11 @@ describe('FilePathProcessor', () => {
       warn: jest.fn(),
       error: jest.fn()
     };
-    
+
     // Create processor instance
     processor = new FilePathProcessor(mockLogger);
   });
-  
+
   describe('processArgs', () => {
     it('should identify file paths in arguments', async () => {
       // Mock fs.access to make some paths exist
@@ -171,14 +171,14 @@ describe('FilePathProcessor', () => {
 
       // Mock fs.readdir to return directory contents
       mockFs.readdir = jest.fn() as unknown as jest.Mock;
-mockFs.readdir.mockImplementation(() => Promise.resolve([
-  { name: 'file1.txt', isDirectory: () => false },
-  { name: 'file2.md', isDirectory: () => false }
-]));
+      mockFs.readdir.mockImplementation(() => Promise.resolve([
+        { name: 'file1.txt', isDirectory: () => false },
+        { name: 'file2.md', isDirectory: () => false }
+      ]));
 
       // Mock fs.readFile to return file content
       mockFs.readFile = jest.fn() as unknown as jest.Mock;
-mockFs.readFile.mockImplementation(() => Promise.resolve('File content'));
+      mockFs.readFile.mockImplementation(() => Promise.resolve('File content'));
 
       // Process arguments with directory path
       const args = ['command', '/test/dir', 'prompt text'];
@@ -195,23 +195,23 @@ mockFs.readFile.mockImplementation(() => Promise.resolve('File content'));
     it('should handle errors during file reading', async () => {
       // Mock fs.access to make file path exist
       mockFs.access = jest.fn() as unknown as jest.Mock;
-mockFs.access.mockImplementation(() => Promise.resolve());
+      mockFs.access.mockImplementation(() => Promise.resolve());
 
       // Mock fs.stat to return file status
       mockFs.stat = jest.fn() as unknown as jest.Mock;
-mockFs.stat.mockImplementation(() => Promise.resolve({
+      mockFs.stat.mockImplementation(() => Promise.resolve({
         isDirectory: () => false,
         size: 100
       }));
 
       // Mock fs.readFile to throw error
       mockFs.readFile = jest.fn() as unknown as jest.Mock;
-mockFs.readFile.mockImplementation(() => Promise.reject(new Error('Error reading file')));
+      mockFs.readFile.mockImplementation(() => Promise.reject(new Error('Error reading file')));
 
       // Process arguments with file path that will error during reading
       const args = ['command', '/test/error.txt', 'prompt text'];
       const result = await processor.processArgs(args);
-      
+
       // Verify that file path was identified but context is empty
       expect(result.remainingArgs).toEqual(['command', 'prompt text']);
       expect(result.context).toBe('');

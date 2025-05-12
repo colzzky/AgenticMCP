@@ -1,108 +1,100 @@
 /**
- * @file Tests for BaseCommand
+ * @file Tests for BaseCommand using jest-mock-extended following our testing standards
  */
 
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { BaseCommand } from '../../../src/core/commands/baseCommand';
-import { FilePathProcessor } from '../../../src/context/filePathProcessor';
+import { mock, mockDeep, MockProxy } from 'jest-mock-extended';
+import { BaseCommand, FilePathProcessorFactory } from '../../../src/core/commands/baseCommand';
+
+// Import types from their defined locations
 import type { CommandContext, CommandOutput } from '../../../src/core/types/command.types';
+import type { Logger } from '../../../src/core/types/logger.types';
+import type { FilePathProcessor } from '../../../src/context/filePathProcessor';
 
-// Create mock for FilePathProcessor
-jest.mock('../../../src/context/filePathProcessor', () => {
-  return {
-    FilePathProcessor: jest.fn().mockImplementation(() => {
-      return {
-        processArgs: jest.fn<(args: string[]) => Promise<{ context: string; remainingArgs: string[] }>>().mockImplementation(async (args) => {
-          // Simple mock implementation for testing
-          const fileArgs = args.filter((arg: string) => arg.includes('.txt') || arg.includes('.md'));
-          const remainingArgs = args.filter((arg: string) => !fileArgs.includes(arg));
-
-          const context = fileArgs.length > 0 ?
-            `Content from files: ${fileArgs.join(', ')}` :
-            '';
-
-          return { context, remainingArgs };
-        })
-      };
-    }) as unknown as jest.MockedClass<typeof FilePathProcessor>
-  };
-});
-
-// Mock logger
-jest.mock('../../../src/core/utils/logger', () => ({
-  logger: {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn()
-  }
-}));
-
-// Create test implementation of BaseCommand
+/**
+ * Test implementation of BaseCommand with proper dependency injection
+ * for verifying the base functionality
+ */
+/**
+ * BaseCommand implementation that properly supports DI
+ * and provides test-specific functionality
+ */
 class TestCommand extends BaseCommand {
-  name = 'test';
-  description = 'Test command';
-
-  processedContext = '';
-  processedArgs: string[] = [];
-
-  constructor(logger: any) {
-    super(logger);
+  public name = 'test';
+  public description = 'Test command';
+  
+  // Properties for test verification
+  public processedContext = '';
+  public processedArgs: string[] = [];
+  
+  constructor(
+    logger: Logger,
+    protected filePathProcessorFactory: FilePathProcessorFactory
+  ) {
+    super(logger, filePathProcessorFactory);
   }
-
-  async execute(context: CommandContext, ...args: unknown[]): Promise<CommandOutput> {
-    const { context: fileContext, remainingArgs } = await this.processFileArgs(args);
-
-    this.processedContext = fileContext;
-    this.processedArgs = remainingArgs;
-
+  
+  public getHelp(): string {
+    return 'Test command help';
+  }
+  
+  public async execute(context: CommandContext, ...args: unknown[]): Promise<CommandOutput> {
+    // Process file paths from arguments
+    const result = await this.processFileArgs(args as string[]);
+    
+    // Store for test verification
+    this.processedContext = result.context;
+    this.processedArgs = result.remainingArgs;
+    
+    // Return success output
     return {
       success: true,
       message: 'Command executed',
-      data: { fileContext, remainingArgs }
+      data: {
+        context: result.context,
+        args: result.remainingArgs
+      }
     };
-  }
-
-  getHelp(): string {
-    return 'Test command help';
   }
 }
 
 describe('BaseCommand', () => {
+  // Strongly typed mock proxies using jest-mock-extended
+  let mockLogger: MockProxy<Logger>;
+  let mockFileProcessor: MockProxy<FilePathProcessor>;
+  let mockFileProcessorFactory: MockProxy<FilePathProcessorFactory>;
   let command: TestCommand;
-  let mockLogger: any;
 
   beforeEach(() => {
-    // Reset mocks
+    // Reset modules and mocks for each test to ensure isolation
+    jest.resetModules();
     jest.clearAllMocks();
-
-    // Setup mock logger
-    mockLogger = {
-      debug: jest.fn(),
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn()
-    };
-
-    // Create command instance
-    command = new TestCommand(mockLogger);
-
-    // Mock FilePathProcessor implementation
-    (FilePathProcessor.prototype.processArgs as jest.MockedFunction<(args: string[]) => Promise<{ context: string; remainingArgs: string[] }>>).mockImplementation(async (args) => {
-      // Simple mock implementation for testing
-      const fileArgs = args.filter((arg: string) => arg.includes('.txt') || arg.includes('.md'));
-      const remainingArgs = args.filter((arg: string) => !fileArgs.includes(arg));
-
-      const context = fileArgs.length > 0 ?
-        `Content from files: ${fileArgs.join(', ')}` :
-        '';
-
-      return { context, remainingArgs };
-    });
+    
+    // Create fresh mocks using jest-mock-extended for type-safety
+    mockLogger = mock<Logger>();
+    mockFileProcessor = mock<FilePathProcessor>();
+    mockFileProcessorFactory = mock<FilePathProcessorFactory>();
+    
+    // Configure the factory mock to return our file processor mock
+    // This properly follows DI principles without using jest.mock
+    mockFileProcessorFactory.create.mockReturnValue(mockFileProcessor);
+    
+    // Create the command with our mocks injected via constructor
+    command = new TestCommand(mockLogger, mockFileProcessorFactory);
+    
+    // Reset test properties to initial state
+    command.processedArgs = [];
+    command.processedContext = '';
   });
 
   describe('processFileArgs', () => {
     it('should process file paths in arguments', async () => {
+      // Setup mock behavior using jest-mock-extended
+      mockFileProcessor.processArgs.mockResolvedValueOnce({
+        context: 'Content from files: file.txt, document.md',
+        remainingArgs: ['arg1', 'arg2']
+      });
+      
       // Execute command with file paths
       const result = await command.execute(
         { options: {} },
@@ -111,29 +103,28 @@ describe('BaseCommand', () => {
         'arg2',
         'document.md'
       );
-
-      // Verify that FilePathProcessor was instantiated
-      expect(FilePathProcessor).toHaveBeenCalledWith(mockLogger);
-
-      // Verify that processArgs was called with string arguments
-      expect(FilePathProcessor.prototype.processArgs).toHaveBeenCalledWith([
-        'arg1', 'file.txt', 'arg2', 'document.md'
-      ]);
-
-      // Verify processed context and remaining args
-      expect(command.processedContext).toContain('file.txt');
-      expect(command.processedContext).toContain('document.md');
-      expect(command.processedArgs).toEqual(['arg1', 'arg2']);
-
-      // Verify command output
+      
+      // Verify the command results
       expect(result.success).toBe(true);
-      expect(result.data).toEqual({
-        fileContext: expect.stringContaining('Content from files'),
-        remainingArgs: ['arg1', 'arg2']
-      });
+      expect(result.message).toBe('Command executed');
+      
+      // Verify our mock was called with the expected arguments
+      expect(mockFileProcessor.processArgs).toHaveBeenCalledWith(
+        ['arg1', 'file.txt', 'arg2', 'document.md']
+      );
+      
+      // Verify the context was processed correctly
+      expect(command.processedContext).toBe('Content from files: file.txt, document.md');
+      expect(command.processedArgs).toEqual(['arg1', 'arg2']);
     });
-
+    
     it('should handle arguments with no file paths', async () => {
+      // Setup mock behavior for this test case
+      mockFileProcessor.processArgs.mockResolvedValueOnce({
+        context: '',
+        remainingArgs: ['arg1', 'arg2', 'arg3']
+      });
+      
       // Execute command with no file paths
       const result = await command.execute(
         { options: {} },
@@ -141,21 +132,24 @@ describe('BaseCommand', () => {
         'arg2',
         'arg3'
       );
-
-      // Verify processed context and remaining args
+      
+      // Verify the mock was called with the expected arguments
+      expect(mockFileProcessor.processArgs).toHaveBeenCalledWith(['arg1', 'arg2', 'arg3']);
+      
+      // Verify the result
+      expect(result.success).toBe(true);
       expect(command.processedContext).toBe('');
       expect(command.processedArgs).toEqual(['arg1', 'arg2', 'arg3']);
-
-      // Verify command output
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual({
-        fileContext: '',
-        remainingArgs: ['arg1', 'arg2', 'arg3']
-      });
     });
 
     it('should handle non-string arguments', async () => {
-      // Execute command with non-string arguments
+      // Setup mock behavior for this specific test case
+      mockFileProcessor.processArgs.mockResolvedValueOnce({
+        context: '',
+        remainingArgs: ['arg1']
+      });
+      
+      // Execute with mixed argument types
       const result = await command.execute(
         { options: {} },
         'arg1',
@@ -163,12 +157,14 @@ describe('BaseCommand', () => {
         true,
         { key: 'value' }
       );
-
-      // Verify that non-string args were filtered
-      expect(FilePathProcessor.prototype.processArgs).toHaveBeenCalledWith(['arg1']);
-
-      // Verify command output
+      
+      // Verify the mock was called with only the string arguments
+      expect(mockFileProcessor.processArgs).toHaveBeenCalledWith(['arg1']);
+      
+      // Verify the result
       expect(result.success).toBe(true);
+      expect(command.processedContext).toBe('');
+      expect(command.processedArgs).toEqual(['arg1']);
     });
   });
 });

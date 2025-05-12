@@ -19,8 +19,9 @@ export enum roleEnums {
 export const baseRoleSchema = {
   prompt: z.string().describe("The task or question"),
   base_path: z.string().describe("Base directory for all file operations (security boundary)"),
-  context: z.string().optional().describe("Additional context or background information"),
+  context: z.string().describe("Additional context or background information"),
   related_files: z.array(z.string()).optional().describe("Paths to related files (relative to base_path)"),
+  allow_file_overwrite: z.boolean().optional().describe("Allow overwriting existing files"),
   role: z.enum([roleEnums.CODER, roleEnums.QA, roleEnums.PROJECT_MANAGER, roleEnums.CPO, roleEnums.UI_UX, roleEnums.SUMMARIZER, roleEnums.REWRITER, roleEnums.ANALYST, roleEnums.CUSTOM]).optional().describe("The role to assume"),
 };
 const baseRoleSchemaObject = z.object(baseRoleSchema);

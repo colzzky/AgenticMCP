@@ -3,7 +3,7 @@ import { LocalCliTool } from '../../tools/localCliTool.js';
 import type { Logger } from '../../core/types/logger.types.js';
 import type { LLMProvider } from '../../core/types/provider.types.js';
 import { constructXmlPrompt, selectModelForRole } from './xmlPromptUtils';
-import { roleEnums } from './roleSchemas';
+import { roleEnums, AllRoleSchemas } from './roleSchemas';
 
 /**
  * Processes file operations found in the LLM response
@@ -82,17 +82,17 @@ export async function processFileOperations(
  * Handles execution of a role-based tool
  */
 export async function handleRoleBasedTool(
-  args: any,
+  args: AllRoleSchemas,
   role: roleEnums,
   logger: Logger,
   llmProvider: LLMProvider
 ): Promise<any> {
-  const { prompt, base_path, context, related_files, ...specializedArgs } = args;
+  const { prompt, base_path, context, related_files, allow_file_overwrite } = args;
   // Create a dedicated LocalCliTool instance with the specified base path
   // Set allowFileOverwrite to false by default for safety
   const dedicatedLocalCliTool = new LocalCliTool({
     baseDir: path.resolve(base_path),
-    allowFileOverwrite: false // Default to safe mode - require explicit allowOverwrite for existing files
+    allowFileOverwrite: allow_file_overwrite || false // Default to safe mode - require explicit allowOverwrite for existing files
   }, logger);
   const fileContents = [] as Array<{ path: string, content: string }>;
   if (related_files && related_files.length > 0) {
@@ -105,10 +105,10 @@ export async function handleRoleBasedTool(
       }
     }
   }
-  const systemPrompt = constructXmlPrompt(role, prompt, context, fileContents, specializedArgs);
+  const systemPrompt = constructXmlPrompt(role, prompt, context, fileContents, args);
   const messages = [
     { role: 'system' as const, content: systemPrompt },
-    { role: 'user' as const, content: `Please address the ${role === 'custom' ? args.role : role} task.` }
+    { role: 'user' as const, content: `Please address the ${role === roleEnums.CUSTOM ? args.role : role} task.` }
   ];
   try {
     logger.info(`Executing ${role} role-based tool with prompt: ${prompt.slice(0, 100)}...`);

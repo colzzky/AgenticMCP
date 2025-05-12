@@ -79,6 +79,310 @@ When implementing new LLM providers:
 - Import types/interfaces from the relevant modules' types directory
 - Consult latest documentation of libraries before creating/mocking tests
 
+## 🧪 Jest Mocking Guide for TypeScript Projects
+
+This guide defines the **only approved way** we write and manage Jest mocks in our TypeScript project. Follow this strictly for consistency and maintainability.
+
+### ⚙️ 1. `tsconfig.test.json`
+
+Create this file to apply relaxed type-checking only in test files:
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": false,
+    "noImplicitAny": false,
+    "strictFunctionTypes": false,
+    "skipLibCheck": true
+  },
+  "include": ["tests/**/*.ts"]
+}
+```
+
+### ⚙️ 2. `jest.config.ts`
+
+```ts
+import type { Config } from 'jest';
+
+const config: Config = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  testMatch: ['**/tests/**/*.test.ts'],
+  moduleFileExtensions: ['ts', 'js'],
+  rootDir: '.',
+};
+
+export default config;
+```
+
+### 📦 3. Install Required Dev Dependencies
+
+```bash
+npm install --save-dev jest ts-jest typescript jest-mock-extended
+```
+
+### 🧰 4. Mocking Pattern for Real Code
+
+#### ✅ Real Service (e.g. `src/services/fileService.ts`)
+
+```ts
+export class FileService {
+  read(path: string): string {
+    // read file logic
+    return `content of ${path}`;
+  }
+}
+```
+
+#### ✅ Test File (e.g. `tests/services/fileService.test.ts`)
+
+```ts
+import { mock } from 'jest-mock-extended';
+import { FileService } from '../../../src/services/fileService';
+
+describe('FileService', () => {
+  let fileServiceMock = mock<FileService>();
+
+  beforeEach(() => {
+    jest.resetModules(); // Reset cache
+    fileServiceMock = mock<FileService>(); // Fresh mock per test
+  });
+
+  test('should return mocked content', () => {
+    fileServiceMock.read.mockReturnValue('mocked content');
+
+    const content = fileServiceMock.read('file.txt');
+
+    expect(content).toBe('mocked content');
+  });
+});
+```
+
+### 🧱 5. Dynamic Sync with Real Code
+
+We do **not manually recreate class structures** in tests. We use `jest-mock-extended` to auto-generate mocks that follow the real class or interface.
+
+If the real code changes, **the mock will reflect it** automatically via TypeScript types.
+
+### 🧼 6. Clean-Up Rules
+
+* Always call `jest.resetModules()` in `beforeEach`
+* Always regenerate mocks per test
+* Do not use hardcoded object mocks
+* Do not use `any` or `@ts-ignore`
+
+### 🚫 Forbidden Patterns
+
+* ❌ `jest.mock('../myModule')` with static mock objects
+* ❌ Mocking without types
+* ❌ One-off stubs defined inline with no type checking
+
+### ✅ Developer Checklist
+
+| Task                                        | Done? |
+| ------------------------------------------- | ----- |
+| `tsconfig.test.json` present and used?      | ✅    |
+| `jest-mock-extended` used for all mocks?    | ✅    |
+| `jest.resetModules()` used in `beforeEach`? | ✅    |
+| No hardcoded fake structures?               | ✅    |
+| All mock types inferred from real classes?  | ✅    |
+
+## ✅ Jest Mocking Standard for TypeScript Projects
+
+This document defines the **only approved method** for mocking and testing in our TypeScript project using [`jest-mock-extended`](https://www.npmjs.com/package/jest-mock-extended). All mocks must follow this structure.
+
+## ⚙️ TypeScript Config
+
+### `tsconfig.test.json`
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": false,
+    "noImplicitAny": false,
+    "strictFunctionTypes": false,
+    "skipLibCheck": true
+  },
+  "include": ["tests/**/*.ts"]
+}
+```
+
+---
+
+## ⚙️ Jest Config
+
+### `jest.config.ts`
+
+```ts
+import type { Config } from 'jest';
+
+const config: Config = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  testMatch: ['**/tests/**/*.test.ts'],
+  moduleFileExtensions: ['ts', 'js'],
+  rootDir: '.',
+};
+
+export default config;
+```
+
+---
+
+## 📦 Install Dev Dependencies
+
+```bash
+npm install --save-dev jest ts-jest typescript jest-mock-extended
+```
+
+---
+
+## ✅ Approved Mocking Pattern (Simple Class or Interface)
+
+### `src/services/fileService.ts`
+
+```ts
+export class FileService {
+  read(path: string): string {
+    return `file content from ${path}`;
+  }
+}
+```
+
+---
+
+### `tests/services/fileService.test.ts`
+
+```ts
+import { MockProxy, mock, mockReset } from 'jest-mock-extended';
+import { FileService } from '../../../src/services/fileService';
+
+describe('FileService', () => {
+  let fileServiceMock: MockProxy<FileService>;
+
+  beforeEach(() => {
+    fileServiceMock = mock<FileService>();
+    mockReset(fileServiceMock);
+  });
+
+  test('should return mocked file content', () => {
+    fileServiceMock.read.mockReturnValue('mocked content');
+    expect(fileServiceMock.read('foo.txt')).toBe('mocked content');
+  });
+});
+```
+
+---
+
+## ✅ Advanced Mocking with `calledWith()` Matchers
+
+```ts
+import { MockProxy, mock } from 'jest-mock-extended';
+
+interface PartyProvider {
+  getSongs: (type: string) => string[];
+}
+
+const provider: MockProxy<PartyProvider> = mock<PartyProvider>();
+
+provider.getSongs.calledWith('disco party').mockReturnValue([
+  'Dance the night away',
+  'Stayin Alive',
+]);
+
+expect(provider.getSongs('disco party')).toEqual([
+  'Dance the night away',
+  'Stayin Alive',
+]);
+```
+
+---
+
+## ✅ Deep Mocks for Nested Interfaces/Classes
+
+```ts
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+
+interface Service {
+  inner: {
+    fetchData: (id: number) => string;
+  };
+}
+
+const serviceMock: DeepMockProxy<Service> = mockDeep<Service>();
+
+serviceMock.inner.fetchData.calledWith(1).mockReturnValue('data-1');
+
+expect(serviceMock.inner.fetchData(1)).toBe('data-1');
+```
+
+---
+
+## ✅ Enforcing Return Values (Fallback Error)
+
+```ts
+import { mock } from 'jest-mock-extended';
+
+interface StrictAPI {
+  fetch: () => string;
+}
+
+const strictMock = mock<StrictAPI>({}, {
+  fallbackMockImplementation: () => {
+    throw new Error('missing return value');
+  }
+});
+
+expect(() => strictMock.fetch()).toThrowError('missing return value');
+```
+
+---
+
+## ✅ Resetting Mocks
+
+Always use `mockReset()` inside `beforeEach` to avoid state leaks:
+
+```ts
+import { mockReset } from 'jest-mock-extended';
+
+beforeEach(() => {
+  mockReset(myMock);
+});
+```
+
+---
+
+## 🔐 Rules & Conventions
+
+| Rule                                               | Description                              |
+| -------------------------------------------------- | ---------------------------------------- |
+| ✅ Use `mock<T>()` or `mockDeep<T>()`               | Always use `jest-mock-extended` helpers  |
+| ✅ Use `MockProxy<T>` or `DeepMockProxy<T>`         | Ensures correct mock typings             |
+| ✅ Reset mocks with `mockReset()` in `beforeEach`   | Prevents stale state                     |
+| ✅ Use `calledWith()` for argument matching         | Improves readability and type safety     |
+| ❌ Do not use `jest.mock(...)` manually             | We standardize on type-safe mocking only |
+| ❌ Do not use `any`, `@ts-ignore`, or untyped mocks | Type safety must be preserved            |
+
+---
+
+## 🧼 Cleanup Notes
+
+* Always use one mock object per test file
+* Do not reuse mock instances across tests
+* All return values must be explicitly defined or throw
+
+## ✅ Developer Checklist
+
+| Task                                        | Done? |
+| ------------------------------------------- | ----- |
+| `tsconfig.test.json` present and used?      | ✅    |
+| `jest-mock-extended` used for all mocks?    | ✅    |
+| `jest.resetModules()` used in `beforeEach`? | ✅    |
+| No hardcoded fake structures?               | ✅    |
+| All mock types inferred from real classes?  | ✅    |
+
 ## Configuration System
 
 The configuration system uses JSON files stored in platform-specific locations:
@@ -120,3 +424,45 @@ The configuration system uses JSON files stored in platform-specific locations:
    - Index files should stay under 50 lines
    - Split files when they require excessive scrolling or contain multiple unrelated concerns
    - Maintain separation of concerns across layers
+
+## Line Count and File Management Guidelines
+
+14. When creating/editing a JavaScript or TypeScript file, check the line count of the file and make sure it does not exceed the ideal line count per file. You can use tools such as `wc -l filename` to check the line count of an existing file or count lines of a string using the tool `wc -l <(echo "string")` before creating a new file to ensure it does not exceed the ideal line count per file.
+
+15. If the file's line count exceeds the suggested number of lines based on "Rules: Ideal Line Count per File", then split the file into multiple files, using `import` and `export` to share code between files, or use composables.
+
+### ✅ **Rules: Ideal Line Count per File**
+
+1. **Limit each file to a single responsibility**
+   * If a file is handling multiple unrelated concerns, split it.
+
+2. **Cap most files between 100–300 lines**
+   * This range supports readability and testability while allowing meaningful logic.
+
+3. **Keep utility/helper files under 150 lines**
+   * Utility files should focus on small, reusable functions. Split them when they start housing unrelated utilities.
+
+4. **Limit test files to 300 lines max**
+   * Group related test cases in the same file, but break them up if there are too many logical variations being tested.
+
+5. **Interface and type files should stay under 150 lines**
+   * Keep closely related types together; split into multiple files if modeling large, unrelated entities.
+
+6. **Index (`index.ts`) and entry point files should stay under 50 lines**
+   * These should primarily import, re-export, or initialize — avoid complex logic.
+
+7. **Avoid nesting more than 2 classes or large functions in a single file**
+   * Deep nesting harms testability and makes files harder to reason about.
+
+8. **If a file contains more than ~10 screenfuls of code, consider refactoring**
+   * This is a soft limit based on visual length and ease of navigation.
+
+9. **Split files when editing requires frequent scrolling or search**
+   * Ease of navigation is critical for collaborative teams and future maintainers.
+
+10. **Maintain separation of concerns across layers (service, controller, utils, etc.)**
+    * Don't mix types, logic, and API handlers in the same file.
+
+## Developer Best Practices
+
+- After creating or editing a file, always run "npm run lint --fix" to see any type/linting errors, and proceed to fix if errors are found - then run "npm run lint" to ensure that there are no errors - repeat process until there are no errors
