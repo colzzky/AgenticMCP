@@ -130,7 +130,7 @@ This document outlines the directory structure of the AgenticMCP.Typescript proj
 ## Key Files:
 
 *   **`README.md`**: Provides an overview of the project, its objectives, and how to use the CLI tool.
-*   **`DIRECTORY.md`**: (This file) Outlines the project directory structure.
+*   **`DIRECTORY.md`**: Outlines the project directory structure.
 *   **`PROGRESS.jsonl`**: Logs the agent's progress, with each line being a JSON object detailing an action.
 *   **`TASKS.jsonl`**: Manages tasks, with each line being a JSON object describing a task's status and details.
 *   **`LICENSE`**: Contains the project's licensing information.
