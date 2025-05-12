@@ -18,8 +18,8 @@
 {"taskNumber": "18", "title": "Implement OpenAI Provider Tool Calling", "shortDescription": "Add tool calling support to the OpenAI provider (FR10.5)", "assignedTo": "coder", "status": "complete"}
 {"taskNumber": "19", "title": "Implement Anthropic Provider Tool Calling", "shortDescription": "Add tool calling support to the Anthropic provider (FR10.5)", "assignedTo": "coder", "status": "complete"}
 {"taskNumber": "20", "title": "Implement LocalCliTool Definition", "shortDescription": "Create tool definitions for LocalCliTool operations (FR21.1, FR21.4 related)", "assignedTo": "coder", "status": "complete"}
-{"taskNumber": "21", "title": "Create MCP Command with Tool Support", "shortDescription": "Implement CLI command that supports model-driven tool calling (FR10.5 related)", "assignedTo": "coder", "status": "pending"}
-{"taskNumber": "22", "title": "Implement Tool Execution Flow", "shortDescription": "Create system for executing tool calls and feeding results back to LLMs (FR10.5 related)", "assignedTo": "coder", "status": "in_progress"}
+{"taskNumber": "21", "title": "Implement tests for LocalCliTool", "shortDescription": "Create tests for LocalCliTool operations (FR21.1, FR21.4 related)", "assignedTo": "coder", "status": "complete"}
+{"taskNumber": "22", "title": "Implement Tool Execution Flow", "shortDescription": "Create system for executing tool calls and feeding results back to LLMs (FR10.5 related)", "assignedTo": "coder", "status": "complete"}
 {"taskNumber": "23", "title": "Implement Google/Gemini Provider Adapter", "shortDescription": "Create adapter for Google Gemini API with TypeScript interfaces (FR10.1)", "assignedTo": "coder", "status": "complete"}
 {"taskNumber": "24", "title": "Implement Grok (xAI) Provider Adapter", "shortDescription": "Create adapter for Grok (xAI) API with TypeScript interfaces (FR10.1)", "assignedTo": "coder", "status": "pending"}
 {"taskNumber": "25", "title": "Implement Basic Writer Command", "shortDescription": "Create first agent command for generating written content (FR5.1, FR5.2)", "assignedTo": "coder", "status": "pending"}
