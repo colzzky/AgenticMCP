@@ -3,16 +3,26 @@
  */
 
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { OpenAIProvider } from '../../../src/providers/openai/openaiProvider';
-import { ProviderRequest } from '../../../src/core/types/provider.types';
+import { setupLoggerMock } from '../../utils/node-module-mock';
 
-// Mock the logger functions to avoid console output during tests
-jest.mock('../../../src/core/utils/logger', () => ({
-  info: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-  debug: jest.fn(),
-}));
+// Declare variables for dynamically imported modules
+let OpenAIProvider: typeof import('../../../src/providers/openai/openaiProvider').OpenAIProvider;
+let ProviderTypes: typeof import('../../../src/core/types/provider.types');
+
+// Setup mock logger
+const mockLogger = setupLoggerMock();
+
+// Setup dynamic imports and mocks
+beforeAll(async () => {
+  // Register mocks with Jest
+  jest.unstable_mockModule('../../../src/core/utils/logger', () => mockLogger);
+
+  // Import modules after mocking
+  const openaiProviderModule = await import('../../../src/providers/openai/openaiProvider');
+  OpenAIProvider = openaiProviderModule.OpenAIProvider;
+
+  ProviderTypes = await import('../../../src/core/types/provider.types');
+});
 
 describe('OpenAIProvider Tool Calling', () => {
   // Test variables
@@ -77,7 +87,7 @@ describe('OpenAIProvider Tool Calling', () => {
   });
   
   it('should include tools in the request when provided', async () => {
-    const toolCallingRequest: ProviderRequest = {
+    const toolCallingRequest: ProviderTypes.ProviderRequest = {
       model: 'gpt-4',
       messages: [{ role: 'user', content: 'Get the weather for New York' }],
       tools: [
@@ -117,7 +127,7 @@ describe('OpenAIProvider Tool Calling', () => {
   });
   
   it('should handle tool_choice when provided as a string', async () => {
-    const toolCallingRequest: ProviderRequest = {
+    const toolCallingRequest: ProviderTypes.ProviderRequest = {
       model: 'gpt-4',
       messages: [{ role: 'user', content: 'Get the weather for New York' }],
       tools: [
@@ -149,7 +159,7 @@ describe('OpenAIProvider Tool Calling', () => {
   });
   
   it('should handle tool_choice when provided as an object', async () => {
-    const toolCallingRequest: ProviderRequest = {
+    const toolCallingRequest: ProviderTypes.ProviderRequest = {
       model: 'gpt-4',
       messages: [{ role: 'user', content: 'Get the weather for New York' }],
       tools: [
@@ -209,7 +219,7 @@ describe('OpenAIProvider Tool Calling', () => {
       ]
     });
     
-    const toolCallingRequest: ProviderRequest = {
+    const toolCallingRequest: ProviderTypes.ProviderRequest = {
       model: 'gpt-4',
       messages: [{ role: 'user', content: 'Get the weather for New York' }],
       tools: [
@@ -267,7 +277,7 @@ describe('OpenAIProvider Tool Calling', () => {
   
   it('should continue a conversation with tool call results', async () => {
     // Initial request with tools
-    const initialRequest = {
+    const initialRequest: ProviderTypes.ProviderRequest = {
       model: 'gpt-4',
       messages: [{ role: 'user', content: 'Get the weather for New York' }],
       tools: [

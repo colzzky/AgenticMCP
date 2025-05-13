@@ -4,31 +4,27 @@
 
 import { jest } from '@jest/globals';
 import { Dirent, Stats } from 'fs';
-import { mockConsole, setupFsPromisesMock, mockESModule } from '../../utils/test-setup';
+import { mockConsole } from '../../utils/test-setup';
 import { mockDeep } from 'jest-mock-extended';
+import { setupNodeFsMock, setupLoggerMock } from '../../utils/node-module-mock';
 
 let NodeFileSystem: typeof import('../../../src/core/adapters/node-file-system.adapter').NodeFileSystem;
-let mockFs: ReturnType<typeof setupFsPromisesMock>;
+let mockFs: ReturnType<typeof setupNodeFsMock>;
+let mockLogger: ReturnType<typeof setupLoggerMock>;
 
 beforeAll(async () => {
-  mockFs = setupFsPromisesMock();
-  mockESModule('node:fs/promises', mockFs, { virtual: true });
-  ({ NodeFileSystem } = await import('../../../src/core/adapters/node-file-system.adapter'));
+  // Setup mocks before any imports
+  mockFs = setupNodeFsMock();
+  mockLogger = setupLoggerMock();
+
+  // Register mocks with Jest
+  jest.unstable_mockModule('node:fs/promises', () => mockFs);
+  jest.unstable_mockModule('../../../src/core/utils/logger', () => mockLogger);
+
+  // Import after registering mocks
+  const adapterModule = await import('../../../src/core/adapters/node-file-system.adapter');
+  NodeFileSystem = adapterModule.NodeFileSystem;
 });
-
-// Mock logger
-const mockLogger = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn()
-};
-mockESModule('../../../src/core/utils/logger', mockLogger, { virtual: true });
-
-// We need to override node:fs/promises directly so we prevent NodeFileSystem
-// from accessing the real file system which causes ENOENT errors
-const realFsPromisesModule = jest.requireActual('node:fs/promises');
-jest.unstable_mockModule('node:fs/promises', () => mockFs);
 
 describe('NodeFileSystem', () => {
   // Console mocks

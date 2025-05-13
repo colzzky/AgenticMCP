@@ -3,45 +3,56 @@
  */
 
 import { jest } from '@jest/globals';
-import { mockConsole, setupKeytarMock, setupFsPromisesMock, mockESModule } from '../../utils/test-setup';
+import { mockConsole } from '../../utils/test-setup';
+import { setupNodeFsMock, setupLoggerMock } from '../../utils/node-module-mock';
 
+// Declare dynamically imported modules and mocks
 let ConfigManager: typeof import('../../../src/core/config/configManager').ConfigManager;
-let mockKeytar: ReturnType<typeof setupKeytarMock>;
-let mockFs: ReturnType<typeof setupFsPromisesMock>;
-const mockLogger = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-};
+let ConfigTypes: typeof import('../../../src/core/types/config.types');
+let mockFs: ReturnType<typeof setupNodeFsMock>;
+let mockLogger: ReturnType<typeof setupLoggerMock>;
 
-beforeAll(async () => {
-  mockKeytar = setupKeytarMock();
-  mockFs = setupFsPromisesMock();
-  mockESModule('keytar', mockKeytar, { virtual: true });
-  mockESModule('../../../src/core/utils/logger', mockLogger, { virtual: true });
-  ({ ConfigManager } = await import('../../../src/core/config/configManager'));
-});
-
-import { AppConfig, ProviderSpecificConfig, McpServerConfig } from '../../../src/core/types/config.types';
-import { InMemoryFileSystem } from '../../utils/in-memory-filesystem';
-import { CredentialManager } from '../../../src/core/credentials/credentialManager';
-
-// Mock CredentialManager
+// Mock CredentialManager methods
 const mockCredentialManager = {
   getSecret: jest.fn(),
   setSecret: jest.fn(),
   deleteSecret: jest.fn(),
   findCredentialsByProvider: jest.fn()
 };
-mockESModule('../../../src/core/credentials/credentialManager', {
-  CredentialManager: mockCredentialManager
+
+// Setup module imports and mocks before test execution
+beforeAll(async () => {
+  // Setup mocks
+  mockFs = setupNodeFsMock();
+  mockLogger = setupLoggerMock();
+
+  // Register mocks with Jest
+  jest.unstable_mockModule('node:fs/promises', () => mockFs);
+  jest.unstable_mockModule('../../../src/core/utils/logger', () => mockLogger);
+  jest.unstable_mockModule('keytar', () => ({
+    getPassword: mockCredentialManager.getSecret,
+    setPassword: mockCredentialManager.setSecret,
+    deletePassword: mockCredentialManager.deleteSecret,
+    findCredentials: mockCredentialManager.findCredentialsByProvider
+  }));
+  jest.unstable_mockModule('../../../src/core/credentials/credentialManager', () => ({
+    CredentialManager: mockCredentialManager
+  }));
+
+  // Import modules after mocking
+  const configManagerModule = await import('../../../src/core/config/configManager');
+  ConfigManager = configManagerModule.ConfigManager;
+
+  ConfigTypes = await import('../../../src/core/types/config.types');
 });
+
+// Import other modules that are not mocked
+import { InMemoryFileSystem } from '../../utils/in-memory-filesystem';
 
 describe('ConfigManager', () => {
   // Original methods we're going to mock
-  const originalConfigPath = ConfigManager.prototype['configPath'];
-  const originalEnsureConfigDirectory = ConfigManager.prototype['ensureConfigDirectory'];
+  let originalConfigPath: string;
+  let originalEnsureConfigDirectory: Function;
   // Use our mocked fs instance
   const originalReadFile = mockFs.readFile;
   const originalWriteFile = mockFs.writeFile;
@@ -52,7 +63,7 @@ describe('ConfigManager', () => {
   let configPath: string;
 
   // Test config object
-  const testConfig: AppConfig = {
+  const testConfig: ConfigTypes.AppConfig = {
     defaultProvider: 'openaiTest',
     providers: {
       'openaiTest': {
@@ -74,6 +85,12 @@ describe('ConfigManager', () => {
       }
     }
   };
+
+  beforeAll(() => {
+    // Store original prototype methods
+    originalConfigPath = ConfigManager.prototype['configPath'];
+    originalEnsureConfigDirectory = ConfigManager.prototype['ensureConfigDirectory'];
+  });
 
   beforeEach(() => {
     // Reset all mocks
@@ -297,7 +314,7 @@ describe('ConfigManager', () => {
       const defaultMcpConfig = {
         enabled: false,
         name: 'Default'
-      } as McpServerConfig;
+      } as ConfigTypes.McpServerConfig;
 
       getDefaultMcpConfigSpy.mockReturnValueOnce(defaultMcpConfig);
 
@@ -351,7 +368,7 @@ describe('ConfigManager', () => {
       configManager['config'] = undefined;
 
       const loadConfigSpy = jest.spyOn(configManager, 'loadConfig');
-      loadConfigSpy.mockResolvedValueOnce(undefined as unknown as AppConfig);
+      loadConfigSpy.mockResolvedValueOnce(undefined as unknown as ConfigTypes.AppConfig);
 
       await configManager.set('defaultProvider', 'anthropicTest');
 
@@ -399,7 +416,7 @@ describe('ConfigManager', () => {
     it('should return API key from credential manager', async () => {
       const configManager = new ConfigManager();
 
-      const providerConfig: ProviderSpecificConfig = {
+      const providerConfig: ConfigTypes.ProviderSpecificConfig = {
         providerType: 'openai',
         instanceName: 'test-instance'
       };
@@ -416,7 +433,7 @@ describe('ConfigManager', () => {
     it('should use default accountName if instanceName not provided', async () => {
       const configManager = new ConfigManager();
 
-      const providerConfig: ProviderSpecificConfig = {
+      const providerConfig: ConfigTypes.ProviderSpecificConfig = {
         providerType: 'openai'
       };
 
@@ -434,7 +451,7 @@ describe('ConfigManager', () => {
 
       const configManager = new ConfigManager();
 
-      const apiKey = await configManager.getResolvedApiKey(undefined as unknown as ProviderSpecificConfig);
+      const apiKey = await configManager.getResolvedApiKey(undefined as unknown as ConfigTypes.ProviderSpecificConfig);
 
       expect(apiKey).toBeUndefined();
       expect(mockCredentialManager.getSecret).not.toHaveBeenCalled();
@@ -448,7 +465,7 @@ describe('ConfigManager', () => {
 
       const configManager = new ConfigManager();
 
-      const providerConfig: ProviderSpecificConfig = {
+      const providerConfig: ConfigTypes.ProviderSpecificConfig = {
         providerType: 'openai',
         instanceName: 'test-instance'
       };
