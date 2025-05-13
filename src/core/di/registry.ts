@@ -10,7 +10,7 @@ import { IFileSystem } from '../interfaces/file-system.interface';
 import type { Logger } from '../types/logger.types';
 import { DIFilePathProcessor } from '../../context/di-file-path-processor';
 import { PathDI, FileSystemDI } from '@/global.types';
-import { DiffService } from '../../tools/services/diff-service';
+import { DiffService } from '../../tools/services/diffService';
 
 /**
  * Register core dependencies

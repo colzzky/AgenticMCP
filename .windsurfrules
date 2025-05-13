@@ -50,6 +50,8 @@
 
 16. If the library does not expose the type definitions, use the "Github" tool inspect the files in the github repository of the library to get the type definitions
 
+17. filenames are camel case and all folder names are kebab-case
+
 ### ✅ **Rules: Ideal Line Count per File**
 
 1. **Limit each file to a single responsibility**

@@ -1,44 +1,56 @@
-import { OpenAIProvider } from './openai';
-import { AnthropicProvider } from './anthropic';
-import { GoogleProvider } from './google';
-import { ProviderFactory } from './providerFactory';
 import type { ConfigManager } from '../core/config/configManager';
-import type { ProviderType } from '../core/types/provider.types';
-import { info } from '../core/utils/logger';
+import type { ProviderType, LLMProvider } from '../core/types/provider.types';
+import type { Logger } from '../core/types/logger.types';
+import type { ProviderFactoryInterface, ProviderInitializerInterface } from './types';
 
 /**
  * Initializes the provider factory with all available provider implementations.
  * This serves as the central point for provider registration and configuration.
+ * 
+ * Uses dependency injection pattern for better testability.
  */
-export class ProviderInitializer {
-  private factory: ProviderFactory;
+export class ProviderInitializer implements ProviderInitializerInterface {
+  private factory: ProviderFactoryInterface;
+  private logger: Logger;
   
   /**
    * Create a new ProviderInitializer.
-   * @param configManager - Configuration manager instance for provider setup
+   * @param factory - The provider factory instance
+   * @param logger - The logger implementation to use
+   * @param providerClasses - Map of provider types to provider class constructors
    */
-  constructor(configManager: ConfigManager) {
-    this.factory = new ProviderFactory(configManager);
-    this.registerProviders();
+  constructor(
+    factory: ProviderFactoryInterface,
+    logger: Logger,
+    providerClasses?: Map<ProviderType, new (...args: any[]) => LLMProvider>
+  ) {
+    this.factory = factory;
+    this.logger = logger;
+    
+    // Register provider classes if provided
+    if (providerClasses && providerClasses.size > 0) {
+      this.registerProviders(providerClasses);
+    }
   }
   
   /**
-   * Registers all available provider implementations with the factory.
+   * Registers provider implementations with the factory.
+   * @param providerClasses - Map of provider types to provider class constructors
    */
-  private registerProviders(): void {
-    // Register available provider implementations
-    this.factory.registerProvider('openai', OpenAIProvider);
-    this.factory.registerProvider('anthropic', AnthropicProvider);
-    this.factory.registerProvider('google', GoogleProvider);
+  private registerProviders(providerClasses: Map<ProviderType, new (...args: any[]) => LLMProvider>): void {
+    // Register each provider from the map
+    for (const [type, providerClass] of providerClasses.entries()) {
+      this.factory.registerProvider(type, providerClass);
+    }
     
-    info(`Registered providers: ${this.factory.getRegisteredProviderTypes().join(', ')}`);
+    this.logger.info(`Registered providers: ${this.factory.getRegisteredProviderTypes().join(', ')}`);
   }
   
   /**
    * Gets the initialized provider factory.
    * @returns The provider factory instance
    */
-  getFactory(): ProviderFactory {
+  getFactory(): ProviderFactoryInterface {
     return this.factory;
   }
   
@@ -50,9 +62,7 @@ export class ProviderInitializer {
    * @param instanceName - Optional instance name for multiple instances of the same provider type
    * @returns The provider instance
    */
-  getProvider(type: ProviderType, instanceName = 'default') {
+  getProvider(type: ProviderType, instanceName = 'default'): LLMProvider {
     return this.factory.getProvider(type, instanceName);
   }
 }
-
-export default ProviderInitializer;

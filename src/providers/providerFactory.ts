@@ -2,24 +2,29 @@ import type { LLMProvider, ProviderType } from '../core/types/provider.types';
 import type { ProviderSpecificConfig } from '../core/types/config.types';
 import type { ConfigManager } from '../core/config/configManager';
 import type { ToolRegistry } from '../tools/toolRegistry';
-import { info, error } from '../core/utils/logger';
+import type { Logger } from '../core/types/logger.types';
+import type { ProviderFactoryInterface } from './types';
 
 /**
  * Factory for creating and managing LLM providers.
  * Uses abstract factory pattern to create provider instances.
+ * Implements dependency injection pattern for better testability.
  */
-export class ProviderFactory {
+export class ProviderFactory implements ProviderFactoryInterface {
   private providerMap: Map<string, new (...args: any[]) => LLMProvider> = new Map();
   private instanceMap: Map<string, LLMProvider> = new Map();
   private configManager: ConfigManager;
   private toolRegistry?: ToolRegistry;
+  private logger: Logger;
 
   /**
    * Creates a new ProviderFactory.
    * @param configManager - The configuration manager to use for provider setup
+   * @param logger - The logger implementation to use
    */
-  constructor(configManager: ConfigManager) {
+  constructor(configManager: ConfigManager, logger: Logger) {
     this.configManager = configManager;
+    this.logger = logger;
   }
 
   /**
@@ -29,7 +34,7 @@ export class ProviderFactory {
    */
   registerProvider(type: ProviderType, providerClass: new (...args: any[]) => LLMProvider): void {
     this.providerMap.set(type, providerClass);
-    info(`Registered provider: ${type}`);
+    this.logger.info(`Registered provider: ${type}`);
   }
 
   /**
@@ -50,29 +55,30 @@ export class ProviderFactory {
     // Get provider class constructor
     const ProviderClass = this.providerMap.get(type);
     if (!ProviderClass) {
-      throw new Error(`Provider type "${type}" is not registered. Available types: ${[...this.providerMap.keys()].join(', ')}`);
+      throw new Error(`Provider type not registered: ${type}`);
     }
     
-    // Create new instance
-    let providerInstance: LLMProvider;
-
-    // Use different constructor patterns depending on the provider type
-    providerInstance = type === 'openai'
-      // OpenAI provider requires configManager
-      ? new ProviderClass(this.configManager)
-      // Other providers use a simpler constructor
-      : new ProviderClass();
-
-    // If tool registry is set, attach it to the provider if supported
-    if (this.toolRegistry && typeof (providerInstance as any).setToolRegistry === 'function') {
-      (providerInstance as any).setToolRegistry(this.toolRegistry);
-      info(`Attached tool registry to provider: ${type} (${instanceName})`);
+    // Create a new instance with dependencies injected
+    try {
+      // Inject necessary dependencies
+      // Note: We're passing the logger as a dependency to the provider
+      const instance = new ProviderClass(this.configManager, this.logger);
+      
+      // Inject the tool registry if available
+      if (this.toolRegistry && typeof instance.setToolRegistry === 'function') {
+        instance.setToolRegistry(this.toolRegistry);
+      }
+      
+      // Cache the instance
+      this.instanceMap.set(cacheKey, instance);
+      this.logger.info(`Created provider instance: ${type} (${instanceName})`);
+      
+      return instance;
+    } catch (error_) {
+      const message = error_ instanceof Error ? error_.message : String(error_);
+      this.logger.error(`Error creating provider ${type} (${instanceName}): ${message}`);
+      throw error_;
     }
-
-    // Cache and return the instance
-    this.instanceMap.set(cacheKey, providerInstance);
-    info(`Created provider instance: ${type} (${instanceName})`);
-    return providerInstance;
   }
 
   /**
@@ -95,11 +101,11 @@ export class ProviderFactory {
         instanceName,
         providerType: type
       });
-      info(`Configured provider: ${type} (${instanceName})`);
+      this.logger.info(`Configured provider: ${type} (${instanceName})`);
       return provider;
     } catch (error_) {
       const message = error_ instanceof Error ? error_.message : String(error_);
-      error(`Error configuring provider ${type} (${instanceName}): ${message}`);
+      this.logger.error(`Error configuring provider ${type} (${instanceName}): ${message}`);
       throw error_;
     }
   }
@@ -127,7 +133,7 @@ export class ProviderFactory {
    */
   clearInstances(): void {
     this.instanceMap.clear();
-    info('Cleared all provider instances');
+    this.logger.info('Cleared all provider instances');
   }
 
   /**
@@ -136,7 +142,15 @@ export class ProviderFactory {
    */
   setToolRegistry(toolRegistry: ToolRegistry): void {
     this.toolRegistry = toolRegistry;
-    info('Set tool registry for provider factory');
+    
+    // Update existing provider instances
+    for (const [key, instance] of this.instanceMap.entries()) {
+      if (typeof instance.setToolRegistry === 'function') {
+        instance.setToolRegistry(toolRegistry);
+      }
+    }
+    
+    this.logger.info('Set tool registry for provider factory');
   }
 
   /**
@@ -147,5 +161,3 @@ export class ProviderFactory {
     return this.toolRegistry;
   }
 }
-
-export default ProviderFactory;

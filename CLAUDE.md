@@ -10,6 +10,7 @@ AgenticMCP (Agentic Model Communication Protocol) is a TypeScript-based CLI tool
 
 - "globalThis" pattern is prohibited
 - **Dependency Injection Policy/Standards for TypeScript (Without Third-Party Libraries)**
+- filenames are camel case and all folder names are kebab-case
 
 ## Development Workflow and Best Practices
 

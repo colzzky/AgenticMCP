@@ -73,7 +73,8 @@ async function main(): Promise<void> {
       logger,
       path,
       fs,
-      defaultAppConfig
+      defaultAppConfig,
+      ProviderFactory
     );
     
     // Create file path processor factory
@@ -82,6 +83,11 @@ async function main(): Promise<void> {
       fs,
       process,
       FilePathProcessor
+    );
+
+    const providerFactoryInstance = new ProviderFactory(
+      providers.configManager,
+      logger
     );
     
     // Configure and register CLI commands
@@ -98,7 +104,7 @@ async function main(): Promise<void> {
       tools.toolExecutor,
       process,
       filePathProcessorFactory,
-      providers.providerFactory,
+      providerFactoryInstance,
       McpServer,
       BaseMcpServer,
       StdioServerTransport,

@@ -63,57 +63,66 @@ export class McpCommands {
   }
 
   /**
-   * Register MCP-related commands with the CLI
-   * 
-   * @param cli Commander instance
+   * Registers MCP-related commands with the command-line interface.
+   * @param program - The Commander program instance
    */
-  @CommandHandler({ name: 'registerCommands', description: 'Register MCP server commands' })
-  public registerCommands(cli: Command): void {
-    cli.command('serve-mcp')
-      .description('Start an MCP server with role-based tools for AI-assisted tasks')
-      .option('-d, --base-dir <path>', 'Base directory for file operations', this.process.cwd())
-      .option('-n, --name <string>', 'Name of the MCP server', this.getDefaultServerName())
-      .option('-v, --version <string>', 'Version of the MCP server', this.getDefaultServerVersion())
-      .option('--description <string>', 'Description of the MCP server', this.getDefaultServerDescription())
-      .option('--tool-prefix <string>', 'Prefix for tool names', this.getDefaultToolPrefix())
-      .option('--provider <string>', 'Default LLM provider for role-based tools', this.getDefaultProviderName())
-      .action(async (options: ServeMcpOptions) => {
-        await this.serveMcp(options);
-      });
+  @CommandHandler({
+    name: 'serve:mcp',
+    description: 'Serve an MCP server for external AI applications'
+  })
+  registerCommands(program: Command): void {
+    program
+      .command('serve:mcp')
+      .description('Serve an MCP server for external AI applications')
+      .option('-b, --base-dir <dir>', 'Base directory for file operations')
+      .option('-n, --name <name>', 'Name of the MCP server')
+      .option('-v, --version <version>', 'Version of the MCP server')
+      .option('-d, --description <description>', 'Description of the MCP server')
+      .option('-t, --tool-prefix <prefix>', 'Tool name prefix')
+      .option('-p, --provider <provider>', 'Default LLM provider for role-based tools')
+      .action(this.handleServeMcp.bind(this));
   }
 
   /**
-   * Start an MCP server with the given options
-   *
-   * @param options Command options
+   * Handler for the serve:mcp command.
+   * @param options - Command options
    */
-  private async serveMcp(options: ServeMcpOptions): Promise<void> {
-    const baseDir = this.pathDI.resolve(options.baseDir || "./");
-
-    this.logger.info(`Base directory for file operations: ${baseDir}`);
-
+  private async handleServeMcp(options: ServeMcpOptions): Promise<void> {
     try {
-      // Create MCP server with configuration
+      const {
+        baseDir = this.pathDI.resolve(this.process.cwd()),
+        name = this.getDefaultServerName(),
+        version = this.getDefaultServerVersion(),
+        description = this.getDefaultServerDescription(),
+        toolPrefix = this.getDefaultToolPrefix(),
+        provider = this.getDefaultProviderName(),
+      } = options;
+
+      this.logger.info(`Starting MCP server (${name} v${version})`);
+      this.logger.info(`Base directory: ${baseDir}`);
+
+      // Create an instance of the MCP server
       const mcpServer = new this.mcpServer(
         {
-          name: options.name || this.getDefaultServerName(),
-          version: options.version || this.getDefaultServerVersion(),
-          description: options.description || this.getDefaultServerDescription()
+          name,
+          version,
+          description,
+          debug: true,
+          logger: this.logger,
+          namePrefix: toolPrefix,
         },
         this.logger,
         this.baseMcpServer
       );
 
-      // Initialize LLM provider for role-based tools
-      const providerName = options.provider || this.getDefaultProviderName();
-      this.logger.info(`Using LLM provider: ${providerName} for role-based tools`);
-
-      const providerConfig = await this.configManager.getProviderConfigByAlias(providerName);
-      if (!providerConfig) {
-        throw new Error(`Provider "${providerName}" not found in configuration. Please configure it first.`);
+      // Check if the provider exists
+      const providerName = provider.toLowerCase();
+      if (!['openai', 'anthropic', 'google'].includes(providerName)) {
+        throw new Error(`Provider "${providerName}" not supported. Please configure it first.`);
       }
 
-      const providerFactory = new this.providerFactory(this.configManager);
+      // Create a provider factory with the proper injected dependencies
+      const providerFactory = new this.providerFactory(this.configManager, this.logger);
       const llmProvider = providerFactory.getProvider(providerName as any);
 
       // Register role-based tools
@@ -134,7 +143,7 @@ export class McpCommands {
       throw error;
     }
   }
-  
+
   /**
    * Get default server name from config or fallback to AgenticMCP-MCP
    */
@@ -142,7 +151,7 @@ export class McpCommands {
     const config = this.configManager.getConfig();
     return config.mcp?.name || 'AgenticMCP-MCP';
   }
-  
+
   /**
    * Get default server version from config or fallback to 1.0.0
    */
@@ -150,7 +159,7 @@ export class McpCommands {
     const config = this.configManager.getConfig();
     return config.mcp?.version || '1.0.0';
   }
-  
+
   /**
    * Get default server description from config or fallback to a generic description
    */
@@ -158,7 +167,7 @@ export class McpCommands {
     const config = this.configManager.getConfig();
     return config.mcp?.description || 'AgenticMCP MCP Server - Providing filesystem operations for LLMs';
   }
-  
+
   /**
    * Get default tool name prefix from config or fallback to empty string
    */
@@ -174,5 +183,4 @@ export class McpCommands {
     const config = this.configManager.getConfig();
     return config.defaultProvider || 'openai';
   }
-
 }
