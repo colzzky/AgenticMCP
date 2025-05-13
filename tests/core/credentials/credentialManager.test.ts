@@ -2,9 +2,10 @@
  * @file Tests for CredentialManager
  */
 
-import { jest } from '@jest/globals';
-import { CredentialIdentifier, KeytarCredential } from '../../../src/core/types/credentials.types';
-import { mockConsole, setupKeytarMock } from '../../utils/test-setup';
+import { jest, describe, it, expect, beforeEach, afterEach, beforeAll } from '@jest/globals';
+import { mock } from 'jest-mock-extended';
+import { mockConsole } from '../../utils/test-setup';
+import { CredentialIdentifier } from '../../../src/core/types/credentials.types';
 
 // Test constants
 const SERVICE_NAME_PREFIX = 'AgenticMCP';
@@ -13,43 +14,27 @@ const TEST_ACCOUNT = 'test-account';
 const TEST_SECRET = 'test-api-key-12345';
 const FULL_SERVICE_NAME = `${SERVICE_NAME_PREFIX}-${TEST_PROVIDER}`;
 
-let CredentialManager: typeof import('../../../src/core/credentials/credentialManager').CredentialManager;
-let mockKeytar: ReturnType<typeof setupKeytarMock>;
+// Create a type-safe mock for keytar using jest-mock-extended
+const mockKeytar = mock<typeof import('keytar')>();
 
-// Set up mocks before any imports
-beforeAll(async () => {
-  // Create keytar mock
-  mockKeytar = setupKeytarMock();
+// Register the mock before importing the module under test
+jest.mock('keytar', () => mockKeytar as unknown as typeof import('keytar'), { virtual: true });
 
-  // Register the mock with Jest
-  jest.unstable_mockModule('keytar', () => ({
-    default: mockKeytar,
-    ...mockKeytar
-  }));
-
-  // Now import the module after mocking
-  const credentialManagerModule = await import('../../../src/core/credentials/credentialManager');
-  CredentialManager = credentialManagerModule.CredentialManager;
-});
+// Import after mocking
+import { CredentialManager } from '../../../src/core/credentials/credentialManager';
 
 describe('CredentialManager', () => {
   // Console mocks
-  let consoleSpy: ReturnType<typeof mockConsole>;
+  let consoleSpy;
 
   beforeEach(() => {
-    jest.resetModules();
     jest.clearAllMocks();
+    jest.resetModules();
 
     // Setup console mocks
     consoleSpy = mockConsole();
 
-    // Reset mock state but keep the mock implementation
-    mockKeytar.getPassword.mockReset();
-    mockKeytar.setPassword.mockReset();
-    mockKeytar.deletePassword.mockReset();
-    mockKeytar.findCredentials.mockReset();
-
-    // Set up default implementations
+    // Setup keytar mock default implementations
     mockKeytar.getPassword.mockImplementation((service, account) => {
       if (service === FULL_SERVICE_NAME && account === TEST_ACCOUNT) {
         return Promise.resolve(TEST_SECRET);
@@ -58,7 +43,7 @@ describe('CredentialManager', () => {
     });
 
     mockKeytar.setPassword.mockImplementation(() => {
-      return Promise.resolve(undefined);
+      return Promise.resolve();
     });
 
     mockKeytar.deletePassword.mockImplementation(() => {
@@ -97,7 +82,7 @@ describe('CredentialManager', () => {
 
   describe('getSecret', () => {
     it('should retrieve secret for valid provider and account', async () => {
-      // Setup keytar mock
+      // Setup specific mock for this test
       mockKeytar.getPassword.mockResolvedValueOnce(TEST_SECRET);
 
       const identifier: CredentialIdentifier = {
@@ -235,7 +220,7 @@ describe('CredentialManager', () => {
       ];
 
       // Setup keytar mock
-      mockKeytar.findCredentials.mockResolvedValueOnce(mockCredentials as { account: string; password: string }[]);
+      mockKeytar.findCredentials.mockResolvedValueOnce(mockCredentials);
 
       const result = await CredentialManager.findCredentialsByProvider(TEST_PROVIDER);
 

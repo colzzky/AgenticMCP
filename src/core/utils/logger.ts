@@ -1,3 +1,5 @@
+import type { Logger } from '../types/logger.types';
+
 /**
  * @fileoverview A simple logger utility for the AgenticMCP CLI.
  * Provides basic logging functionalities with different severity levels.
@@ -57,7 +59,7 @@ export function setLogLevel(level: string): void {
   }
 }
 
-export const logger = {
+export const logger: Logger = {
   info,
   warn,
   error,

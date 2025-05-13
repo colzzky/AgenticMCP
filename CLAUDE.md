@@ -78,10 +78,7 @@ When implementing new LLM providers:
 - Always define types/interfaces in the types directory, not in test files
 - Import types/interfaces from the relevant modules' types directory
 - Consult latest documentation of libraries before creating/mocking tests
-
-## 🧪 Jest Mocking Guide for TypeScript Projects
-
-(... rest of the existing content ...)
+- Remove all duplicate or temporary tests
 
 ## Project Workflow Rules
 
@@ -111,48 +108,13 @@ When implementing new LLM providers:
    - Split files when they require excessive scrolling or contain multiple unrelated concerns
    - Maintain separation of concerns across layers
 
-## Line Count and File Management Guidelines
-
-14. When creating/editing a JavaScript or TypeScript file, check the line count of the file and make sure it does not exceed the ideal line count per file. You can use tools such as `wc -l filename` to check the line count of an existing file or count lines of a string using the tool `wc -l <(echo "string")` before creating a new file to ensure it does not exceed the ideal line count per file.
-
-15. If the file's line count exceeds the suggested number of lines based on "Rules: Ideal Line Count per File", then split the file into multiple files, using `import` and `export` to share code between files, or use composables.
-
-### ✅ **Rules: Ideal Line Count per File**
-
-1. **Limit each file to a single responsibility**
-   * If a file is handling multiple unrelated concerns, split it.
-
-2. **Cap most files between 100–300 lines**
-   * This range supports readability and testability while allowing meaningful logic.
-
-3. **Keep utility/helper files under 150 lines**
-   * Utility files should focus on small, reusable functions. Split them when they start housing unrelated utilities.
-
-4. **Limit test files to 300 lines max**
-   * Group related test cases in the same file, but break them up if there are too many logical variations being tested.
-
-5. **Interface and type files should stay under 150 lines**
-   * Keep closely related types together; split into multiple files if modeling large, unrelated entities.
-
-6. **Index (`index.ts`) and entry point files should stay under 50 lines**
-   * These should primarily import, re-export, or initialize — avoid complex logic.
-
-7. **Avoid nesting more than 2 classes or large functions in a single file**
-   * Deep nesting harms testability and makes files harder to reason about.
-
-8. **If a file contains more than ~10 screenfuls of code, consider refactoring**
-   * This is a soft limit based on visual length and ease of navigation.
-
-9. **Split files when editing requires frequent scrolling or search**
-   * Ease of navigation is critical for collaborative teams and future maintainers.
-
-10. **Maintain separation of concerns across layers (service, controller, utils, etc.)**
-    * Don't mix types, logic, and API handlers in the same file.
-
 ## Developer Best Practices
 
+- Write robust and testable code by fully adopting dependency injection
 - After creating or editing a file, always run "npm run lint --fix" to see any type/linting errors, and proceed to fix if errors are found - then run "npm run lint" to ensure that there are no errors - repeat process until there are no errors
 
 - When working on test files - Always run "npm run type-check:tests" to ensure that there are no type errors in the tests - repeat process until there are no errors
  - 13.1 When working on src files - Always run "npm run type-check:src" to ensure that there are no type errors in the src files - repeat process until there are no errors
  - 13.2 Finally run "npm run type-check" to ensure that there are no type errors in the entire project - repeat process until there are no errors
+
+(Rest of the existing content remains the same)

@@ -78,21 +78,23 @@ export class BasicExampleCommand implements Command {
    * Get help for this command
    */
   getHelp(): string {
-    return `
-Example Command
-
-Usage:
-  agenticmcp example [options]
-  agenticmcp example subcommand <input>
-
-Options:
-  -v, --verbose     Enable verbose output
-
-Examples:
-  agenticmcp example
-  agenticmcp example --verbose
-  agenticmcp example subcommand "Hello World"
-    `;
+    let output = '';
+    output += 'Example Command';
+    output += '\n';
+    output += 'Usage: agenticmcp example [options]';
+    output += '\n';
+    output += 'Options:';
+    output += '\n';
+    output += '  -v, --verbose     Enable verbose output';
+    output += '\n';
+    output += 'Examples:';
+    output += '\n';
+    output += '  agenticmcp example';
+    output += '\n';
+    output += '  agenticmcp example --verbose';
+    output += '\n';
+    output += '  agenticmcp example subcommand "Hello World"';
+    return output;
   }
 }
 

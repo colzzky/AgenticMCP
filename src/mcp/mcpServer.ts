@@ -1,20 +1,19 @@
-import { McpServer as BaseMcpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { Implementation } from "@modelcontextprotocol/sdk/types.js";
-import { StdioServerTransport as ServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { Logger } from '../core/types/logger.types.js';
 import { type ZodRawShape } from "zod";
-
-/**
- * Configuration options for the MCP server
- */
-export type McpServerConfig = Implementation;
+import type {
+  McpServerConfig,
+  McpServerType,
+  McpServerTransport,
+  BaseMcpServer,
+  BaseMcpServerInstance
+} from "../mcp/types"
 
 /**
  * MCP Server class that wraps the MCP SDK server and provides integration
  * with AgenticMCP's existing DILocalCliTool implementation.
  */
 export class McpServer {
-  private server: BaseMcpServer;
+  private server: BaseMcpServerInstance;
   private logger: Logger;
   private isConnected = false;
   private registeredTools: Set<string> = new Set();
@@ -25,8 +24,8 @@ export class McpServer {
    * @param config Server configuration options
    * @param logger Logger instance for logging
    */
-  constructor(config: McpServerConfig, logger: Logger) {
-    this.server = new BaseMcpServer({
+  constructor(config: McpServerConfig, logger: Logger, server: BaseMcpServer) {
+    this.server = new server({
       name: config.name,
       version: config.version,
       description: config.description
@@ -44,15 +43,15 @@ export class McpServer {
    * @param transport Server transport implementation
    * @returns Promise that resolves when the server is connected
    */
-  public async connect(transport: ServerTransport): Promise<void> {
+  public async connect(transport: McpServerTransport): Promise<void> {
     if (this.isConnected) {
       this.logger.warn('MCP Server is already connected to a transport');
       return;
     }
-    
+
     try {
       this.logger.info('Connecting MCP Server to transport...');
-      await this.server.connect(transport);
+      await this.server.connect(new transport());
       this.isConnected = true;
       this.logger.info('MCP Server successfully connected to transport');
     } catch (error) {

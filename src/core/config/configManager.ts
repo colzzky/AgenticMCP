@@ -1,9 +1,7 @@
 /**
  * @file Manages application configuration, including loading, saving, and providing defaults.
  */
-
-import * as fs from 'node:fs/promises';
-import path from 'node:path';
+import type { PathDI, FileSystemDI } from '../../global.types';
 import envPaths from 'env-paths';
 import { AppConfig, ProviderSpecificConfig, OpenAIProviderSpecificConfig, McpServerConfig } from '../types/config.types'; 
 import { CredentialManager } from '../credentials/credentialManager'; 
@@ -19,19 +17,23 @@ const CONFIG_FILE_NAME = 'config.json';
 export class ConfigManager {
   private configPath: string;
   private config: AppConfig | undefined = undefined;
+  private pathDI: PathDI;
+  private fileSystemDI: FileSystemDI;
 
-  constructor(appName: string = APP_NAME) {
+  constructor(appName: string = APP_NAME, pathDI: PathDI, fileSystemDI: FileSystemDI) {
     const paths = envPaths(appName, { suffix: '' });
-    this.configPath = path.join(paths.config, CONFIG_FILE_NAME);
+    this.configPath = pathDI.join(paths.config, CONFIG_FILE_NAME);
+    this.pathDI = pathDI;
+    this.fileSystemDI = fileSystemDI;
   }
 
   /**
    * Ensures the configuration directory exists.
    */
   private async ensureConfigDirectory(): Promise<void> {
-    const dir = path.dirname(this.configPath);
+    const dir = this.pathDI.dirname(this.configPath);
     try {
-      await fs.mkdir(dir, { recursive: true });
+      await this.fileSystemDI.mkdir(dir, { recursive: true });
     } catch (error: unknown) {
       if (
         error &&
@@ -58,7 +60,7 @@ export class ConfigManager {
     await this.ensureConfigDirectory();
 
     try {
-      const fileContent = await fs.readFile(this.configPath, 'utf-8');
+      const fileContent = await this.fileSystemDI.readFile(this.configPath, 'utf-8');
       this.config = JSON.parse(fileContent) as AppConfig;
     } catch (error: unknown) {
       if (
@@ -94,7 +96,7 @@ export class ConfigManager {
     await this.ensureConfigDirectory();
     try {
       const fileContent = JSON.stringify(this.config, undefined, 2);
-      await fs.writeFile(this.configPath, fileContent, 'utf-8');
+      await this.fileSystemDI.writeFile(this.configPath, fileContent, 'utf-8');
       console.log(`Configuration saved to ${this.configPath}`);
     } catch (error) {
       console.error(`Error saving config file ${this.configPath}:`, error);
@@ -239,11 +241,9 @@ export class ConfigManager {
 
   /**
    * Gets the file path where the configuration is stored.
-   * @returns {string} The configuration file path.
+   * @returns {string} The configuration file this.pathDI.
    */
   public getConfigFilePath(): string {
     return this.configPath;
   }
 }
-
-export const configManager = new ConfigManager();

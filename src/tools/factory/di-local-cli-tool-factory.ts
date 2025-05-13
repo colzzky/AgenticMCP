@@ -7,6 +7,7 @@ import { IFileSystem } from '../../core/interfaces/file-system.interface';
 import { IDiffService } from '../../core/interfaces/diff-service.interface';
 import { Logger } from '../../core/types/logger.types';
 import { DILocalCliTool, LocalCliToolConfig } from '../localCliTool';
+import type { PathDI } from '../../global.types';
 
 /**
  * Creates a new DILocalCliTool instance with dependencies from the DI container
@@ -21,6 +22,7 @@ export function createDILocalCliTool(
   const logger = container.get(DI_TOKENS.LOGGER) as Logger;
   const fileSystem = container.getSingleton(DI_TOKENS.FILE_SYSTEM) as IFileSystem;
   const diffService = container.getSingleton(DI_TOKENS.DIFF_SERVICE) as IDiffService;
+  const pathDI = container.getSingleton(DI_TOKENS.PATH_DI) as PathDI;
   
-  return new DILocalCliTool(config, logger, fileSystem, diffService);
+  return new DILocalCliTool(config, logger, fileSystem, diffService, pathDI);
 }

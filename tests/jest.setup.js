@@ -5,6 +5,7 @@
 // Import Jest
 import { jest } from '@jest/globals';
 import { Stats, Dirent } from 'fs';
+import { mock } from 'jest-mock-extended';
 
 // Create global mock registry
 global.__mocks__ = {};
@@ -132,11 +133,52 @@ const createOsMock = () => ({
   cpus: jest.fn().mockReturnValue([{ model: 'Mock CPU', speed: 2000 }])
 });
 
+/**
+ * Create a mock implementation for @google/genai
+ */
+const createGoogleGenAIMock = () => {
+  // Create mock response objects
+  const mockChatGenerateContentResponse = {
+    candidates: [{ content: { parts: [{ text: 'This is a mock response from Gemini AI' }], role: 'model' } }],
+    text: 'This is a mock response from Gemini AI',
+    usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 20, totalTokenCount: 30 }
+  };
+
+  // Create mock chat session
+  const mockChatSession = {
+    sendMessage: jest.fn().mockResolvedValue(mockChatGenerateContentResponse)
+  };
+
+  // Create mock model
+  const mockGenerativeModel = {
+    generateContent: jest.fn().mockReturnValue({
+      response: Promise.resolve(mockChatGenerateContentResponse)
+    }),
+    startChat: jest.fn().mockReturnValue(mockChatSession)
+  };
+
+  // Create mock models API
+  const mockModelsAPI = {
+    get: jest.fn().mockReturnValue(mockGenerativeModel)
+  };
+
+  return {
+    GoogleGenAI: jest.fn().mockImplementation(() => ({
+      models: mockModelsAPI
+    })),
+    HarmCategory: { HARM_CATEGORY_HARASSMENT: 'harassment' },
+    HarmBlockThreshold: { BLOCK_MEDIUM_AND_ABOVE: 'medium' }
+  };
+};
+
 // Create mocks
 const fsMock = createFsMock();
 const keytarMock = createKeytarMock();
 const pathMock = createPathMock();
-const osMock = createOsMock();
+// Create a type-safe mock for node:os
+const osMock = mock<typeof import('node:os')>(createOsMock());
+
+const googleGenAIMock = createGoogleGenAIMock();
 
 // Patch Node.js modules
 jest.unstable_mockModule('node:fs/promises', () => fsMock);
@@ -144,14 +186,18 @@ jest.unstable_mockModule('fs/promises', () => fsMock);
 jest.unstable_mockModule('keytar', () => keytarMock);
 jest.unstable_mockModule('node:path', () => pathMock);
 jest.unstable_mockModule('path', () => pathMock);
-jest.unstable_mockModule('node:os', () => osMock);
-jest.unstable_mockModule('os', () => osMock);
+jest.unstable_mockModule('node:os', () => ({ ...osMock, default: osMock }));
+jest.unstable_mockModule('os', () => ({ ...osMock, default: osMock }));
+jest.unstable_mockModule('@google/genai', () => googleGenAIMock);
 
 // Store mocks in global registry for easy access in tests
-global.__mocks__.fs = fsMock;
-global.__mocks__.keytar = keytarMock;
-global.__mocks__.path = pathMock;
-global.__mocks__.os = osMock;
+global.__mocks__ = {
+  fs: fsMock,
+  keytar: keytarMock,
+  path: pathMock,
+  os: osMock,
+  googleGenAI: googleGenAIMock
+};
 
 // Helper function for accessing mocks from tests
 global.getMock = (name) => global.__mocks__[name];

@@ -5,11 +5,16 @@
 import type { Command, CommandContext, CommandOutput } from '../types/command.types';
 import type { Logger } from '../types/logger.types';
 import { FilePathProcessor } from '../../context/filePathProcessor';
+import type { PathDI, FileSystemDI } from '../../global.types';
 
 /**
  * Factory interface for creating FilePathProcessors
  */
 export interface FilePathProcessorFactory {
+  pathDI: PathDI;
+  fileSystemDI: FileSystemDI;
+  processDi: NodeJS.Process;
+  factory: typeof FilePathProcessor;
   create(logger: Logger): FilePathProcessor;
 }
 
@@ -17,8 +22,27 @@ export interface FilePathProcessorFactory {
  * Default implementation of the FilePathProcessorFactory
  */
 export class DefaultFilePathProcessorFactory implements FilePathProcessorFactory {
+  pathDI: PathDI;
+  fileSystemDI: FileSystemDI;
+  processDi: NodeJS.Process;
+  factory: typeof FilePathProcessor;
+
+  constructor(
+    pathDI: PathDI,
+    fileSystemDI: FileSystemDI,
+    processDi: NodeJS.Process,
+    factory: typeof FilePathProcessor
+  ) {
+    this.pathDI = pathDI;
+    this.fileSystemDI = fileSystemDI;
+    this.processDi = processDi;
+    this.factory = factory;
+  }
+
   create(logger: Logger): FilePathProcessor {
-    return new FilePathProcessor(logger);
+    return new this.factory(
+      logger,this.pathDI, this.fileSystemDI, this.processDi
+    );
   }
 }
 
@@ -34,16 +58,16 @@ export abstract class BaseCommand implements Command {
     description: string;
     defaultValue?: unknown;
   }>;
-  
-  protected logger: Logger;
+
   protected filePathProcessorFactory: FilePathProcessorFactory;
+  protected logger: Logger;
 
   constructor(
     logger: Logger,
-    filePathProcessorFactory?: FilePathProcessorFactory
+    filePathProcessorFactory: FilePathProcessorFactory
   ) {
     this.logger = logger;
-    this.filePathProcessorFactory = filePathProcessorFactory || new DefaultFilePathProcessorFactory();
+    this.filePathProcessorFactory = filePathProcessorFactory;
   }
 
   /**
@@ -56,10 +80,10 @@ export abstract class BaseCommand implements Command {
   ): Promise<{ context: string; remainingArgs: string[] }> {
     // Convert args to strings, filtering out non-string values
     const stringArgs = args.filter(arg => typeof arg === 'string') as string[];
-    
+
     // Create a file path processor using the factory (for better testability)
     const processor = this.filePathProcessorFactory.create(this.logger);
-    
+
     // Process the arguments
     return processor.processArgs(stringArgs);
   }

@@ -1,4 +1,4 @@
-import keytar from 'keytar';
+import * as keytar from 'keytar';
 import { CredentialIdentifier, KeytarCredential } from '../types/credentials.types';
 import { logger } from '../utils/index'; // Corrected: Import from barrel file
 

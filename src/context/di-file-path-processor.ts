@@ -2,7 +2,7 @@
  * @file Utility for processing file path arguments into context - DI enabled version
  */
 
-import path from 'node:path';
+import type { PathDI, FileSystemDI } from '../global.types';
 import { FileContextManager } from './contextManager';
 import type { Logger } from '../core/types/logger.types';
 import { IFileSystem } from '../core/interfaces/file-system.interface';
@@ -40,6 +40,8 @@ export class DIFilePathProcessor {
   private logger: Logger;
   private fileSystem: IFileSystem;
   private options: FilePathProcessorOptions;
+  private pathDI: PathDI;
+  private processDi: NodeJS.Process;
 
   /**
    * Creates a new FilePathProcessor with dependency injection
@@ -50,12 +52,17 @@ export class DIFilePathProcessor {
   constructor(
     logger: Logger, 
     fileSystem: IFileSystem,
+    pathDI: PathDI,
+    fileSystemDI: FileSystemDI,
+    processDi: NodeJS.Process,
     options: FilePathProcessorOptions = {}
   ) {
     this.logger = logger;
     this.fileSystem = fileSystem;
+    this.pathDI = pathDI;
+    this.processDi = processDi;
     this.options = { ...DEFAULT_OPTIONS, ...options };
-    this.contextManager = new FileContextManager();
+    this.contextManager = new FileContextManager(pathDI, fileSystemDI);
   }
 
   /**
@@ -97,7 +104,7 @@ export class DIFilePathProcessor {
       for (const item of contextItems) {
         if (item.content) {
           if (context) context += '\n\n';
-          context += `--- ${path.basename(item.sourcePath || '')} ---\n`;
+          context += `--- ${ this.pathDI.basename(item.sourcePath || '')} ---\n`;
           context += item.content;
         }
       }
@@ -117,9 +124,9 @@ export class DIFilePathProcessor {
   private async isExistingPath(pathStr: string): Promise<boolean> {
     try {
       // Resolve relative paths against base directory
-      const resolvedPath = path.isAbsolute(pathStr) 
+      const resolvedPath =  this.pathDI.isAbsolute(pathStr) 
         ? pathStr 
-        : path.resolve(this.options.baseDir || process.cwd(), pathStr);
+        :  this.pathDI.resolve(this.options.baseDir || this.processDi.cwd(), pathStr);
       
       await this.fileSystem.access(resolvedPath);
       return true;
@@ -140,9 +147,9 @@ export class DIFilePathProcessor {
     for (const filePath of filePaths) {
       try {
         // Resolve relative paths against base directory
-        const resolvedPath = path.isAbsolute(filePath) 
+        const resolvedPath =  this.pathDI.isAbsolute(filePath) 
           ? filePath 
-          : path.resolve(this.options.baseDir || process.cwd(), filePath);
+          :  this.pathDI.resolve(this.options.baseDir || this.processDi.cwd(), filePath);
         
         const stat = await this.fileSystem.stat(resolvedPath);
         

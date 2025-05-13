@@ -2,7 +2,6 @@
  * @file Dependency Injection enabled version of LocalCliTool for better testability
  */
 
-import * as path from 'node:path';
 import { Minimatch } from 'minimatch';
 import type { Logger } from '../core/types/logger.types';
 import { getLocalCliToolDefinitions } from './localCliToolDefinitions';
@@ -30,6 +29,8 @@ import type {
   FindFilesResult,
   LocalCliCommandMap
 } from '../core/types/cli.types';
+
+import type { PathDI } from '../global.types';
 
 export interface FunctionDefinition {
   name: string;
@@ -65,26 +66,25 @@ export class DILocalCliTool {
   private fileSystem: IFileSystem;
   private diffService: IDiffService;
   private commandMap: LocalCliCommandMap;
+  private pathDI: PathDI;
 
-  /**
-   * Gets the available commands in this LocalCliTool instance.
-   * Used for tool registration and integration with LLM providers.
-   * @returns The command map with available commands and their handlers.
-   */
-  public getCommandMap(): Readonly<LocalCliCommandMap> {
-    return this.commandMap;
-  }
-
-  constructor(config: LocalCliToolConfig, logger: Logger, fileSystem: IFileSystem, diffService: IDiffService) {
+  constructor(
+    config: LocalCliToolConfig,
+    logger: Logger,
+    fileSystem: IFileSystem,
+    diffService: IDiffService,
+    pathDI: PathDI
+  ) {
     if (!config.baseDir) throw new TypeError("'baseDir' must be specified in the configuration.");
-    if (!path.isAbsolute(config.baseDir)) throw new TypeError("'baseDir' must be an absolute path.");
+    if (!pathDI.isAbsolute(config.baseDir)) throw new TypeError("'baseDir' must be an absolute this.pathDI.");
 
-    this.baseDir = path.resolve(config.baseDir);
+    this.baseDir = pathDI.resolve(config.baseDir);
     this.allowedCommands = new Set(config.allowedCommands || []);
     this.allowFileOverwrite = config.allowFileOverwrite ?? false;
     this.logger = logger;
     this.fileSystem = fileSystem;
     this.diffService = diffService;
+    this.pathDI = pathDI;
 
     this.commandMap = {
       create_directory: this._createDirectory.bind(this),
@@ -101,6 +101,15 @@ export class DILocalCliTool {
   }
 
   /**
+   * Gets the available commands in this LocalCliTool instance.
+   * Used for tool registration and integration with LLM providers.
+   * @returns The command map with available commands and their handlers.
+   */
+  public getCommandMap(): Readonly<LocalCliCommandMap> {
+    return this.commandMap;
+  }
+
+  /**
    * Returns JSON-schema-like definitions for each allowed command.
    * Uses the standardized tool definitions from localCliToolDefinitions.ts
    * 
@@ -109,7 +118,7 @@ export class DILocalCliTool {
   public getToolDefinitions(): ToolDefinition[] {
     // Get the standardized tool definitions
     const toolDefinitions = getLocalCliToolDefinitions();
-    
+
     // Convert to the format expected by this class's interface
     return toolDefinitions.map((tool: Tool) => ({
       type: 'function',
@@ -199,8 +208,8 @@ export class DILocalCliTool {
    * Resolves a relative path against cwd or baseDir and ensures it stays within baseDir.
    */
   private resolveAndValidatePath(rel: string): string {
-    const resolved = path.resolve(this.baseDir, rel);
-    if (!resolved.startsWith(this.baseDir + path.sep) && resolved !== this.baseDir) {
+    const resolved = this.pathDI.resolve(this.baseDir, rel);
+    if (!resolved.startsWith(this.baseDir + this.pathDI.sep) && resolved !== this.baseDir) {
       throw new Error(`Access denied: Path '${rel}' is outside of baseDir.`);
     }
     return resolved;
@@ -229,7 +238,7 @@ export class DILocalCliTool {
 
     try {
       // Create parent directories if they don't exist
-      await this.fileSystem.mkdir(path.dirname(target), { recursive: true });
+      await this.fileSystem.mkdir(this.pathDI.dirname(target), { recursive: true });
 
       let existingContent = '';
       let fileExists = false;
@@ -345,23 +354,23 @@ export class DILocalCliTool {
   private async _listDirectory(args: ListDirectoryArgs): Promise<ListDirectoryResult> {
     const rel = args.path || '.';
     const target = this.resolveAndValidatePath(rel);
-    
+
     try {
       const entries: DirectoryEntry[] = [];
       const items = await this.fileSystem.readdir(target);
-      
+
       for (const itemName of items) {
         if (itemName.startsWith('.')) continue;
-        
-        const itemPath = path.join(target, itemName);
+
+        const itemPath = this.pathDI.join(target, itemName);
         const stat = await this.fileSystem.stat(itemPath);
-        
-        entries.push({ 
-          name: path.relative(this.baseDir, itemPath), 
-          type: stat.isDirectory() ? 'directory' : 'file' 
+
+        entries.push({
+          name: this.pathDI.relative(this.baseDir, itemPath),
+          type: stat.isDirectory() ? 'directory' : 'file'
         });
       }
-      
+
       return { entries };
     } catch (error) {
       this.logger.error(`Error listing directory ${args.path}: ${error instanceof Error ? error.message : String(error)}`);
@@ -375,35 +384,35 @@ export class DILocalCliTool {
     const regex = new RegExp(args.query, 'i');
     const maxResults = 50;
     const recursive = args.recursive ?? false;
-    
+
     const walk = async (dir: string) => {
       try {
         const items = await this.fileSystem.readdir(dir);
-        
+
         for (const itemName of items) {
           if (results.length >= maxResults) return;
-          
-          const itemPath = path.join(dir, itemName);
+
+          const itemPath = this.pathDI.join(dir, itemName);
           const stat = await this.fileSystem.stat(itemPath);
-          
+
           if (stat.isDirectory()) {
             if (recursive) await walk(itemPath);
           } else {
             try {
               const content = await this.fileSystem.readFile(itemPath, 'utf8');
               const lines = content.split(/\r?\n/);
-              
+
               for (const [i, lineRaw] of lines.entries()) {
                 if (regex.test(lineRaw)) {
                   let line = lineRaw.trim();
                   if (line.length > 200) line = line.slice(0, 197) + '...';
-                  
+
                   results.push({
-                    file: path.relative(this.baseDir, itemPath),
+                    file: this.pathDI.relative(this.baseDir, itemPath),
                     line_number: i + 1,
                     line_content: line,
                   });
-                  
+
                   if (results.length >= maxResults) return;
                 }
               }
@@ -416,7 +425,7 @@ export class DILocalCliTool {
         // Skip directories that cannot be read
       }
     };
-    
+
     await walk(this.baseDir);
     return { results };
   }
@@ -426,20 +435,20 @@ export class DILocalCliTool {
     const results: string[] = [];
     const recursive = args.recursive ?? false;
     const matcher = new Minimatch(args.pattern);
-    
+
     const walk = async (dir: string) => {
       try {
         const items = await this.fileSystem.readdir(dir);
-        
+
         for (const itemName of items) {
-          const itemPath = path.join(dir, itemName);
+          const itemPath = this.pathDI.join(dir, itemName);
           const stat = await this.fileSystem.stat(itemPath);
-          
+
           if (stat.isDirectory()) {
             if (recursive) await walk(itemPath);
           } else {
             if (matcher.match(itemName)) {
-              results.push(path.relative(this.baseDir, itemPath));
+              results.push(this.pathDI.relative(this.baseDir, itemPath));
             }
           }
         }
@@ -447,7 +456,7 @@ export class DILocalCliTool {
         // Skip directories that cannot be read
       }
     };
-    
+
     await walk(this.baseDir);
     return { files: results };
   }

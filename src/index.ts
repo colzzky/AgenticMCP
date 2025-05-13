@@ -8,7 +8,7 @@ import { McpCommands } from './commands/mcpCommands';
 import { ToolCommands } from './commands/toolCommands';
 import { LLMCommand } from './commands/llmCommand';
 import { logger } from './core/utils/logger';
-import { configManager } from './core/config/configManager';
+import { ConfigManager } from './core/config/configManager';
 import { DIContainer } from './core/di/container';
 import { DILocalCliTool, LocalCliToolConfig } from './tools/localCliTool';
 import { ToolRegistry } from './tools/toolRegistry';
@@ -17,107 +17,294 @@ import { DiffService } from './core/services/diff.service';
 import { ToolExecutor } from './tools/toolExecutor';
 import { ToolResultFormatter } from './tools/toolResultFormatter';
 import { ProviderInitializer } from './providers/providerInitializer';
-import path from 'node:path';
+import { ProviderFactory } from './providers/providerFactory';
+import type { ProviderFactoryInstance } from './providers/types';
+import type { PathDI } from './global.types';
+import * as path from 'node:path';
+import * as fs from 'node:fs/promises';
+import { DI_TOKENS } from './core/di/tokens';
+import { FilePathProcessorFactory } from './core/commands/type';
+import { DefaultFilePathProcessorFactory } from './core/commands/baseCommand';
+import { McpServer } from "./mcp/mcpServer";
+import { McpServer as BaseMcpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { FilePathProcessor } from './context/filePathProcessor';
 
-async function main(): Promise<void> {
-  const program = new Command();
+type LoggerType = typeof logger;
 
-  // --- Dependency Injection Setup --- 
-  const container = DIContainer.getInstance();
+export async function main(
+  command: typeof Command,
+  diContainer: typeof DIContainer,
+  fileSystem: typeof FileSystemService,
+  diffServiceInstance: typeof DiffService,
+  processDi: NodeJS.Process,
+  localCliTool: typeof DILocalCliTool,
+  loggerTool: LoggerType,
+  toolRegistry: typeof ToolRegistry,
+  toolExecutor: typeof ToolExecutor,
+  toolResultFormatter: typeof ToolResultFormatter,
+  configManager: typeof ConfigManager,
+  providerInitializer: typeof ProviderInitializer,
+  mcpCommands: typeof McpCommands,
+  llmCommand: typeof LLMCommand,
+  toolCommands: typeof ToolCommands,
+  pathDi: typeof path,
+  fsDi: typeof fs,
+  filePathProcessorFactory: typeof DefaultFilePathProcessorFactory,
+): Promise<void> {
+  const program = new command();
   
-  // 1. Register Logger (created externally)
-  container.register<typeof logger>('logger', logger);
+  // Set up the DI container
+  const container = setupDependencyInjection(
+    diContainer,
+    loggerTool,
+    fileSystem,
+    diffServiceInstance,
+    pathDi,
+    fsDi,
+    processDi,
+    localCliTool
+  );
+  
+  // Set up the tools system
+  const tools = setupToolSystem(
+    container,
+    toolRegistry,
+    toolExecutor,
+    toolResultFormatter,
+    loggerTool
+  );
+  
+  // Set up provider system
+  const providers = setupProviderSystem(
+    configManager,
+    providerInitializer, 
+    tools.toolRegistry,
+    loggerTool,
+    pathDi,
+    fsDi
+  );
+  
+  // Register global references (needed for CLI operation)
+  registerGlobalReferences(tools, providers.providerFactory);
+  
+  const filePathProcessorFactoryInstance = new filePathProcessorFactory(
+    pathDi,
+    fsDi,
+    processDi,
+    FilePathProcessor
+  );
+
+  // Configure and register CLI commands
+  setupCliCommands(
+    program,
+    pathDi,
+    fsDi,
+    mcpCommands,
+    llmCommand,
+    toolCommands,
+    providers.configManager,
+    loggerTool,
+    tools.toolRegistry,
+    processDi,
+    filePathProcessorFactoryInstance,
+    providers.providerFactory
+  );
+
+  // Run the program
+  return runProgram(program, processDi, loggerTool);
+}
+
+// Helper functions outside main
+
+function setupDependencyInjection(
+  diContainer: typeof DIContainer,
+  loggerTool: LoggerType,
+  fileSystem: typeof FileSystemService,
+  diffServiceInstance: typeof DiffService,
+  pathDi: typeof path,
+  fsDi: typeof fs,
+  processDi: NodeJS.Process,
+  localCliTool: typeof DILocalCliTool
+): { container: any, localCliToolInstance: any } {
+  const container = diContainer.getInstance();
+  
+  // 1. Register Logger
+  container.register<LoggerType>(DI_TOKENS.LOGGER, loggerTool);
 
   // 2. Create and Register FileSystem Service
-  const fileSystemService = new FileSystemService();
-  container.register<FileSystemService>('FileSystem', fileSystemService);
+  const fileSystemService = new fileSystem(pathDi, fsDi);
+  container.register<FileSystemService>(DI_TOKENS.FILE_SYSTEM, fileSystemService);
 
   // 3. Create and Register Diff Service
-  const diffService = new DiffService();
-  container.register<DiffService>('DiffService', diffService);
+  const diffService = new diffServiceInstance();
+  container.register<DiffService>(DI_TOKENS.DIFF_SERVICE, diffService);
 
-  // 4. Create and Register LocalCliTool Configuration
-  const baseDir = process.cwd();
+  // 4. Register Path
+  container.register<PathDI>(DI_TOKENS.PATH_DI, pathDi);
+
+  // 5. Create and Register LocalCliTool Configuration
+  const baseDir = processDi.cwd();
   const localCliToolConfig: LocalCliToolConfig = {
     baseDir,
-    allowedCommands: [], // Keep empty for now, can be configured later
-    allowFileOverwrite: false // Default to false for safety
+    allowedCommands: [],
+    allowFileOverwrite: false
   };
-  container.register<LocalCliToolConfig>('LocalCliToolConfig', localCliToolConfig);
-  logger.info(`Base directory for tool operations: ${baseDir}`);
+  container.register<LocalCliToolConfig>(DI_TOKENS.LOCAL_CLI_TOOL, localCliToolConfig);
+  loggerTool.info(`Base directory for tool operations: ${baseDir}`);
 
-  // 5. Manually instantiate DILocalCliTool using registered dependencies
-  const localCliTool = new DILocalCliTool(
-    container.get('LocalCliToolConfig'),
-    container.get('logger'),
-    container.get('FileSystem'),
-    container.get('DiffService')
+  // 6. Instantiate and register DILocalCliTool
+  const localCliToolInstance = new localCliTool(
+    container.get(DI_TOKENS.LOCAL_CLI_TOOL),
+    container.get(DI_TOKENS.LOGGER),
+    container.get(DI_TOKENS.FILE_SYSTEM),
+    container.get(DI_TOKENS.DIFF_SERVICE),
+    container.get(DI_TOKENS.PATH_DI)
   );
-  // Optionally register the created instance if it needs to be injected elsewhere
-  container.register<DILocalCliTool>('DILocalCliTool', localCliTool); 
-  // --- End of DI Setup ---
+  container.register<DILocalCliTool>(DI_TOKENS.LOCAL_CLI_TOOL, localCliToolInstance);
+  
+  return { container, localCliToolInstance };
+}
 
-
+function setupToolSystem(
+  diSetup: { container: any, localCliToolInstance: any },
+  toolRegistry: typeof ToolRegistry,
+  toolExecutor: typeof ToolExecutor,
+  toolResultFormatter: typeof ToolResultFormatter,
+  loggerTool: LoggerType
+): { toolRegistry: any, toolExecutor: any, toolResultFormatter: any } {
   // Create tool registry and register local CLI tools
-  const toolRegistry = new ToolRegistry(logger);
-  const registeredToolCount = toolRegistry.registerLocalCliTools(localCliTool);
-  logger.info(`Registered ${registeredToolCount} local CLI tools`);
+  const toolRegistryInstance = new toolRegistry(loggerTool);
+  const registeredToolCount = toolRegistryInstance.registerLocalCliTools(diSetup.localCliToolInstance);
+  loggerTool.info(`Registered ${registeredToolCount} local CLI tools`);
 
-  // Get command map from LocalCliTool using the public getter
-  const commandMap = localCliTool.getCommandMap();
-
-  // Create tool implementations map for execution
+  // Get command map and create tool implementations map
+  const commandMap = diSetup.localCliToolInstance.getCommandMap();
   const toolImplementations: Record<string, Function> = {};
   for (const commandName in commandMap) {
     toolImplementations[commandName] = commandMap[commandName as keyof typeof commandMap];
   }
 
-  // Instantiate ToolExecutor and ToolResultFormatter (potentially needs DI too later)
-  const toolExecutor = new ToolExecutor(toolRegistry, toolImplementations, logger);
-  const toolResultFormatter = new ToolResultFormatter(logger);
+  // Create ToolExecutor and ToolResultFormatter
+  const toolExecutorInstance = new toolExecutor(
+    toolRegistryInstance, 
+    toolImplementations, 
+    loggerTool
+  );
+  const toolResultFormatterInstance = new toolResultFormatter(loggerTool);
 
-  // Initialize provider system with tool registry
-  logger.info('Initializing provider system');
-  const providerInitializer = new ProviderInitializer(configManager);
-  const providerFactory = providerInitializer.getFactory();
+  return {
+    toolRegistry: toolRegistryInstance,
+    toolExecutor: toolExecutorInstance,
+    toolResultFormatter: toolResultFormatterInstance
+  };
+}
+
+function setupProviderSystem(
+  configManager: typeof ConfigManager,
+  providerInitializer: typeof ProviderInitializer,
+  toolRegistryInstance: any,
+  loggerTool: LoggerType,
+  pathDi: typeof path,
+  fsDi: typeof fs
+): { configManager: any, providerInitializer: any, providerFactory: any } {
+  loggerTool.info('Initializing provider system');
+  const configManagerInstance = new configManager("AgenticMCP", pathDi, fsDi);
+  const providerInitializerInstance = new providerInitializer(configManagerInstance);
+  const providerFactoryInstance = providerInitializerInstance.getFactory();
 
   // Connect provider factory with tool registry
-  providerFactory.setToolRegistry(toolRegistry);
-  logger.info('Connected tool registry with provider factory');
+  providerFactoryInstance.setToolRegistry(toolRegistryInstance);
+  loggerTool.info('Connected tool registry with provider factory');
 
-  // Store tool components in globalThis for later use by providers and commands
-  globalThis.toolRegistry = toolRegistry;
-  globalThis.toolExecutor = toolExecutor;
-  globalThis.toolResultFormatter = toolResultFormatter;
+  return {
+    configManager: configManagerInstance,
+    providerInitializer: providerInitializerInstance,
+    providerFactory: providerFactoryInstance
+  };
+}
+
+function registerGlobalReferences(
+  tools: { toolRegistry: any, toolExecutor: any, toolResultFormatter: any },
+  providerFactory: any
+): void {
+  // Store components in globalThis for use by providers and commands
+  globalThis.toolRegistry = tools.toolRegistry;
+  globalThis.toolExecutor = tools.toolExecutor;
+  globalThis.toolResultFormatter = tools.toolResultFormatter;
   globalThis.providerFactory = providerFactory;
+}
+
+function setupCliCommands(
+  program: any,
+  pathDi: typeof path,
+  fsDi: typeof fs,
+  mcpCommands: typeof McpCommands,
+  llmCommand: typeof LLMCommand,
+  toolCommands: typeof ToolCommands,
+  configManagerInstance: any,
+  loggerTool: LoggerType,
+  toolRegistryInstance: any,
+  processDi: NodeJS.Process,
+  filePathProcessorFactory: FilePathProcessorFactory,
+  providerFactoryInstance: ProviderFactoryInstance
+): void {
 
   program
     .version(pkg.version)
     .description(pkg.description);
 
-  // Register command groups
-  registerConfigCommands(program);
+  // Register config and credential commands
+  registerConfigCommands(program, configManagerInstance, processDi);
   registerCredentialCommands(program);
 
   // Register MCP commands
-  const mcpCommands = new McpCommands(configManager, logger);
-  mcpCommands.registerCommands(program);
+  const mcpCommandsInstance = new mcpCommands(
+    configManagerInstance,
+    loggerTool,
+    pathDi,
+    McpServer,
+    BaseMcpServer,
+    process,
+    StdioServerTransport,
+    ProviderFactory
+  );
+  mcpCommandsInstance.registerCommands(program);
 
-  // Register LLM command with file path context support
-  const llmCommand = new LLMCommand();
+  // Register LLM command
+  registerLlmCommand(
+    program,
+    llmCommand,
+    loggerTool,
+    filePathProcessorFactory,
+    providerFactoryInstance
+  );
+  
+  // Register tool commands
+  registerToolCommands(program, toolCommands, loggerTool);
+}
+
+function registerLlmCommand(
+  program: any,
+  llmCommand: typeof LLMCommand,
+  loggerTool: LoggerType,
+  filePathProcessorFactory: FilePathProcessorFactory,
+  providerFactoryInstance: ProviderFactoryInstance
+): void {
+  const llmCommandInstance = new llmCommand(
+    loggerTool, filePathProcessorFactory, providerFactoryInstance
+  );
   program
-    .command(llmCommand.name)
-    .description(llmCommand.description)
+    .command(llmCommandInstance.name)
+    .description(llmCommandInstance.description)
     .option('-p, --provider <provider>', 'LLM provider to use (default: openai)')
     .option('-m, --model <model>', 'Model to use with the provider')
     .allowUnknownOption(true) // Allow file paths to be passed as args
     .action(async (options, command) => {
       try {
-        // Get remaining args (after the command and options)
         const args = command.args;
-        const result = await llmCommand.execute({ options }, ...args);
+        const result = await llmCommandInstance.execute({ options }, ...args);
 
-        // Output the result
         if (result.success) {
           console.log(result.message);
         } else {
@@ -125,102 +312,137 @@ async function main(): Promise<void> {
         }
       } catch (error) {
         if (error instanceof Error) {
-          logger.error(`Error executing LLM command: ${error.message}`);
+          loggerTool.error(`Error executing LLM command: ${error.message}`);
           console.error(`Error: ${error.message}`);
         }
       }
     });
+}
 
-  // Register tool commands
-  const toolCommands = new ToolCommands();
+function registerToolCommands(
+  program: any,
+  toolCommands: typeof ToolCommands,
+  loggerTool: LoggerType
+): void {
+  const toolCommandsInstance = new toolCommands();
   program
-    .command(toolCommands.name)
-    .description(toolCommands.description)
+    .command(toolCommandsInstance.name)
+    .description(toolCommandsInstance.description)
     .action(async (options) => {
       try {
-        const result = await toolCommands.execute({ options }, options);
+        const result = await toolCommandsInstance.execute({ options }, options);
         console.log(JSON.stringify(result, undefined, 2));
       } catch (error) {
         if (error instanceof Error) {
-          logger.error(`Error executing tool commands: ${error.message}`);
+          loggerTool.error(`Error executing tool commands: ${error.message}`);
         }
       }
     });
 
   // Add subcommands for tool commands
-  const toolsCommand = program.commands.find(cmd => cmd.name() === toolCommands.name);
+  const toolsCommand = program.commands.find(cmd => cmd.name() === toolCommandsInstance.name);
   if (toolsCommand) {
-    toolsCommand
-      .command('list')
-      .description('List all registered tools')
-      .action(async (options) => {
-        try {
-          // @ts-ignore - We know this method exists on the class
-          const result = await toolCommands.listTools();
-          console.log(JSON.stringify(result, undefined, 2));
-        } catch (error) {
-          if (error instanceof Error) {
-            logger.error(`Error listing tools: ${error.message}`);
-          }
-        }
-      });
-
-    toolsCommand
-      .command('execute <name>')
-      .description('Execute a specific tool')
-      .option('-a, --args <json>', 'JSON-formatted arguments for the tool')
-      .action(async (name, options) => {
-        try {
-          let args = {};
-          if (options.args) {
-            try {
-              args = JSON.parse(options.args);
-            } catch (parseError) {
-              logger.error(`Invalid JSON arguments: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
-              return;
-            }
-          }
-
-          // @ts-ignore - We know this method exists on the class
-          const result = await toolCommands.executeTool(name, args);
-          console.log(JSON.stringify(result, undefined, 2));
-        } catch (error) {
-          if (error instanceof Error) {
-            logger.error(`Error executing tool: ${error.message}`);
-          }
-        }
-      });
+    setupToolSubcommands(toolsCommand, toolCommandsInstance, loggerTool);
   }
+}
 
-  // Default help and error handling
+function setupToolSubcommands(
+  toolsCommand: any,
+  toolCommandsInstance: any,
+  loggerTool: LoggerType
+): void {
+  toolsCommand
+    .command('list')
+    .description('List all registered tools')
+    .action(async () => {
+      try {
+        const result = await toolCommandsInstance.listTools();
+        console.log(JSON.stringify(result, undefined, 2));
+      } catch (error) {
+        if (error instanceof Error) {
+          loggerTool.error(`Error listing tools: ${error.message}`);
+        }
+      }
+    });
+
+  toolsCommand
+    .command('execute <name>')
+    .description('Execute a specific tool')
+    .option('-a, --args <json>', 'JSON-formatted arguments for the tool')
+    .action(async (name, options) => {
+      try {
+        let args = {};
+        if (options.args) {
+          try {
+            args = JSON.parse(options.args);
+          } catch (parseError) {
+            loggerTool.error(`Invalid JSON arguments: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+            return;
+          }
+        }
+
+        const result = await toolCommandsInstance.executeTool(name, args);
+        console.log(JSON.stringify(result, undefined, 2));
+      } catch (error) {
+        if (error instanceof Error) {
+          loggerTool.error(`Error executing tool: ${error.message}`);
+        }
+      }
+    });
+}
+
+async function runProgram(
+  program: any,
+  processDi: NodeJS.Process,
+  loggerTool: LoggerType
+): Promise<void> {
+  // Add help handler
   program.on('--help', () => {
     console.log('');
     console.log('Use "[command] --help" for more information on a command.');
-    logger.info('Displaying help information.');
+    loggerTool.info('Displaying help information.');
   });
 
   try {
-    await program.parseAsync(process.argv);
-    // Use .length === 0 for explicit length check
-    if (process.argv.slice(2).length === 0) {
+    await program.parseAsync(processDi.argv);
+    if (processDi.argv.slice(2).length === 0) {
       program.outputHelp();
     }
   } catch (error) {
     if (error instanceof Error) {
-      logger.error(`Command execution failed: ${error.message}`);
-      if (process.env.DEBUG === 'true') {
+      loggerTool.error(`Command execution failed: ${error.message}`);
+      if (processDi.env.DEBUG === 'true') {
         console.error(error.stack);
       }
     } else {
-      logger.error('An unknown error occurred during command execution.');
+      loggerTool.error('An unknown error occurred during command execution.');
     }
-    process.exit(1);
+    processDi.exit(1);
   }
 }
 
 // Prefer direct top-level await
 try {
-  await main();
+  await main(
+    Command,
+    DIContainer,
+    FileSystemService,
+    DiffService,
+    process,
+    DILocalCliTool,
+    logger,
+    ToolRegistry,
+    ToolExecutor,
+    ToolResultFormatter,
+    ConfigManager,
+    ProviderInitializer,
+    McpCommands,
+    LLMCommand,
+    ToolCommands,
+    path,
+    fs,
+    DefaultFilePathProcessorFactory
+  );
 } catch (error) {
   const errorMessage = error instanceof Error ? error.message : String(error);
   logger.error(`Unhandled error in main function: ${errorMessage}`);

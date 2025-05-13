@@ -1,9 +1,17 @@
-import path from 'node:path';
+import type { PathDI } from '../../global.types';
 import { createDILocalCliTool } from '../../tools/factory/di-local-cli-tool-factory.js';
 import type { Logger } from '../../core/types/logger.types.js';
 import type { LLMProvider } from '../../core/types/provider.types.js';
 import { constructXmlPrompt, selectModelForRole } from './xmlPromptUtils';
 import { roleEnums, AllRoleSchemas } from './roleSchemas';
+
+/**
+ * Interface to define the structure of regex matches
+ */
+interface FileOperationMatch {
+  fullMatch: string;
+  content: string;
+}
 
 /**
  * Processes file operations found in the LLM response
@@ -16,7 +24,7 @@ export async function processFileOperations(
   const fileOpRegex = /<file_operation>([^]*?)<\/file_operation>/g;
   let match;
   let processedResponse = response;
-  const matches = [];
+  const matches: FileOperationMatch[] = [];
   while ((match = fileOpRegex.exec(response)) !== null) {
     if (match && match.length >= 2) {
       matches.push({ fullMatch: match[0], content: match[1] });
@@ -78,20 +86,29 @@ export async function processFileOperations(
   return processedResponse;
 }
 
+export type HandleRoleBasedToolArgs = {
+  args: AllRoleSchemas;
+  role: roleEnums;
+  logger: Logger;
+  llmProvider: LLMProvider;
+  pathDI: PathDI;
+};
+
 /**
  * Handles execution of a role-based tool
  */
-export async function handleRoleBasedTool(
-  args: AllRoleSchemas,
-  role: roleEnums,
-  logger: Logger,
-  llmProvider: LLMProvider
-): Promise<any> {
+export async function handleRoleBasedTool({
+  args,
+  role,
+  logger,
+  llmProvider,
+  pathDI
+}: HandleRoleBasedToolArgs): Promise<any> {
   const { prompt, base_path, context, related_files, allow_file_overwrite } = args;
   // Create a dedicated DILocalCliTool instance with the specified base path
   // Set allowFileOverwrite to false by default for safety
   const dedicatedLocalCliTool = createDILocalCliTool({
-    baseDir: path.resolve(base_path),
+    baseDir: pathDI.resolve(base_path),
     allowFileOverwrite: allow_file_overwrite || false // Default to safe mode - require explicit allowOverwrite for existing files
   });
   const fileContents = [] as Array<{ path: string, content: string }>;

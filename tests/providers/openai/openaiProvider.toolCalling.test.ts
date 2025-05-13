@@ -2,27 +2,23 @@
  * @file Tests for OpenAI provider tool calling functionality
  */
 
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { setupLoggerMock } from '../../utils/node-module-mock';
+import { jest, describe, it, expect, beforeEach, beforeAll } from '@jest/globals';
 
-// Declare variables for dynamically imported modules
-let OpenAIProvider: typeof import('../../../src/providers/openai/openaiProvider').OpenAIProvider;
-let ProviderTypes: typeof import('../../../src/core/types/provider.types');
+// Create mock implementations
+const mockLogger = {
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  setLogLevel: jest.fn()
+};
 
-// Setup mock logger
-const mockLogger = setupLoggerMock();
+// Define mocks for modules
+jest.mock('../../../src/core/utils/logger', () => mockLogger, { virtual: true });
 
-// Setup dynamic imports and mocks
-beforeAll(async () => {
-  // Register mocks with Jest
-  jest.unstable_mockModule('../../../src/core/utils/logger', () => mockLogger);
-
-  // Import modules after mocking
-  const openaiProviderModule = await import('../../../src/providers/openai/openaiProvider');
-  OpenAIProvider = openaiProviderModule.OpenAIProvider;
-
-  ProviderTypes = await import('../../../src/core/types/provider.types');
-});
+// Import modules after mocking
+import { OpenAIProvider } from '../../../src/providers/openai/openaiProvider';
+import * as ProviderTypes from '../../../src/core/types/provider.types';
 
 describe('OpenAIProvider Tool Calling', () => {
   // Test variables

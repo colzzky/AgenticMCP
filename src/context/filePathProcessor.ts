@@ -2,8 +2,7 @@
  * @file Utility for processing file path arguments into context
  */
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import type { PathDI, FileSystemDI } from '../global.types';
 import { FileContextManager } from './contextManager';
 import type { Logger } from '../core/types/logger.types';
 
@@ -38,16 +37,31 @@ export class FilePathProcessor {
   private contextManager: FileContextManager;
   private logger: Logger;
   private options: FilePathProcessorOptions;
+  private pathDI: PathDI;
+  private fileSystemDI: FileSystemDI;
+  private processDi: NodeJS.Process;
 
   /**
    * Creates a new FilePathProcessor
    * @param logger - Logger instance
+   * @param pathDI - Path DI instance
+   * @param fileSystemDI - File system DI instance
+   * @param processDi - Process DI instance
    * @param options - Processing options
    */
-  constructor(logger: Logger, options: FilePathProcessorOptions = {}) {
+  constructor(
+    logger: Logger, 
+    pathDI: PathDI, 
+    fileSystemDI: FileSystemDI, 
+    processDi: NodeJS.Process, 
+    options: FilePathProcessorOptions = {}
+  ) {
     this.logger = logger;
     this.options = { ...DEFAULT_OPTIONS, ...options };
-    this.contextManager = new FileContextManager();
+    this.contextManager = new FileContextManager(pathDI, fileSystemDI);
+    this.pathDI = pathDI;
+    this.fileSystemDI = fileSystemDI;
+    this.processDi = processDi;
   }
 
   /**
@@ -89,7 +103,7 @@ export class FilePathProcessor {
       for (const item of contextItems) {
         if (item.content) {
           if (context) context += '\n\n';
-          context += `--- ${path.basename(item.sourcePath || '')} ---\n`;
+          context += `--- ${this.pathDI.basename(item.sourcePath || '')} ---\n`;
           context += item.content;
         }
       }
@@ -109,11 +123,11 @@ export class FilePathProcessor {
   private async isExistingPath(pathStr: string): Promise<boolean> {
     try {
       // Resolve relative paths against base directory
-      const resolvedPath = path.isAbsolute(pathStr) 
+      const resolvedPath = this.pathDI.isAbsolute(pathStr) 
         ? pathStr 
-        : path.resolve(this.options.baseDir || process.cwd(), pathStr);
+        : this.pathDI.resolve(this.options.baseDir || this.processDi.cwd(), pathStr);
       
-      await fs.access(resolvedPath);
+      await this.fileSystemDI.access(resolvedPath);
       return true;
     } catch {
       return false;
@@ -132,11 +146,11 @@ export class FilePathProcessor {
     for (const filePath of filePaths) {
       try {
         // Resolve relative paths against base directory
-        const resolvedPath = path.isAbsolute(filePath) 
+        const resolvedPath = this.pathDI.isAbsolute(filePath) 
           ? filePath 
-          : path.resolve(this.options.baseDir || process.cwd(), filePath);
+          : this.pathDI.resolve(this.options.baseDir || this.processDi.cwd(), filePath);
         
-        const stat = await fs.stat(resolvedPath);
+        const stat = await this.fileSystemDI.stat(resolvedPath);
         
         // Add as a context source
         await this.contextManager.addSource({

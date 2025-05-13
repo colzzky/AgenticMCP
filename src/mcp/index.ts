@@ -1,11 +1,12 @@
 // Export MCP server
-export { McpServer, type McpServerConfig } from './mcpServer.js';
+export { McpServer } from './mcpServer';
+import type { McpServerConfig } from './types';
 
 // Export transports
-export { 
-  StdioTransport, 
+export {
+  StdioTransport,
   HttpTransport,
   TransportType,
-  type StdioTransportConfig, 
-  type HttpTransportConfig 
+  type StdioTransportConfig,
+  type HttpTransportConfig
 } from './transports/index.js';

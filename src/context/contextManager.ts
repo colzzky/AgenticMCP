@@ -1,5 +1,4 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import type { PathDI, FileSystemDI } from '../global.types';
 import { Minimatch } from 'minimatch';
 import {
   ContextManager,
@@ -15,6 +14,19 @@ export class FileContextManager implements ContextManager {
   private sources: ContextSource[] = [];
   private items: ContextItem[] = [];
   private processors: ContextProcessor[] = [];
+
+  pathDI: PathDI;
+  fileSystemDI: FileSystemDI;
+
+  /**
+   * Creates a new FileContextManager with dependency injection
+   * @param pathDI - Path DI instance
+   * @param fileSystemDI - File system DI instance
+   */
+  constructor(pathDI: PathDI, fileSystemDI: FileSystemDI) {
+    this.pathDI = pathDI;
+    this.fileSystemDI = fileSystemDI;
+  }
 
   /**
    * Add a context source (directory or file).
@@ -90,7 +102,7 @@ export class FileContextManager implements ContextManager {
    * Loads context items from a given source (file or directory).
    */
   private async loadSource(source: ContextSource): Promise<ContextItem[]> {
-    const stat = await fs.stat(source.path);
+    const stat = await this.fileSystemDI.stat(source.path);
     return stat.isDirectory()
       ? this.loadFromDirectory(source)
       : [await this.loadFromFile(source.path)];
@@ -107,9 +119,9 @@ export class FileContextManager implements ContextManager {
 
     const walk = async (dir: string, depth: number) => {
       if (depth > maxDepth) return;
-      const entries = await fs.readdir(dir, { withFileTypes: true });
+      const entries = await this.fileSystemDI.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
+        const fullPath = this.pathDI.join(dir, entry.name);
         if (entry.isDirectory()) {
           if (recursive) await walk(fullPath, depth + 1);
         } else {
@@ -127,15 +139,15 @@ export class FileContextManager implements ContextManager {
    * Loads a single file as a context item.
    */
   private async loadFromFile(filePath: string): Promise<ContextItem> {
-    const content = await fs.readFile(filePath, 'utf8');
-    const stat = await fs.stat(filePath);
+    const content = await this.fileSystemDI.readFile(filePath, 'utf8');
+    const stat = await this.fileSystemDI.stat(filePath);
     return {
       id: filePath,
       type: this.detectType(filePath),
       sourcePath: filePath,
       content,
       metadata: {
-        extension: path.extname(filePath),
+        extension: this.pathDI.extname(filePath),
         size: stat.size,
       },
     };
@@ -145,7 +157,7 @@ export class FileContextManager implements ContextManager {
    * Simple file type detection based on extension.
    */
   private detectType(filePath: string): string {
-    const ext = path.extname(filePath).toLowerCase();
+    const ext = this.pathDI.extname(filePath).toLowerCase();
     switch (ext) {
       case '.md': {
         return 'markdown';

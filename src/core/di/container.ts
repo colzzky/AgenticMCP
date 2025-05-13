@@ -1,3 +1,5 @@
+import { DI_TOKENS } from "./tokens"
+
 /**
  * @file Simple dependency injection container
  */
@@ -24,14 +26,14 @@ export class DIContainer {
   /**
    * Private constructor for singleton pattern
    */
-  private constructor() {}
+  private constructor() { }
 
   /**
    * Register a dependency with the container
    * @param token - Dependency token/identifier
    * @param dependency - The dependency implementation or factory
    */
-  public register<T>(token: string, dependency: T): void {
+  public register<T>(token: DI_TOKENS, dependency: T): void {
     this.dependencies.set(token, dependency);
   }
 
@@ -40,7 +42,7 @@ export class DIContainer {
    * @param token - Dependency token/identifier
    * @returns The dependency implementation
    */
-  public get<T>(token: string): T {
+  public get<T>(token: DI_TOKENS): T {
     // Check if this is a singleton factory that hasn't been instantiated
     if (this.singletons.has(token)) {
       // If it's a singleton that hasn't been instantiated yet, return the factory
@@ -65,9 +67,9 @@ export class DIContainer {
    * @param token - Dependency token/identifier
    * @param factory - Factory function to create the singleton
    */
-  public registerSingleton<T>(token: string, factory: () => T): void {
+  public registerSingleton<T>(token: DI_TOKENS, factory: () => T): void {
     this.dependencies.set(token, factory);
-    
+
     // Create singleton instance lazily when requested
     this.singletons.set(token, undefined); // Reserve the slot
   }
@@ -77,7 +79,7 @@ export class DIContainer {
    * @param token - Dependency token/identifier
    * @returns The singleton instance
    */
-  public getSingleton<T>(token: string): T {
+  public getSingleton<T>(token: DI_TOKENS): T {
     if (!this.singletons.has(token)) {
       throw new Error(`Singleton not registered: ${token}`);
     }

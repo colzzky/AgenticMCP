@@ -1,12 +1,11 @@
 import { Command } from 'commander';
-import path from 'node:path';
+import type { PathDI } from '../global.types';
 import { CommandHandler } from '../core/commands/decorators.js';
 import type { Logger } from '../core/types/logger.types.js';
 import { ConfigManager } from '../core/config/configManager.js';
-import { McpServer } from '../mcp/mcpServer.js';
+import type { McpServerType, McpServerTransport, BaseMcpServer } from '../mcp/types.js';
 import { registerRoleBasedTools } from '../mcp/tools/index.js';
-import { ProviderFactory } from '../providers/providerFactory.js';
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import type { ProviderFactoryType } from '../providers/types.js';
 
 /**
  * Command options for serving the MCP server
@@ -29,20 +28,35 @@ export interface ServeMcpOptions {
 /**
  * Command for starting an MCP server to expose DILocalCliTool functionality through MCP.
  * This allows external LLM applications to access file operations via the standard MCP protocol.
- *
- * @example
- * ```
- * # Start an MCP server using stdio transport
- * agenticmcp serve-mcp
- * ```
  */
 export class McpCommands {
   private configManager: ConfigManager;
   private logger: Logger;
+  private pathDI: PathDI;
+  private mcpServer: McpServerType;
+  private baseMcpServer: BaseMcpServer;
+  private process: NodeJS.Process
+  private transport: McpServerTransport;
+  private providerFactory: ProviderFactoryType;
 
-  constructor(configManager: ConfigManager, logger: Logger) {
+  constructor(
+    configManager: ConfigManager,
+    logger: Logger,
+    pathDI: PathDI,
+    mcpServer: McpServerType,
+    baseMcpServer: BaseMcpServer,
+    process: NodeJS.Process,
+    transport: McpServerTransport,
+    providerFactory: ProviderFactoryType
+  ) {
     this.configManager = configManager;
     this.logger = logger;
+    this.pathDI = pathDI;
+    this.mcpServer = mcpServer;
+    this.baseMcpServer = baseMcpServer;
+    this.process = process;
+    this.transport = transport;
+    this.providerFactory = providerFactory;
   }
 
   /**
@@ -54,7 +68,7 @@ export class McpCommands {
   public registerCommands(cli: Command): void {
     cli.command('serve-mcp')
       .description('Start an MCP server with role-based tools for AI-assisted tasks')
-      .option('-d, --base-dir <path>', 'Base directory for file operations', process.cwd())
+      .option('-d, --base-dir <path>', 'Base directory for file operations', this.process.cwd())
       .option('-n, --name <string>', 'Name of the MCP server', this.getDefaultServerName())
       .option('-v, --version <string>', 'Version of the MCP server', this.getDefaultServerVersion())
       .option('--description <string>', 'Description of the MCP server', this.getDefaultServerDescription())
@@ -71,19 +85,20 @@ export class McpCommands {
    * @param options Command options
    */
   private async serveMcp(options: ServeMcpOptions): Promise<void> {
-    const baseDir = path.resolve(options.baseDir || process.cwd());
+    const baseDir = this.pathDI.resolve(options.baseDir || "./");
 
     this.logger.info(`Base directory for file operations: ${baseDir}`);
 
     try {
       // Create MCP server with configuration
-      const mcpServer = new McpServer(
+      const mcpServer = new this.mcpServer(
         {
           name: options.name || this.getDefaultServerName(),
           version: options.version || this.getDefaultServerVersion(),
           description: options.description || this.getDefaultServerDescription()
         },
-        this.logger
+        this.logger,
+        this.baseMcpServer
       );
 
       // Initialize LLM provider for role-based tools
@@ -95,21 +110,18 @@ export class McpCommands {
         throw new Error(`Provider "${providerName}" not found in configuration. Please configure it first.`);
       }
 
-      const providerFactory = new ProviderFactory(this.configManager);
+      const providerFactory = new this.providerFactory(this.configManager);
       const llmProvider = providerFactory.getProvider(providerName as any);
 
       // Register role-based tools
-      registerRoleBasedTools(mcpServer, this.logger, llmProvider);
-
-      // Create and connect appropriate transport
-      const transport = new StdioServerTransport();
+      registerRoleBasedTools(mcpServer, this.logger, llmProvider, this.pathDI);
 
       this.logger.info(`Starting HTTP MCP server`);
-      await mcpServer.connect(transport);
+      await mcpServer.connect(this.transport);
       this.logger.info(`MCP server running`);
 
       // Keep the process running
-      process.on('SIGINT', async () => {
+      this.process.on('SIGINT', async () => {
         this.logger.info('Received SIGINT, shutting down MCP server...');
         await mcpServer.disconnect();
         throw new Error('Process exited with code: ' + 0);
@@ -159,4 +171,5 @@ export class McpCommands {
     const config = this.configManager.getConfig();
     return config.defaultProvider || 'openai';
   }
+
 }

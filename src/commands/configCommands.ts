@@ -6,20 +6,24 @@ import { Command } from 'commander';
 import { ConfigManager } from '../core/config/configManager';
 import { AppConfig } from '../core/types/config.types';
 import { logger } from '../core/utils/index';
-import { isValidProviderType } from '../core/utils/index';
 
 /**
  * Registers the 'config' command and its subcommands with the main program.
  * @param program The main Commander program instance.
+ * @param configManager The ConfigManager instance.
  */
-export function registerConfigCommands(program: Command): void {
+export function registerConfigCommands(
+  program: Command,
+  configManager: InstanceType<typeof ConfigManager>,
+  processDi: NodeJS.Process
+): void {
+
   // Show help if no command is specified
-  if (process.argv.slice(2).length === 0) {
+  if (processDi.argv.slice(2).length === 0) {
     program.outputHelp();
   }
 
   const configCommand = program.command('config').description('Manage CLI configuration.');
-  const configManager = new ConfigManager();
 
   configCommand
     .command('path')

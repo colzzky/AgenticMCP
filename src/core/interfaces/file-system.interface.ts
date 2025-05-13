@@ -1,3 +1,5 @@
+import type { PathDI, FileSystemDI } from '../../global.types';
+
 /**
  * @file Interface for file system operations to enable dependency injection and testability
  */
@@ -25,6 +27,10 @@ export interface FileSearchResult {
  * This enables dependency injection and testability by decoupling from direct fs usage
  */
 export interface IFileSystem {
+
+  pathDI: PathDI;
+  fileSystemDI: FileSystemDI;
+
   /**
    * Check if a file or directory exists
    * @param path - Path to check

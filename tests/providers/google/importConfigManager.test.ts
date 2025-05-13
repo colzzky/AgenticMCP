@@ -3,25 +3,36 @@
  */
 
 import { jest, describe, it, expect } from '@jest/globals';
-import { setupNodeOsMock, setupLoggerMock } from '../../utils/node-module-mock';
 
-// Declare dynamically imported module
-let ConfigManager: typeof import('../../../src/core/config/configManager').ConfigManager;
+// Mock path dependency
+jest.spyOn(console, 'log').mockImplementation(() => {});
+jest.spyOn(console, 'error').mockImplementation(() => {});
 
-// Setup mocks
-const mockLogger = setupLoggerMock();
-const mockOs = setupNodeOsMock();
+// Mock all dependencies
+jest.mock('node:fs/promises', () => ({
+  mkdir: jest.fn().mockResolvedValue(undefined),
+  readFile: jest.fn().mockRejectedValue({ code: 'ENOENT' }),
+  writeFile: jest.fn().mockResolvedValue(undefined),
+}));
 
-// Setup module imports and mocks
-beforeAll(async () => {
-  // Register mocks
-  jest.unstable_mockModule('node:os', () => mockOs);
-  jest.unstable_mockModule('../../../src/core/utils/logger', () => mockLogger);
+jest.mock('node:path', () => ({
+  join: jest.fn((...args) => args.join('/')),
+  dirname: jest.fn(path => path.split('/').slice(0, -1).join('/')),
+}));
 
-  // Import module after mocking
-  const configManagerModule = await import('../../../src/core/config/configManager');
-  ConfigManager = configManagerModule.ConfigManager;
-});
+jest.mock('env-paths', () => jest.fn(() => ({
+  config: '/mock/path/config'
+})));
+
+// Manually mock credential manager
+jest.mock('../../../src/core/credentials/credentialManager', () => ({
+  CredentialManager: {
+    getSecret: jest.fn().mockResolvedValue('mock-api-key')
+  }
+}));
+
+// Import after mocking
+import { ConfigManager } from '../../../src/core/config/configManager';
 
 describe('ConfigManager import', () => {
   it('should import ConfigManager without error', () => {

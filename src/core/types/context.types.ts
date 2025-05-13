@@ -1,4 +1,5 @@
 // src/core/types/context.types.ts
+import type { PathDI, FileSystemDI } from '../../global.types';
 
 /**
  * Represents a single item of context, such as a file or a web page.
@@ -35,7 +36,11 @@ export interface ContextProcessor {
  * Defines the interface for a Context Manager.
  * Responsible for loading, processing, and providing context items.
  */
-export interface ContextManager { // No 'any' used
+export interface ContextManager {
+
+  pathDI: PathDI;
+  fileSystemDI: FileSystemDI;
+
   /**
    * Adds a context source to the manager.
    * @param source - The context source to add.

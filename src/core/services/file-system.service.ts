@@ -1,9 +1,7 @@
 /**
  * @file Concrete implementation of IFileSystem using Node.js fs module
  */
-
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import type { PathDI, FileSystemDI } from '../../global.types';
 import { IFileSystem, DirectoryEntry, FileSearchResult } from '../interfaces/file-system.interface';
 
 // Basic implementation using Node's fs/promises
@@ -11,12 +9,20 @@ export class FileSystemService implements IFileSystem {
 
   // --- IFileSystem Implementation ---
 
+  pathDI: PathDI;
+  fileSystemDI: FileSystemDI;
+
+  constructor(pathDI: PathDI, fileSystemDI: FileSystemDI) {
+    this.pathDI = pathDI;
+    this.fileSystemDI = fileSystemDI;
+  }
+
   async access(checkPath: string): Promise<void> {
-    await fs.access(checkPath);
+    await this.fileSystemDI.access(checkPath);
   }
 
   async stat(checkPath: string): Promise<{ isDirectory: () => boolean; size: number; }> {
-      const stats = await fs.stat(checkPath);
+      const stats = await this.fileSystemDI.stat(checkPath);
       return {
           isDirectory: () => stats.isDirectory(),
           size: stats.size,
@@ -24,13 +30,13 @@ export class FileSystemService implements IFileSystem {
   }
 
   async readFile(filePath: string, encoding: BufferEncoding = 'utf-8'): Promise<string> {
-    return fs.readFile(filePath, encoding);
+    return this.fileSystemDI.readFile(filePath, encoding);
   }
 
   async readdir(dirPath: string): Promise<string[]> {
      // IFileSystem expects only names, but our DirectoryEntry needs more.
      // We'll adapt here. If only names are truly needed elsewhere, the interface might need adjustment.
-     const entries = await fs.readdir(dirPath, { withFileTypes: true });
+     const entries = await this.fileSystemDI.readdir(dirPath, { withFileTypes: true });
      return entries.map(entry => entry.name);
      // Note: This implementation differs from the previous listDirectory which returned DirectoryEntry[].
      // If DirectoryEntry[] is needed, the interface should specify that return type for readdir.
@@ -38,21 +44,21 @@ export class FileSystemService implements IFileSystem {
 
   async writeFile(filePath: string, content: string): Promise<void> {
     // Ensure parent directory exists before writing
-    await this.mkdir(path.dirname(filePath));
-    await fs.writeFile(filePath, content, 'utf-8');
+    await this.mkdir(this.pathDI.dirname(filePath));
+    await this.fileSystemDI.writeFile(filePath, content, 'utf-8');
   }
 
   async unlink(filePath: string): Promise<void> {
-    await fs.unlink(filePath);
+    await this.fileSystemDI.unlink(filePath);
   }
 
   async mkdir(dirPath: string): Promise<void> {
-    await fs.mkdir(dirPath, { recursive: true });
+    await this.fileSystemDI.mkdir(dirPath, { recursive: true });
   }
 
   async rmdir(dirPath: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {
-    // Pass options directly, let fs.rm handle defaults if options is undefined
-    await fs.rm(dirPath, options);
+    // Pass options directly, let this.fileSystemDI.rm handle defaults if options is undefined
+    await this.fileSystemDI.rm(dirPath, options);
   }
 
 
@@ -62,7 +68,7 @@ export class FileSystemService implements IFileSystem {
   // Original implementation renamed, kept for potential internal use
   async pathExistsInternal(checkPath: string): Promise<boolean> { 
       try {
-          await fs.access(checkPath);
+          await this.fileSystemDI.access(checkPath);
           return true;
       } catch {
           return false;
@@ -72,7 +78,7 @@ export class FileSystemService implements IFileSystem {
   // Original implementation renamed, kept for potential internal use
   async isDirectoryInternal(checkPath: string): Promise<boolean> {
     try {
-      const stats = await fs.stat(checkPath);
+      const stats = await this.fileSystemDI.stat(checkPath);
       return stats.isDirectory();
     } catch {
       // If stat fails (e.g., path doesn't exist), it's not a directory
@@ -82,13 +88,13 @@ export class FileSystemService implements IFileSystem {
 
   // Original implementation renamed, kept for potential internal use or if interface changes
   async listDirectoryInternal(dirPath: string): Promise<DirectoryEntry[]> { 
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    const entries = await this.fileSystemDI.readdir(dirPath, { withFileTypes: true });
     // Explicitly type the array resulting from Promise.all
     const results: (DirectoryEntry | undefined)[] = await Promise.all(
       entries.map(async (entry): Promise<DirectoryEntry | undefined> => {
-        const fullPath = path.join(dirPath, entry.name);
+        const fullPath = this.pathDI.join(dirPath, entry.name);
         try {
-            const stats = await fs.stat(fullPath);
+            const stats = await this.fileSystemDI.stat(fullPath);
             // Ensure the returned object structure matches DirectoryEntry exactly
             const directoryEntry: DirectoryEntry = {
               name: entry.name,
