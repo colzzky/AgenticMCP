@@ -2,7 +2,7 @@
  * @file Dependency Injection enabled version of LocalCliTool for better testability
  */
 
-import path from 'node:path';
+import * as path from 'node:path';
 import { Minimatch } from 'minimatch';
 import type { Logger } from '../core/types/logger.types';
 import { getLocalCliToolDefinitions } from './localCliToolDefinitions';
