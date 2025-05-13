@@ -3,6 +3,24 @@
  */
 
 /**
+ * Represents an entry within a directory listing.
+ */
+export interface DirectoryEntry {
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  size?: number; // Size might not be available for all entry types or systems
+}
+
+/**
+ * Represents a result from a file search operation.
+ */
+export interface FileSearchResult {
+  path: string;
+  score?: number; // Optional relevance score
+}
+
+/**
  * Interface for file system operations 
  * This enables dependency injection and testability by decoupling from direct fs usage
  */

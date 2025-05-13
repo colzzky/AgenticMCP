@@ -4,9 +4,8 @@
  */
 
 import type { Tool } from '../core/types/provider.types';
-import { LocalCliTool } from './localCliTool';
+import { DILocalCliTool } from './localCliTool';
 import type { Logger } from '../core/types/logger.types';
-import { ToolDefinition } from './localCliTool';
 
 /**
  * Registry for managing tool definitions that can be used by LLM providers
@@ -108,12 +107,12 @@ export class ToolRegistry {
   }
 
   /**
-   * Registers all tool definitions from a LocalCliTool instance
-   * @param cliTool - The LocalCliTool instance to register tools from
+   * Registers all tool definitions from a DILocalCliTool instance
+   * @param cliTool - The DILocalCliTool instance to register tools from
    * @returns The number of tools successfully registered
    */
-  public registerLocalCliTools(cliTool: any): number {
-    // Get tool definitions from the LocalCliTool instance
+  public registerLocalCliTools(cliTool: DILocalCliTool): number {
+    // Get tool definitions from the DILocalCliTool instance
     const toolDefinitions = cliTool.getToolDefinitions();
     // Convert ToolDefinition[] to Tool[] format
     const tools: Tool[] = toolDefinitions.map((def: any) => ({

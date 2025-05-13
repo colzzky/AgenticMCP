@@ -205,3 +205,104 @@ The implementation effectively addresses the key requirements defined in README.
 The AgenticMCP architecture demonstrates a well-designed approach to creating a unified CLI interface for multiple LLM providers. The implementation follows software engineering best practices with modular components, strong typing, and clean separation of concerns.
 
 The codebase effectively fulfills the requirements defined in the README.md, providing a robust foundation for a command-line interface to interact with various LLM services through predefined agent commands, specialized contexts, and tool calling capabilities.
+
+  AgenticMCP Architecture Summary
+
+  Core Components
+
+  1. CLI Framework
+    - Commander.js-based entry point with command handling
+    - Configuration management using file-based JSON storage
+    - Secure credential handling via system keychain (keytar)
+    - Centralized logging with configurable levels
+  2. Provider System
+    - Abstract factory pattern for LLM provider instantiation
+    - Adapter implementations for OpenAI, Anthropic, Google, and Grok
+    - Common interface standardizing provider interactions
+    - Centralized provider registration and configuration
+  3. Command System
+    - Decorator-based command registration (@AgentCommand)
+    - Command hierarchy with handlers and parameters
+    - Command categorization and discovery
+    - Support for both interactive and non-interactive modes
+  4. Context Management
+    - File-based context loading with pattern matching
+    - Context window optimization for token management
+    - Support for multiple input methods (files, directories, stdin)
+    - Context caching and persistence
+  5. Tool Calling System
+    - Central registry for tool/function definitions
+    - Tool executor for handling LLM function calls
+    - Execution manager coordinating LLM-tool interactions
+    - Support for parallel and sequential tool execution
+  6. Conversation Management
+    - Multi-turn conversation with history tracking
+    - Session persistence across invocations
+    - Integration of tool calls and results in conversation flow
+    - Support for continued conversations
+
+  Architectural Patterns
+
+  1. Dependency Injection
+    - Container-based DI for service registration/resolution
+    - Interface-based design for testability
+    - Constructor injection of dependencies
+  2. Adapter Pattern
+    - Provider adapters for different LLM services
+    - Standardized interfaces for providers
+  3. Factory Pattern
+    - Provider factory for dynamic instantiation
+    - Context processor factory for handling different sources
+  4. Registry Pattern
+    - Command registry for discovery and execution
+    - Tool registry for function definitions
+  5. Event System
+    - Tool events for monitoring execution
+    - Subscription-based event handling
+
+  Key Workflows
+
+  1. Tool Calling Flow
+    - LLM autonomously decides which tools to call
+    - Tool registry validates and formats tool definitions
+    - Tool executor handles function calls
+    - Results fed back to LLM for further processing
+    - Recursive pattern enabling complex workflows
+  2. Provider Interactions
+    - Standardized request/response formats
+    - Provider-specific format conversions
+    - Error handling and retry mechanisms
+    - Tool calling support across providers
+  3. Context Processing
+    - File/directory scanning
+    - Token counting and window management
+    - Context prioritization
+    - Integration into LLM prompts
+  4. Command Execution
+    - Parameter validation and normalization
+    - Command handler resolution
+    - Result formatting and output
+
+  Testing Strategy
+
+  1. Unit Testing
+    - Jest framework with TypeScript support
+    - Type-safe mocking with jest-mock-extended
+    - In-memory filesystem for testing
+    - Dependency injection for testability
+  2. Test Utilities
+    - Mock implementations of key interfaces
+    - Test-specific DI containers
+    - Strict conventions for consistent testing
+  3. Type Safety
+    - Extensive TypeScript typing
+    - Interface-based design
+    - Generic types for flexibility
+
+  Architecture Strengths
+
+  1. Modularity: Clean separation of concerns
+  2. Extensibility: Easy to add new providers and tools
+  3. Type Safety: Comprehensive typing throughout
+  4. Testability: DI and interface-based design
+  5. Security: Secure credential handling

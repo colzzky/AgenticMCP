@@ -27,7 +27,7 @@ describe('OpenAIProvider Tool Calling', () => {
     jest.clearAllMocks();
     
     // Create the mock create method
-    mockCreate = jest.fn().mockResolvedValue({
+    mockCreate = (jest.fn() as any).mockResolvedValue({
       id: 'chatcmpl-mock',
       object: 'chat.completion',
       created: Date.now(),
@@ -54,11 +54,11 @@ describe('OpenAIProvider Tool Calling', () => {
     };
     
     // Create the mock OpenAI constructor
-    mockOpenAIConstructor = jest.fn().mockReturnValue(mockOpenAIClient);
+    mockOpenAIConstructor = (jest.fn() as any).mockReturnValue(mockOpenAIClient);
     
     // Create the mock config manager
     mockConfigManager = {
-      getResolvedApiKey: jest.fn().mockResolvedValue('resolved-api-key')
+      getResolvedApiKey: (jest.fn() as any).mockResolvedValue('resolved-api-key')
     };
     
     // Create the provider

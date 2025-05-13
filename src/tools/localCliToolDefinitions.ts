@@ -29,7 +29,7 @@ export const getLocalCliToolDefinitions = (): Tool[] => {
     {
       type: 'function',
       name: 'write_file',
-      description: 'Writes content to a file at the specified path',
+      description: 'Writes content to a file at the specified path and returns a GitHub-style diff',
       parameters: {
         type: 'object',
         properties: {
@@ -40,6 +40,10 @@ export const getLocalCliToolDefinitions = (): Tool[] => {
           content: {
             type: 'string',
             description: 'Content to write to the file'
+          },
+          allowOverwrite: {
+            type: 'boolean',
+            description: 'Whether to overwrite the file if it already exists (default: false)'
           }
         },
         required: ['path', 'content']

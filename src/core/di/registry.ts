@@ -38,10 +38,23 @@ export function registerContextDependencies(container: DIContainer = DIContainer
 }
 
 /**
+ * Register tool-related dependencies
+ * @param container - DI container instance
+ */
+export function registerToolDependencies(container: DIContainer = DIContainer.getInstance()): void {
+  // Import here to avoid circular dependencies
+  const { DiffService } = require('../../tools/services/diff-service');
+
+  // Register diff service
+  container.registerSingleton(DI_TOKENS.DIFF_SERVICE, () => new DiffService());
+}
+
+/**
  * Register all dependencies
  * @param container - DI container instance
  */
 export function registerAllDependencies(container: DIContainer = DIContainer.getInstance()): void {
   registerCoreDependencies(container);
   registerContextDependencies(container);
+  registerToolDependencies(container);
 }

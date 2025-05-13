@@ -194,7 +194,6 @@ describe('AnthropicProvider Tool Calling Batch 1', () => {
     
     it('should handle empty content arrays', () => {
       expect(provider['extractToolCallsFromResponse']([])).toBeUndefined();
-      // eslint-disable-next-line unicorn/no-useless-undefined
       expect(provider['extractToolCallsFromResponse'](undefined)).toBeUndefined();
     });
   });
@@ -228,7 +227,6 @@ describe('AnthropicProvider Tool Calling Batch 1', () => {
     
     it('should return empty string for empty or undefined content', () => {
       expect(provider['extractTextFromContentBlocks']([])).toBe('');
-      // eslint-disable-next-line unicorn/no-useless-undefined
       expect(provider['extractTextFromContentBlocks'](undefined)).toBe('');
     });
   });

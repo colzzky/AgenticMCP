@@ -21,4 +21,5 @@ export const DI_TOKENS = {
   TOOL_REGISTRY: 'tools:registry',
   LOCAL_CLI_TOOL: 'tools:localCliTool',
   TOOL_EXECUTOR: 'tools:executor',
+  DIFF_SERVICE: 'tools:diffService',
 };

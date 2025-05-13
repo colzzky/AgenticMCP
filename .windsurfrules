@@ -42,11 +42,15 @@
 
 12. After creating or editing a file, always run "npm run lint --fix" to see any type/linting errors, and proceed to fix if errors are found - then run "npm run lint" to ensure that there are no errors - repeat process until there are no errors
 
-13. Always run "npm run type-check" to ensure that there are no type errors - repeat process until there are no errors
+13. When working on test files - Always run "npm run type-check:tests" to ensure that there are no type errors in the tests - repeat process until there are no errors
+ - 13.1 When working on src files - Always run "npm run type-check:src" to ensure that there are no type errors in the src files - repeat process until there are no errors
+ - 13.2 Finally run "npm run type-check" to ensure that there are no type errors in the entire project - repeat process until there are no errors
 
 14. when creating/editing a javascript or typescript file, check the line count of the file and make sure it does not exceed the ideal line count per file. you can use tools such as "wc -l filename" to check the line count of the file of an existing file or count lines of a string using the tool "wc -l <(echo "string")" before creating a new file to make sure it does not exceed the ideal line count per file
 
 15. If the file lines number exceeds the suggested number of lines based on "Rules: Ideal Line Count per File", then split the file into multiple files, just use "import" and "export" to share code between files, or use composables
+
+16. If the library does not expose the type definitions, use the "Github" tool inspect the files in the github repository of the library to get the type definitions
 
 ### ✅ **Rules: Ideal Line Count per File**
 

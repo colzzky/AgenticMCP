@@ -1,398 +1,275 @@
 /**
- * @file In-memory filesystem implementation for tests
+ * @file In-memory filesystem implementation for testing
  */
 
-import path from 'node:path';
-import { IFileSystem } from '../../src/core/interfaces/file-system.interface';
+import { IFileSystem, DirectoryEntry } from '../../src/core/interfaces/file-system.interface';
 
 /**
- * Represents a file or directory in the in-memory filesystem
- */
-interface FileSystemEntry {
-  /** Whether this entry is a directory */
-  isDirectory: boolean;
-  /** Content of the file (empty for directories) */
-  content?: string;
-  /** Child entries for directories */
-  children?: Map<string, FileSystemEntry>;
-  /** Last modification time */
-  mtime: Date;
-}
-
-/**
- * Implementation of a filesystem that exists only in memory
- * Used for testing file operations without touching the actual filesystem
+ * In-memory implementation of the IFileSystem interface for testing
  */
 export class InMemoryFileSystem implements IFileSystem {
-  private root: Map<string, FileSystemEntry>;
-  
-  constructor() {
-    this.root = new Map();
-  }
-  
-  /**
-   * Create an empty directory at the given path
-   * @param directoryPath - Path to create
-   */
-  public createDirectory(directoryPath: string): void {
-    const normalizedPath = this.normalizePath(directoryPath);
-    const parts = this.getPathParts(normalizedPath);
-    
-    let current = this.root;
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (!current.has(part)) {
-        if (i === parts.length - 1) {
-          // Create the final directory
-          current.set(part, {
-            isDirectory: true,
-            children: new Map(),
-            mtime: new Date()
-          });
-        } else {
-          // Create intermediate directory
-          current.set(part, {
-            isDirectory: true,
-            children: new Map(),
-            mtime: new Date()
-          });
-        }
-      } else if (!current.get(part)!.isDirectory) {
-        throw new Error(`Path ${normalizedPath} exists but is not a directory`);
-      }
-      
-      // Move to the next level
-      current = current.get(part)!.children!;
-    }
-  }
-  
-  /**
-   * Creates a file with the given content
-   * @param filePath - Path to the file
-   * @param content - Content to write
-   */
-  public createFile(filePath: string, content: string): void {
-    const normalizedPath = this.normalizePath(filePath);
-    const parts = this.getPathParts(normalizedPath);
-    
-    if (parts.length === 0) {
-      throw new Error('Invalid file path');
-    }
-    
-    // The file name is the last part of the path
-    const fileName = parts.pop()!;
-    
-    // Create parent directories if needed
-    if (parts.length > 0) {
-      const dirPath = path.join('/', ...parts);
-      this.createDirectory(dirPath);
-    }
-    
-    // Get the parent directory
-    let current = this.navigateToDirectory(parts);
-    
-    // Create/update the file
-    current.set(fileName, {
-      isDirectory: false,
-      content,
-      mtime: new Date()
-    });
-  }
-  
+  private files: Map<string, string> = new Map();
+  private directories: Map<string, string[]> = new Map();
+
   /**
    * Check if a file or directory exists
    * @param path - Path to check
    */
-  public async access(path: string): Promise<void> {
-    try {
-      this.getEntry(path);
-      return;
-    } catch (error) {
-      throw error;
+  async access(path: string): Promise<void> {
+    const fileExists = this.files.has(path);
+    const dirExists = this.directories.has(path);
+
+    if (!fileExists && !dirExists) {
+      throw new Error(`ENOENT: no such file or directory, access '${path}'`);
     }
   }
-  
+
   /**
    * Get file or directory stats
    * @param path - Path to get stats for
    */
-  public async stat(path: string): Promise<{
+  async stat(path: string): Promise<{
     isDirectory: () => boolean;
     size: number;
-    mtime?: Date;
   }> {
-    const entry = this.getEntry(path);
-    
-    return {
-      isDirectory: () => entry.isDirectory,
-      size: entry.isDirectory ? 0 : (entry.content?.length || 0),
-      mtime: entry.mtime
+    const isDir = this.directories.has(path);
+    const isFile = this.files.has(path);
+
+    if (!isDir && !isFile) {
+      throw new Error(`ENOENT: no such file or directory, stat '${path}'`);
     }
+
+    return {
+      isDirectory: () => isDir,
+      size: isFile ? (this.files.get(path) || '').length : 0
+    };
   }
-  
+
   /**
    * Read file contents
    * @param path - Path to file
-   * @param encoding - Ignored in this implementation
+   * @param encoding - File encoding
    */
-  public async readFile(path: string, encoding: BufferEncoding): Promise<string> {
-    const entry = this.getEntry(path);
-    
-    if (entry.isDirectory) {
-      throw new Error(`EISDIR: illegal operation on a directory, read ${path}`);
+  async readFile(path: string, encoding: BufferEncoding): Promise<string> {
+    const content = this.files.get(path);
+    if (content === undefined) {
+      throw new Error(`ENOENT: no such file or directory, readFile '${path}'`);
     }
-    
-    return entry.content || ''
+    return content;
   }
-  
+
   /**
    * Read directory contents
    * @param path - Path to directory
    */
-  public async readdir(path: string): Promise<string[]> {
-    const entry = this.getEntry(path);
-    
-    if (!entry.isDirectory) {
-      throw new Error(`ENOTDIR: not a directory, scandir ${path}`);
+  async readdir(path: string): Promise<string[]> {
+    const entries = this.directories.get(path);
+    if (entries === undefined) {
+      throw new Error(`ENOENT: no such file or directory, readdir '${path}'`);
     }
-    
-    return [...entry.children!.keys()]
+    return [...entries];
   }
-  
+
   /**
    * Write to file
    * @param path - Path to file
    * @param data - Content to write
    */
-  public async writeFile(path: string, data: string): Promise<void> {
-    try {
-      this.createFile(path, data);
-      return;
-    } catch (error) {
-      throw error;
+  async writeFile(path: string, data: string): Promise<void> {
+    // Ensure parent directory exists
+    const dirPath = path.substring(0, path.lastIndexOf('/'));
+    if (dirPath && !this.directories.has(dirPath)) {
+      await this.mkdir(dirPath, { recursive: true });
+    }
+    
+    this.files.set(path, data);
+    
+    // Add file to parent directory if not already there
+    if (dirPath) {
+      const filename = path.substring(path.lastIndexOf('/') + 1);
+      const entries = this.directories.get(dirPath) || [];
+      if (!entries.includes(filename)) {
+        entries.push(filename);
+        this.directories.set(dirPath, entries);
+      }
     }
   }
-  
+
   /**
    * Delete a file
    * @param path - Path to file
    */
-  public async unlink(path: string): Promise<void> {
-    const normalizedPath = this.normalizePath(path);
-    const parts = this.getPathParts(normalizedPath);
-    
-    if (parts.length === 0) {
-      throw new Error('Cannot delete root directory');
+  async unlink(path: string): Promise<void> {
+    if (!this.files.has(path)) {
+      throw new Error(`ENOENT: no such file or directory, unlink '${path}'`);
     }
     
-    const fileName = parts.pop()!;
-    const parentDir = this.navigateToDirectory(parts);
-    
-    if (!parentDir.has(fileName)) {
-      throw new Error(`ENOENT: no such file or directory, unlink ${path}`);
+    // Remove from parent directory entries
+    const dirPath = path.substring(0, path.lastIndexOf('/'));
+    const filename = path.substring(path.lastIndexOf('/') + 1);
+    if (dirPath && this.directories.has(dirPath)) {
+      const entries = this.directories.get(dirPath) || [];
+      const updatedEntries = entries.filter(entry => entry !== filename);
+      this.directories.set(dirPath, updatedEntries);
     }
     
-    const entry = parentDir.get(fileName)!;
-    if (entry.isDirectory) {
-      throw new Error(`EISDIR: illegal operation on a directory, unlink ${path}`);
-    }
-    
-    parentDir.delete(fileName);
-    return;
+    this.files.delete(path);
   }
-  
+
   /**
    * Create a directory
    * @param path - Path to directory
    * @param options - Directory creation options
    */
-  public async mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
-    const normalizedPath = this.normalizePath(path);
-    const parts = this.getPathParts(normalizedPath);
-    
+  async mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
+    // If directory already exists, nothing to do
+    if (this.directories.has(path)) {
+      return;
+    }
+
     if (options?.recursive) {
-      // Create parent directories
-      try {
-        this.createDirectory(normalizedPath);
-        return;
-      } catch (error) {
-        throw error;
-      }
-    } else {
-      // Only create the final directory, not parents
-      if (parts.length === 0) {
-        throw new Error('Invalid directory path');
-      }
+      // Create parent directories recursively
+      const parts = path.split('/').filter(Boolean);
+      let currentPath = '';
       
-      try {
-        // Check if parent exists
-        const parentParts = parts.slice(0, -1);
-        const parentPath = parentParts.join('/');
-        
-        const parentEntry = this.getEntry(parentPath);
-        if (!parentEntry.isDirectory) {
-          throw new Error(`ENOTDIR: not a directory, mkdir ${path}`);
+      for (const part of parts) {
+        if (currentPath) {
+          currentPath += '/' + part;
+        } else {
+          currentPath = '/' + part;
         }
         
-        // Create the directory
-        this.createDirectory(normalizedPath);
-        return;
-      } catch (error) {
-        throw error;
+        if (!this.directories.has(currentPath)) {
+          this.directories.set(currentPath, []);
+          
+          // Add to parent directory
+          const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+          if (parentPath && this.directories.has(parentPath)) {
+            const parentEntries = this.directories.get(parentPath) || [];
+            const dirName = currentPath.substring(currentPath.lastIndexOf('/') + 1);
+            if (!parentEntries.includes(dirName)) {
+              parentEntries.push(dirName);
+              this.directories.set(parentPath, parentEntries);
+            }
+          }
+        }
+      }
+    } else {
+      // Non-recursive mkdir requires parent to exist
+      const parentPath = path.substring(0, path.lastIndexOf('/'));
+      if (parentPath && !this.directories.has(parentPath)) {
+        throw new Error(`ENOENT: no such directory, mkdir '${path}'`);
+      }
+      
+      this.directories.set(path, []);
+      
+      // Add to parent directory
+      if (parentPath) {
+        const parentEntries = this.directories.get(parentPath) || [];
+        const dirName = path.substring(path.lastIndexOf('/') + 1);
+        parentEntries.push(dirName);
+        this.directories.set(parentPath, parentEntries);
       }
     }
   }
-  
+
   /**
    * Remove a directory
    * @param path - Path to directory
    * @param options - Directory removal options
    */
-  public async rmdir(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {
-    try {
-      const normalizedPath = this.normalizePath(path);
-      const parts = this.getPathParts(normalizedPath);
-
-      if (parts.length === 0) {
-        throw new Error('Cannot delete root directory');
-      }
-
-      const dirName = parts.pop()!;
-      const parentDir = this.navigateToDirectory(parts);
-
-      if (!parentDir.has(dirName)) {
-        if (options?.force) {
-          return;
+  async rmdir(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {
+    if (!this.directories.has(path)) {
+      throw new Error(`ENOENT: no such directory, rmdir '${path}'`);
+    }
+    
+    const entries = this.directories.get(path) || [];
+    
+    if (entries.length > 0 && !(options?.force || options?.recursive)) {
+      throw new Error(`ENOTEMPTY: directory not empty, rmdir '${path}'`);
+    }
+    
+    if (options?.recursive) {
+      // Get all files and dirs under this path
+      const allPaths = [...this.files.keys(), ...this.directories.keys()]
+        .filter(p => p.startsWith(`${path}/`));
+      
+      // Remove all files under this path
+      for (const filePath of allPaths) {
+        if (this.files.has(filePath)) {
+          this.files.delete(filePath);
         }
-        throw new Error(`ENOENT: no such file or directory, rmdir ${path}`);
+        if (this.directories.has(filePath)) {
+          this.directories.delete(filePath);
+        }
       }
+    }
+    
+    // Remove from parent directory entries
+    const parentPath = path.substring(0, path.lastIndexOf('/'));
+    const dirName = path.substring(path.lastIndexOf('/') + 1);
+    if (parentPath && this.directories.has(parentPath)) {
+      const parentEntries = this.directories.get(parentPath) || [];
+      const updatedEntries = parentEntries.filter(entry => entry !== dirName);
+      this.directories.set(parentPath, updatedEntries);
+    }
+    
+    this.directories.delete(path);
+  }
 
-      const entry = parentDir.get(dirName)!;
-      if (!entry.isDirectory) {
-        throw new Error(`ENOTDIR: not a directory, rmdir ${path}`);
-      }
+  // Additional utility methods for testing
 
-      if (!options?.recursive && entry.children!.size > 0) {
-        throw new Error(`ENOTEMPTY: directory not empty, rmdir ${path}`);
-      }
+  /**
+   * Create a file with the specified content
+   * @param path - Path to file
+   * @param content - File content
+   */
+  async createFile(path: string, content: string): Promise<void> {
+    await this.writeFile(path, content);
+  }
 
-      parentDir.delete(dirName);
-      return;
-    } catch (error) {
-      throw error;
-    }
-  }
-  
   /**
-   * Clear all files and directories
+   * Create a directory structure
+   * @param structure - Object representing directory structure
+   * @param basePath - Base path to create structure under
    */
-  public clear(): void {
-    this.root.clear();
-  }
-  
-  /**
-   * Debugging helper to dump the filesystem structure
-   */
-  public dumpFileSystem(): Record<string, any> {
-    const result: Record<string, any> = {};
-    
-    for (const [name, entry] of this.root.entries()) {
-      result[name] = entry.isDirectory ? this.dumpDirectory(entry.children!) : entry.content;
-    }
-    
-    return result;
-  }
-  
-  /**
-   * Helper to dump a directory structure
-   */
-  private dumpDirectory(dir: Map<string, FileSystemEntry>): Record<string, any> {
-    const result: Record<string, any> = {};
-    
-    for (const [name, entry] of dir.entries()) {
-      result[name] = entry.isDirectory ? this.dumpDirectory(entry.children!) : entry.content;
-    }
-    
-    return result;
-  }
-  
-  /**
-   * Find an entry at the given path
-   */
-  private getEntry(entryPath: string): FileSystemEntry {
-    const normalizedPath = this.normalizePath(entryPath);
-    const parts = this.getPathParts(normalizedPath);
-    
-    if (parts.length === 0) {
-      // Root directory
-      return {
-        isDirectory: true,
-        children: this.root,
-        mtime: new Date()
-      };
-    }
-    
-    let current = this.root;
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (!current.has(part)) {
-        throw new Error(`ENOENT: no such file or directory, stat ${entryPath}`);
-      }
+  async createDirectoryStructure(
+    structure: Record<string, string | Record<string, string>>,
+    basePath = ''
+  ): Promise<void> {
+    for (const [name, content] of Object.entries(structure)) {
+      const path = basePath ? `${basePath}/${name}` : name;
       
-      const entry = current.get(part)!;
-      if (i === parts.length - 1) {
-        // This is the entry we're looking for
-        return entry;
+      if (typeof content === 'string') {
+        await this.createFile(path, content);
+      } else {
+        await this.mkdir(path, { recursive: true });
+        await this.createDirectoryStructure(content, path);
       }
-      
-      if (!entry.isDirectory) {
-        throw new Error(`ENOTDIR: not a directory, scandir ${entryPath}`);
-      }
-      
-      // Move to the next level
-      current = entry.children!;
     }
-    
-    // Should never reach here
-    throw new Error(`Internal error navigating to ${entryPath}`);
   }
-  
+
   /**
-   * Navigate to a directory and return its children map
+   * Reset the filesystem to empty state
    */
-  private navigateToDirectory(parts: string[]): Map<string, FileSystemEntry> {
-    let current = this.root;
-    
-    for (const part of parts) {
-      if (!current.has(part)) {
-        throw new Error(`Directory not found: ${part}`);
-      }
-      
-      const entry = current.get(part)!;
-      if (!entry.isDirectory) {
-        throw new Error(`Not a directory: ${part}`);
-      }
-      
-      current = entry.children!;
-    }
-    
-    return current;
+  reset(): void {
+    this.files.clear();
+    this.directories.clear();
   }
-  
+
   /**
-   * Normalize a path to a standard format
+   * Debug method to print the current state of the filesystem
    */
-  private normalizePath(inputPath: string): string {
-    let normalizedPath = path.normalize(inputPath);
+  debug(): void {
+    console.log('Files:');
+    this.files.forEach((content, path) => {
+      console.log(`  ${path} (${content.length} bytes)`);
+    });
     
-    // Remove leading slashes for our internal representation
-    return normalizedPath;
-  }
-  
-  /**
-   * Split a path into its component parts
-   */
-  private getPathParts(normalizedPath: string): string[] {
-    return normalizedPath.split(path.sep).filter(part => part !== '');
+    console.log('Directories:');
+    this.directories.forEach((entries, path) => {
+      console.log(`  ${path}/`);
+      entries.forEach(entry => console.log(`    - ${entry}`));
+    });
   }
 }

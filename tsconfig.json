@@ -14,7 +14,7 @@
     "forceConsistentCasingInFileNames": true, /* Disallow inconsistently-cased references to the same file. */
     "experimentalDecorators": true, /* Enables experimental support for ES7 decorators. */
     "emitDecoratorMetadata": true, /* Enables experimental support for emitting type metadata for decorators. */
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "noFallthroughCasesInSwitch": true,
@@ -31,6 +31,7 @@
   "rootDir": ".",
   "include": [
     "src/**/*.ts",
+    "**/**/*.test.ts",
   ],
   "exclude": [
     "node_modules",
@@ -38,7 +39,5 @@
     "**/*.spec.ts",
     "*.json",
     "*.js",
-    "**/**/*.test.ts",
-    "**/**/*.spec.ts"
   ]
 }

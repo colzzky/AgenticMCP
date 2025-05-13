@@ -4,7 +4,7 @@
 
 import type { Command, CommandContext, CommandOutput } from '../types/command.types';
 import type { Logger } from '../types/logger.types';
-import type { FilePathProcessor } from '../../context/filePathProcessor';
+import { FilePathProcessor } from '../../context/filePathProcessor';
 
 /**
  * Factory interface for creating FilePathProcessors
@@ -18,8 +18,6 @@ export interface FilePathProcessorFactory {
  */
 export class DefaultFilePathProcessorFactory implements FilePathProcessorFactory {
   create(logger: Logger): FilePathProcessor {
-    // Import is done here to avoid circular dependency
-    const { FilePathProcessor } = require('../../context/filePathProcessor');
     return new FilePathProcessor(logger);
   }
 }

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { LocalCliTool } from '../../tools/localCliTool.js';
+import { createDILocalCliTool } from '../../tools/factory/di-local-cli-tool-factory.js';
 import type { Logger } from '../../core/types/logger.types.js';
 import type { LLMProvider } from '../../core/types/provider.types.js';
 import { constructXmlPrompt, selectModelForRole } from './xmlPromptUtils';
@@ -10,7 +10,7 @@ import { roleEnums, AllRoleSchemas } from './roleSchemas';
  */
 export async function processFileOperations(
   response: string,
-  localCliTool: LocalCliTool,
+  localCliTool: ReturnType<typeof createDILocalCliTool>,
   logger: Logger
 ): Promise<string> {
   const fileOpRegex = /<file_operation>([^]*?)<\/file_operation>/g;
@@ -88,12 +88,12 @@ export async function handleRoleBasedTool(
   llmProvider: LLMProvider
 ): Promise<any> {
   const { prompt, base_path, context, related_files, allow_file_overwrite } = args;
-  // Create a dedicated LocalCliTool instance with the specified base path
+  // Create a dedicated DILocalCliTool instance with the specified base path
   // Set allowFileOverwrite to false by default for safety
-  const dedicatedLocalCliTool = new LocalCliTool({
+  const dedicatedLocalCliTool = createDILocalCliTool({
     baseDir: path.resolve(base_path),
     allowFileOverwrite: allow_file_overwrite || false // Default to safe mode - require explicit allowOverwrite for existing files
-  }, logger);
+  });
   const fileContents = [] as Array<{ path: string, content: string }>;
   if (related_files && related_files.length > 0) {
     for (const filePath of related_files) {

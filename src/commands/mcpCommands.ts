@@ -11,7 +11,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 /**
  * Command options for serving the MCP server
  */
-interface ServeMcpOptions {
+export interface ServeMcpOptions {
   /** Base directory for file operations */
   baseDir?: string;
   /** Name of the MCP server */
@@ -27,9 +27,9 @@ interface ServeMcpOptions {
 }
 
 /**
- * Command for starting an MCP server to expose LocalCliTool functionality through MCP.
+ * Command for starting an MCP server to expose DILocalCliTool functionality through MCP.
  * This allows external LLM applications to access file operations via the standard MCP protocol.
- * 
+ *
  * @example
  * ```
  * # Start an MCP server using stdio transport
@@ -116,7 +116,7 @@ export class McpCommands {
       });
     } catch (error) {
       this.logger.error('Failed to start MCP server:', error);
-      throw new Error('Process exited with code: ' + 1);
+      throw error;
     }
   }
   

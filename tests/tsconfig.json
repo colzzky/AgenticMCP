@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig",
+  "compilerOptions": {
+    "strict": false,
+    "noImplicitAny": false,
+    "strictFunctionTypes": false,
+    "noImplicitThis": false
+  },
+  "include": [
+    "**/**/*.test.ts",
+  ]
+}

@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import pkg from '../package.json' with { type: 'json' };
+import pkg from '../package.json' assert { type: 'json' };
 import { registerConfigCommands } from './commands/configCommands';
 import { registerCredentialCommands } from './commands/credentialCommands';
 import { McpCommands } from './commands/mcpCommands';
 import { ToolCommands } from './commands/toolCommands';
 import { LLMCommand } from './commands/llmCommand';
-import { logger } from './core/utils/index';
+import { logger } from './core/utils/logger';
 import { configManager } from './core/config/configManager';
-import { LocalCliTool } from './tools/localCliTool';
+import { DIContainer } from './core/di/container';
+import { DILocalCliTool, LocalCliToolConfig } from './tools/localCliTool';
 import { ToolRegistry } from './tools/toolRegistry';
+import { FileSystemService } from './core/services/file-system.service';
+import { DiffService } from './core/services/diff.service';
 import { ToolExecutor } from './tools/toolExecutor';
 import { ToolResultFormatter } from './tools/toolResultFormatter';
 import { ProviderInitializer } from './providers/providerInitializer';
@@ -19,15 +22,41 @@ import path from 'node:path';
 async function main(): Promise<void> {
   const program = new Command();
 
-  // Initialize tool system
-  const baseDir = process.cwd();
-  const localCliToolConfig = {
-    baseDir,
-    allowedCommands: [] // Can be configured from settings later
-  };
+  // --- Dependency Injection Setup --- 
+  const container = DIContainer.getInstance();
+  
+  // 1. Register Logger (created externally)
+  container.register<typeof logger>('logger', logger);
 
-  logger.info(`Initializing LocalCliTool with base directory: ${baseDir}`);
-  const localCliTool = new LocalCliTool(localCliToolConfig, logger);
+  // 2. Create and Register FileSystem Service
+  const fileSystemService = new FileSystemService();
+  container.register<FileSystemService>('FileSystem', fileSystemService);
+
+  // 3. Create and Register Diff Service
+  const diffService = new DiffService();
+  container.register<DiffService>('DiffService', diffService);
+
+  // 4. Create and Register LocalCliTool Configuration
+  const baseDir = process.cwd();
+  const localCliToolConfig: LocalCliToolConfig = {
+    baseDir,
+    allowedCommands: [], // Keep empty for now, can be configured later
+    allowFileOverwrite: false // Default to false for safety
+  };
+  container.register<LocalCliToolConfig>('LocalCliToolConfig', localCliToolConfig);
+  logger.info(`Base directory for tool operations: ${baseDir}`);
+
+  // 5. Manually instantiate DILocalCliTool using registered dependencies
+  const localCliTool = new DILocalCliTool(
+    container.get('LocalCliToolConfig'),
+    container.get('logger'),
+    container.get('FileSystem'),
+    container.get('DiffService')
+  );
+  // Optionally register the created instance if it needs to be injected elsewhere
+  container.register<DILocalCliTool>('DILocalCliTool', localCliTool); 
+  // --- End of DI Setup ---
+
 
   // Create tool registry and register local CLI tools
   const toolRegistry = new ToolRegistry(logger);
@@ -39,17 +68,12 @@ async function main(): Promise<void> {
 
   // Create tool implementations map for execution
   const toolImplementations: Record<string, Function> = {};
-  for (const cmdName of Object.keys(commandMap)) {
-    toolImplementations[cmdName] = (args: any) => localCliTool.execute(cmdName as any, args);
+  for (const commandName in commandMap) {
+    toolImplementations[commandName] = commandMap[commandName as keyof typeof commandMap];
   }
 
-  // Create tool execution components
-  const toolExecutor = new ToolExecutor(
-    toolRegistry,
-    toolImplementations,
-    logger
-  );
-
+  // Instantiate ToolExecutor and ToolResultFormatter (potentially needs DI too later)
+  const toolExecutor = new ToolExecutor(toolRegistry, toolImplementations, logger);
   const toolResultFormatter = new ToolResultFormatter(logger);
 
   // Initialize provider system with tool registry

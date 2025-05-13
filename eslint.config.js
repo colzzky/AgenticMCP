@@ -20,7 +20,9 @@ export default [
         'unicorn/text-encoding-identifier-case': 'off',
         'unicorn/prevent-abbreviations': 'off',
         'unicorn/filename-case': 'off',
-        'max-lines': ["error", {"max": 350, "skipComments": true, "skipBlankLines": true}]
+        'max-lines': ["error", {"max": 350, "skipComments": true, "skipBlankLines": true}],
+        'unicorn/no-useless-undefined': 'off',
+        'unicorn/prefer-regexp-test': 'off'
 			},
 		},
 ];

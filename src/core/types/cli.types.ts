@@ -23,11 +23,12 @@ export interface FindFilesArgs { pattern: string; recursive?: boolean; }
 
 export interface ListDirectoryResult { entries: DirectoryEntry[]; }
 export interface ReadFileResult { content: string; }
-export interface WriteFileResult { 
+export interface WriteFileResult {
   success: boolean;
   existingContent?: string;
   fileExists?: boolean;
   message?: string;
+  diff?: string; // GitHub-style diff showing changes made to the file
 }
 export interface CreateDirectoryResult { success: boolean; }
 export interface DeleteFileResult { success: boolean; }

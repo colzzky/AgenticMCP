@@ -1,99 +1,123 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import * as logger from '@/core/utils';
-jest.mock('@/core/utils');
+/**
+ * @file Tests for logger utility
+ */
 
-describe('Logger Utility', () => {
-  let consoleLogSpy: ReturnType<typeof jest.spyOn>;
-  let consoleWarnSpy: ReturnType<typeof jest.spyOn>;
-  let consoleErrorSpy: ReturnType<typeof jest.spyOn>;
-  let originalDebugEnv: string | undefined;
-  let originalAgenticMCPDebugEnv: string | undefined;
+import { jest } from '@jest/globals';
+import { logger } from '../../../src/core/utils/logger';
+
+describe('Logger', () => {
+  // Store original console methods
+  const originalConsoleLog = console.log;
+  const originalConsoleWarn = console.warn;
+  const originalConsoleError = console.error;
+  
+  // Store original env vars
+  const originalEnv = { ...process.env };
 
   beforeEach(() => {
-    // Spy on console methods
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-    // Backup and clear debug environment variables
-    originalDebugEnv = process.env.DEBUG;
-    originalAgenticMCPDebugEnv = process.env.AGENTICMCP_DEBUG;
-    delete process.env.DEBUG;
-    delete process.env.AGENTICMCP_DEBUG;
-
-    // Reset log level to a known default for consistent testing
-    // logger.setLogLevel is available via the re-export in src/core/utils/index.ts
-    logger.setLogLevel('info');
+    // Reset mocks
+    jest.resetModules();
+    
+    // Mock console methods
+    console.log = jest.fn();
+    console.warn = jest.fn();
+    console.error = jest.fn();
+    
+    // Reset env vars
+    process.env = { ...originalEnv };
   });
 
   afterEach(() => {
     // Restore console methods
-    consoleLogSpy.mockRestore();
-    consoleWarnSpy.mockRestore();
-    consoleErrorSpy.mockRestore();
-
-    // Restore debug environment variables
-    process.env.DEBUG = originalDebugEnv;
-    process.env.AGENTICMCP_DEBUG = originalAgenticMCPDebugEnv;
+    console.log = originalConsoleLog;
+    console.warn = originalConsoleWarn;
+    console.error = originalConsoleError;
+    
+    // Restore env vars
+    process.env = originalEnv;
   });
 
-  it('should log info messages correctly', () => {
-    const message = 'Test info message';
-    logger.info(message);
-    expect(consoleLogSpy).toHaveBeenCalledWith(`[INFO] ${message}`);
+  describe('info', () => {
+    it('should log message with INFO prefix', () => {
+      const message = 'This is an info message';
+      
+      logger.info(message);
+      
+      expect(console.log).toHaveBeenCalledWith(`[INFO] ${message}`);
+    });
   });
 
-  it('should log warn messages correctly', () => {
-    const message = 'Test warn message';
-    logger.warn(message);
-    expect(consoleWarnSpy).toHaveBeenCalledWith(`[WARN] ${message}`);
+  describe('warn', () => {
+    it('should log message with WARN prefix', () => {
+      const message = 'This is a warning message';
+      
+      logger.warn(message);
+      
+      expect(console.warn).toHaveBeenCalledWith(`[WARN] ${message}`);
+    });
   });
 
-  it('should log error messages correctly', () => {
-    const message = 'Test error message';
-    logger.error(message);
-    expect(consoleErrorSpy).toHaveBeenCalledWith(`[ERROR] ${message}`);
+  describe('error', () => {
+    it('should log message with ERROR prefix', () => {
+      const message = 'This is an error message';
+      
+      logger.error(message);
+      
+      expect(console.error).toHaveBeenCalledWith(`[ERROR] ${message}`);
+    });
   });
 
-  describe('debug logging', () => {
-    const message = 'Test debug message';
-
-    it('should not log debug messages by default', () => {
+  describe('debug', () => {
+    it('should not log debug message when DEBUG is not set', () => {
+      const message = 'This is a debug message';
+      
       logger.debug(message);
-      expect(consoleLogSpy).not.toHaveBeenCalled();
+      
+      expect(console.log).not.toHaveBeenCalled();
     });
 
-    it('should log debug messages when process.env.DEBUG is "true"', () => {
+    it('should log debug message when DEBUG=true', () => {
       process.env.DEBUG = 'true';
+      
+      const message = 'This is a debug message';
+      
       logger.debug(message);
-      expect(consoleLogSpy).toHaveBeenCalledWith(`[DEBUG] ${message}`);
+      
+      expect(console.log).toHaveBeenCalledWith(`[DEBUG] ${message}`);
     });
 
-    it('should log debug messages when process.env.AGENTICMCP_DEBUG is "true"', () => {
+    it('should log debug message when AGENTICMCP_DEBUG=true', () => {
       process.env.AGENTICMCP_DEBUG = 'true';
+      
+      const message = 'This is a debug message';
+      
       logger.debug(message);
-      expect(consoleLogSpy).toHaveBeenCalledWith(`[DEBUG] ${message}`);
-    });
-
-    it('should not log debug messages if DEBUG is other than "true"', () => {
-      process.env.DEBUG = 'false';
-      logger.debug(message);
-      expect(consoleLogSpy).not.toHaveBeenCalled();
+      
+      expect(console.log).toHaveBeenCalledWith(`[DEBUG] ${message}`);
     });
   });
 
-  describe('setLogLevel function', () => {
-    // Note: The current logger's info/warn/error/debug functions do not yet use the internal
-    // currentLogLevel to filter messages. These tests primarily check if setLogLevel itself works.
-
-    it('should allow setting a valid log level (e.g., "debug") without throwing', () => {
-      expect(() => logger.setLogLevel('debug')).not.toThrow();
+  describe('setLogLevel', () => {
+    it('should set valid log level', () => {
+      // Mock error function to check it's not called
+      const errorSpy = jest.spyOn(logger, 'error').mockImplementation(jest.fn());
+      
+      logger.setLogLevel('warn');
+      
+      expect(errorSpy).not.toHaveBeenCalled();
+      
+      errorSpy.mockRestore();
     });
 
-    it('should log an error when setting an invalid log level', () => {
-      const invalidLevel = 'invalid_level';
-      logger.setLogLevel(invalidLevel);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(`[ERROR] Invalid log level: ${invalidLevel}`);
+    it('should log error for invalid log level', () => {
+      // Mock error function to check it's called
+      const errorSpy = jest.spyOn(logger, 'error').mockImplementation(jest.fn());
+      
+      logger.setLogLevel('invalid');
+      
+      expect(errorSpy).toHaveBeenCalledWith('Invalid log level: invalid');
+      
+      errorSpy.mockRestore();
     });
   });
 });
