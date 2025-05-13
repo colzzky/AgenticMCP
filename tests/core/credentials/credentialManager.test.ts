@@ -3,45 +3,25 @@
  */
 
 import { jest } from '@jest/globals';
-import { MockProxy, mock, mockReset } from 'jest-mock-extended';
-import { CredentialManager } from '../../../src/core/credentials/credentialManager';
 import { CredentialIdentifier, KeytarCredential } from '../../../src/core/types/credentials.types';
-import { mockConsole, mockKeytar, mockModule } from '../../utils/test-setup';
+import { mockConsole, setupKeytarMock, mockESModule } from '../../utils/test-setup';
 
-// Mock keytar module both ways to ensure it's used
-mockModule('keytar', mockKeytar);
+// Test constants
+const SERVICE_NAME_PREFIX = 'AgenticMCP';
+const TEST_PROVIDER = 'openai';
+const TEST_ACCOUNT = 'test-account';
+const TEST_SECRET = 'test-api-key-12345';
+const FULL_SERVICE_NAME = `${SERVICE_NAME_PREFIX}-${TEST_PROVIDER}`;
 
-// Direct mock of the CredentialManager to avoid actual module import issues
-jest.unstable_mockModule('../../../src/core/credentials/credentialManager', () => {
-  return {
-    CredentialManager: {
-      getSecret: async (identifier) => {
-        return mockKeytar.getPassword(`AgenticMCP-${identifier.providerType}`, identifier.accountName);
-      },
-      setSecret: async (identifier, secret) => {
-        const result = await mockKeytar.setPassword(`AgenticMCP-${identifier.providerType}`, identifier.accountName, secret);
-        if (mockKeytar.setPassword.mock.calls.length > 0) {
-          console.log(`Secret set for ${identifier.accountName} under AgenticMCP-${identifier.providerType}`);
-        }
-        return result;
-      },
-      deleteSecret: async (identifier) => {
-        const result = await mockKeytar.deletePassword(`AgenticMCP-${identifier.providerType}`, identifier.accountName);
-        if (result) {
-          console.log(`Secret deleted for ${identifier.accountName} under AgenticMCP-${identifier.providerType}`);
-        } else {
-          console.warn(`No secret found for ${identifier.accountName} under AgenticMCP-${identifier.providerType}`);
-        }
-        return result;
-      },
-      findCredentialsByProvider: async (providerType) => {
-        return mockKeytar.findCredentials(`AgenticMCP-${providerType}`);
-      },
-      getFullServiceName: (providerType) => {
-        return `AgenticMCP-${providerType.toLowerCase()}`;
-      }
-    }
-  };
+let CredentialManager: typeof import('../../../src/core/credentials/credentialManager').CredentialManager;
+let mockKeytar: ReturnType<typeof setupKeytarMock>;
+
+// Patch and import order: patch before import
+beforeAll(async () => {
+  mockKeytar = setupKeytarMock();
+  mockESModule('keytar', mockKeytar, { virtual: true });
+  // Dynamically import after patch
+  ({ CredentialManager } = await import('../../../src/core/credentials/credentialManager'));
 });
 
 describe('CredentialManager', () => {
@@ -246,13 +226,13 @@ describe('CredentialManager', () => {
   describe('findCredentialsByProvider', () => {
     it('should return array of credentials for provider', async () => {
       // Mock credentials data
-      const mockCredentials: KeytarCredential[] = [
+      const mockCredentials = [
         { account: 'account1', password: 'password1' },
         { account: 'account2', password: 'password2' }
       ];
 
       // Setup keytar mock
-      mockKeytar.findCredentials.mockResolvedValueOnce(mockCredentials);
+      mockKeytar.findCredentials.mockResolvedValueOnce(mockCredentials as { account: string; password: string }[]);
 
       const result = await CredentialManager.findCredentialsByProvider(TEST_PROVIDER);
 

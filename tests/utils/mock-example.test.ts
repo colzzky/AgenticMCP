@@ -138,7 +138,7 @@ describe('ES Module Mocking Examples', () => {
     it('demonstrates how to use createModuleSpy', async () => {
       // Create a spy for a module with methods
       const serviceMock = await createModuleSpy('./service-module', {
-        fetchData: jest.fn().mockResolvedValue({ id: 1, name: 'Test' }),
+        fetchData: jest.fn<(id: number) => Promise<{ id: number; name: string }>>().mockResolvedValue({ id: 1, name: 'Test' }),
         processData: jest.fn().mockReturnValue('processed')
       });
       

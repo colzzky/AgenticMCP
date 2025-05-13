@@ -3,10 +3,14 @@
  */
 
 import { jest } from '@jest/globals';
-import { setupFsPromisesMock, mockConsole } from '../utils/test-setup';
+import { mockConsole, setupFsPromisesMock, mockESModule } from '../utils/test-setup';
+import { Dirent, Stats } from 'fs';
 
-// Set up the fs mock BEFORE importing NodeFileSystem
-const mockFs = setupFsPromisesMock();
+let mockFs: ReturnType<typeof setupFsPromisesMock>;
+beforeAll(() => {
+  mockFs = setupFsPromisesMock();
+  mockESModule('node:fs/promises', mockFs, { virtual: true });
+});
 
 // Now we can import the module that uses fs
 import { NodeFileSystem } from '../../src/core/adapters/node-file-system.adapter';
@@ -41,16 +45,39 @@ describe('NodeFileSystem Example', () => {
     
     // Set up default mock implementations
     mockFs.access.mockResolvedValue(undefined);
-    mockFs.stat.mockResolvedValue({
-      isDirectory: jest.fn().mockReturnValue(false),
-      size: 1024
-    });
-    mockFs.readFile.mockResolvedValue(TEST_CONTENT);
-    mockFs.readdir.mockResolvedValue(TEST_FILE_ARRAY);
-    mockFs.writeFile.mockResolvedValue(undefined);
-    mockFs.unlink.mockResolvedValue(undefined);
-    mockFs.mkdir.mockResolvedValue(undefined);
-    mockFs.rmdir.mockResolvedValue(undefined);
+    const mockStats: Stats = {
+  isDirectory: () => false,
+  isFile: () => true,
+  isBlockDevice: () => false,
+  isCharacterDevice: () => false,
+  isFIFO: () => false,
+  isSocket: () => false,
+  isSymbolicLink: () => false,
+  dev: 0, ino: 0, mode: 0, nlink: 0, uid: 0, gid: 0, rdev: 0, size: 1024, blksize: 0, blocks: 0,
+  atimeMs: 0, mtimeMs: 0, ctimeMs: 0, birthtimeMs: 0,
+  atime: new Date(), mtime: new Date(), ctime: new Date(), birthtime: new Date(),
+};
+const mockDirent = Object.assign(Object.create(Dirent.prototype), {
+  name: Buffer.from('file1.txt'),
+  isDirectory: () => false,
+  isFile: () => true,
+  isBlockDevice: () => false,
+  isCharacterDevice: () => false,
+  isFIFO: () => false,
+  isSocket: () => false,
+  isSymbolicLink: () => false,
+  parentPath: Buffer.from('/test/path'),
+  path: Buffer.from('/test/path/file1.txt'),
+}) as Dirent<Buffer<ArrayBufferLike>>;
+
+mockFs.stat.mockResolvedValue(mockStats);
+mockFs.readFile.mockResolvedValue(Buffer.from(TEST_CONTENT));
+mockFs.readdir.mockResolvedValue([mockDirent] as Dirent<Buffer<ArrayBufferLike>>[]);
+mockFs.writeFile.mockResolvedValue(undefined);
+mockFs.unlink.mockResolvedValue(undefined);
+mockFs.mkdir.mockResolvedValue(undefined);
+mockFs.rmdir.mockResolvedValue(undefined);
+mockFs.rm.mockResolvedValue(undefined);
     mockFs.rm.mockResolvedValue(undefined);
   });
   

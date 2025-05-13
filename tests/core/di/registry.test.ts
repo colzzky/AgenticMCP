@@ -14,7 +14,7 @@ import { DIContainer } from '../../../src/core/di/container';
 import { DI_TOKENS } from '../../../src/core/di/tokens';
 import { IFileSystem } from '../../../src/core/interfaces/file-system.interface';
 import { Logger } from '../../../src/core/types/logger.types';
-import { mockModule } from '../../utils/test-setup';
+import { mockESModule } from '../../utils/test-setup';
 
 // Create mocked implementations
 const mockNodeFileSystem = jest.fn().mockImplementation(() => ({
@@ -38,19 +38,19 @@ const mockLogger = {
 };
 
 // Use mockModule to create the mocks
-mockModule('../../../src/core/adapters/node-file-system.adapter', {
+mockESModule('../../../src/core/adapters/node-file-system.adapter', {
   NodeFileSystem: mockNodeFileSystem
 });
 
-mockModule('../../../src/context/di-file-path-processor', {
+mockESModule('../../../src/context/di-file-path-processor', {
   DIFilePathProcessor: mockDIFilePathProcessor
 });
 
-mockModule('../../tools/services/diff-service', {
+mockESModule('../../tools/services/diff-service', {
   DiffService: mockDiffService
 }, { virtual: true });
 
-mockModule('../../../src/core/utils', {
+mockESModule('../../../src/core/utils', {
   logger: mockLogger
 }, { virtual: true });
 

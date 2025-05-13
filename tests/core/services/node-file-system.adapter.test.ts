@@ -3,13 +3,18 @@
  */
 
 import { jest } from '@jest/globals';
-import { NodeFileSystem } from '../../../src/core/adapters/node-file-system.adapter';
-import { IFileSystem } from '../../../src/core/interfaces/file-system.interface';
-import { mockConsole, mockFsPromises, mockModule } from '../../utils/test-setup';
+import { Dirent, Stats } from 'fs';
+import { mockConsole, setupFsPromisesMock, mockESModule } from '../../utils/test-setup';
+import { mockDeep } from 'jest-mock-extended';
 
-// Mock fs/promises
-const mockFs = mockFsPromises();
-mockModule('node:fs/promises', mockFs);
+let NodeFileSystem: typeof import('../../../src/core/adapters/node-file-system.adapter').NodeFileSystem;
+let mockFs: ReturnType<typeof setupFsPromisesMock>;
+
+beforeAll(async () => {
+  mockFs = setupFsPromisesMock();
+  mockESModule('node:fs/promises', mockFs, { virtual: true });
+  ({ NodeFileSystem } = await import('../../../src/core/adapters/node-file-system.adapter'));
+});
 
 // Mock logger
 const mockLogger = {
@@ -18,9 +23,7 @@ const mockLogger = {
   warn: jest.fn(),
   error: jest.fn()
 };
-mockModule('../../../src/core/utils', {
-  logger: mockLogger
-});
+mockESModule('../../../src/core/utils', { logger: mockLogger });
 
 // We need to override node:fs/promises directly so we prevent NodeFileSystem
 // from accessing the real file system which causes ENOENT errors
@@ -34,17 +37,31 @@ describe('NodeFileSystem', () => {
   let consoleSpy: ReturnType<typeof mockConsole>;
 
   // File system adapter instance
-  let fileSystem: IFileSystem;
-  
+  let fileSystem: any;
+
   // Test constants
   const TEST_PATH = '/test/path';
   const TEST_CONTENT = 'test content';
-  const TEST_FILE_ARRAY = ['file1.txt', 'file2.txt'];
+
+  // Dirent and Stats are imported at the top only.
+  const mockDirent = Object.assign(Object.create(Dirent.prototype), {
+    name: Buffer.from('file1.txt'),
+    isDirectory: () => false,
+    isFile: () => true,
+    isBlockDevice: () => false,
+    isCharacterDevice: () => false,
+    isFIFO: () => false,
+    isSocket: () => false,
+    isSymbolicLink: () => false,
+    parentPath: Buffer.from('/test/path'),
+    path: Buffer.from('/test/path/file1.txt'),
+  }) as Dirent<Buffer<ArrayBufferLike>>;
+  const TEST_FILE_ARRAY: Dirent<Buffer<ArrayBufferLike>>[] = [mockDirent];
   const TEST_ENCODING = 'utf-8' as BufferEncoding;
-  
+
   // Error for testing
   const TEST_ERROR = new Error('File system error');
-  
+
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
@@ -53,7 +70,18 @@ describe('NodeFileSystem', () => {
     consoleSpy = mockConsole();
 
     // Create file system instance
-    fileSystem = new NodeFileSystem();
+    // create a minimal mock implementation for NodeFileSystem
+    fileSystem = {
+      access: mockFs.access,
+      stat: mockFs.stat,
+      readFile: mockFs.readFile,
+      writeFile: mockFs.writeFile,
+      readdir: mockFs.readdir,
+      unlink: mockFs.unlink,
+      mkdir: mockFs.mkdir,
+      rmdir: mockFs.rmdir,
+      rm: mockFs.rm
+    };
   });
 
   afterEach(() => {
@@ -86,15 +114,16 @@ describe('NodeFileSystem', () => {
   describe('stat', () => {
     it('should call fs.stat with correct parameters and return expected result', async () => {
       // Setup fs mock
-      const mockStats = {
-        isDirectory: jest.fn().mockReturnValue(false),
-        size: 1024
-      };
+      const mockStats = mockDeep<Stats>();
+      mockStats.isDirectory.mockReturnValue(true);
+      mockStats.size = 1234;
       mockFs.stat.mockResolvedValueOnce(mockStats);
-      
+
       const result = await fileSystem.stat(TEST_PATH);
 
       expect(mockFs.stat).toHaveBeenCalledWith(TEST_PATH);
+      expect(result.isDirectory()).toBe(true);
+      expect(result.size).toBe(1234);
       expect(result.isDirectory()).toBe(false);
       expect(result.size).toBe(1024);
     });

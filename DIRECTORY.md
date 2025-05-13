@@ -1,14 +1,13 @@
 ```markdown
 .
-├── CLAUDE.md +6
-├── DIRECTORY.md +69
-├── KNOWLEDGE.md +102
+├── CLAUDE.md
+├── DIRECTORY.md
+├── KNOWLEDGE.md
 ├── LICENSE
-├── PROGRESS.jsonl +1
+├── PROGRESS.jsonl
 ├── README.md
-├── TASKS.jsonl +1
+├── TASKS.jsonl
 ├── TESTING.md
-├── _turn-over-details.md
 ├── backup_mocks/
 │   ├── file-path-processor.js
 │   └── file-path-processor.js.bak
@@ -25,15 +24,15 @@
 │   ├── ARCHITECTURE.md
 │   ├── MCP_MODE.md
 │   └── TOOLS.md
-├── eslint.config.js +3
+├── eslint.config.js
 ├── examples/
 │   └── mcp/
 │       ├── anthropic-integration.js
 │       ├── http-client.js
 │       └── stdio-client.js
-├── jest.config.js +2
-├── package-lock.json +19
-├── package.json +5
+├── jest.config.js
+├── package-lock.json
+├── package.json
 ├── project-summary.md
 ├── src/
 │   ├── commands/
@@ -45,7 +44,7 @@
 │   │   │   └── index.ts
 │   │   ├── index.ts
 │   │   ├── llmCommand.ts
-│   │   ├── mcpCommands.ts +4
+│   │   ├── mcpCommands.ts
 │   │   ├── toolCommands.ts
 │   │   └── writerCommand.ts
 │   ├── context/
@@ -59,7 +58,7 @@
 │   │   ├── adapters/
 │   │   │   └── node-file-system.adapter.ts
 │   │   ├── commands/
-│   │   │   ├── baseCommand.ts +1
+│   │   │   ├── baseCommand.ts
 │   │   │   ├── decorators.ts
 │   │   │   ├── di-base-command.ts
 │   │   │   ├── index.ts
@@ -73,14 +72,17 @@
 │   │   │   └── index.ts
 │   │   ├── di/
 │   │   │   ├── container.ts
-│   │   │   ├── registry.ts +13
-│   │   │   └── tokens.ts +1
+│   │   │   ├── registry.ts
+│   │   │   └── tokens.ts
 │   │   ├── index.ts
 │   │   ├── interfaces/
-│   │   │   └── file-system.interface.ts +18
+│   │   │   ├── diff-service.interface.ts
+│   │   │   └── file-system.interface.ts
 │   │   ├── services/
+│   │   │   ├── diff.service.ts
+│   │   │   └── file-system.service.ts
 │   │   ├── types/
-│   │   │   ├── cli.types.ts +2
+│   │   │   ├── cli.types.ts
 │   │   │   ├── command.types.ts
 │   │   │   ├── config.types.ts
 │   │   │   ├── context.types.ts
@@ -94,14 +96,14 @@
 │   │       └── validation.ts
 │   ├── di-setup.ts
 │   ├── global.d.ts
-│   ├── index.ts +41
+│   ├── index.ts
 │   ├── mcp/
 │   │   ├── index.ts
-│   │   ├── mcpServer.ts +1
+│   │   ├── mcpServer.ts
 │   │   ├── tools/
 │   │   │   ├── index.ts
 │   │   │   ├── roleBasedTools.ts
-│   │   │   ├── roleHandlers.ts +5
+│   │   │   ├── roleHandlers.ts
 │   │   │   ├── roleSchemas.ts
 │   │   │   ├── xmlPromptUtils.ts
 │   │   │   └── xmlPromptUtilsHelpers.ts
@@ -129,26 +131,51 @@
 │   │   ├── providerFactory.ts
 │   │   └── providerInitializer.ts
 │   ├── tools/
-│   │   ├── localCliTool +31
 │   │   ├── factory/
-│   │   ├── localCliToolDefinitions.ts +5
+│   │   │   └── di-local-cli-tool-factory.ts
+│   │   ├── localCliTool.ts
+│   │   ├── localCliToolDefinitions.ts
 │   │   ├── services/
+│   │   │   └── diff-service.ts
 │   │   ├── toolDefinitions.md
 │   │   ├── toolEvents.ts
 │   │   ├── toolExecutionFlow.md
 │   │   ├── toolExecutionManager.ts
 │   │   ├── toolExecutor.ts
-│   │   ├── toolRegistry.ts +5
+│   │   ├── toolRegistry.ts
 │   │   ├── toolResultFormatter.ts
 │   │   └── utils/
+│   │       └── diffUtils.ts
+│   └── tsconfig.json
 ├── tests/
+│   ├── CORE_SERVICES_TESTING.md
+│   ├── ES_MODULE_TESTING.md
+│   ├── SUMMARY.md
+│   ├── TESTING_STRATEGY.md
 │   ├── conversation/
 │   │   └── conversationManager.test.ts
+│   ├── core/
+│   │   ├── config/
+│   │   │   └── configManager.test.ts
+│   │   ├── credentials/
+│   │   │   └── credentialManager.test.ts
+│   │   ├── di/
+│   │   │   ├── container.test.ts
+│   │   │   └── registry.test.ts
+│   │   ├── services/
+│   │   │   └── node-file-system.adapter.test.ts
+│   │   └── utils/
+│   │       ├── logger.test.ts
+│   │       └── validation.test.ts
+│   ├── examples/
+│   │   ├── credentials-mock-example.test.ts
+│   │   └── fs-mock-example.test.ts
 │   ├── index.test.ts
+│   ├── jest.setup.js
 │   ├── providers/
 │   │   ├── anthropic/
 │   │   │   ├── anthropicProvider.test.ts
-│   │   │   ├── anthropicProviderToolCalling.test.ts +0
+│   │   │   ├── anthropicProviderToolCalling.test.ts
 │   │   │   ├── anthropicProviderToolCalling2a.test.ts
 │   │   │   └── anthropicProviderToolCalling2b.test.ts
 │   │   ├── google/
@@ -163,9 +190,16 @@
 │   │   └── openai/
 │   │       ├── openaiProvider.basic.test.ts
 │   │       ├── openaiProvider.shared.test.ts
-│   │       ├── openaiProvider.toolCalling.test.ts +3
+│   │       ├── openaiProvider.toolCalling.test.ts
 │   │       └── openaiProviderTestUtils.ts
+│   ├── tools/
+│   ├── tsconfig.json
+│   └── utils/
+│       ├── in-memory-filesystem.ts
+│       ├── mock-example-module.ts
+│       ├── mock-example.test.ts
+│       └── test-setup.ts
 ├── tree.sh
-├── tsconfig.json +1
-└── turn-over-details.md +289
+├── tsconfig.json
+└── turn-over-details.md
 ```

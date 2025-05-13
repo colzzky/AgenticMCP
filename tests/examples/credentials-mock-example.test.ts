@@ -3,10 +3,13 @@
  */
 
 import { jest } from '@jest/globals';
-import { setupKeytarMock, mockConsole } from '../utils/test-setup';
+import { mockConsole, setupKeytarMock, mockESModule } from '../utils/test-setup';
 
-// Set up the keytar mock BEFORE importing CredentialManager
-const mockKeytar = setupKeytarMock();
+let mockKeytar: ReturnType<typeof setupKeytarMock>;
+beforeAll(() => {
+  mockKeytar = setupKeytarMock();
+  mockESModule('keytar', mockKeytar, { virtual: true });
+});
 
 // Now we can import the module that uses keytar
 import { CredentialManager } from '../../src/core/credentials/credentialManager';

@@ -236,37 +236,17 @@ export async function dynamicESModuleMock<T = any>(
   return mockedModule;
 }
 
-/**
- * Mock node:fs/promises module
- * This provides a complete mock of the fs/promises module with type checking
- */
-export function setupFsPromisesMock() {
-  const fsMock = mockFsPromises();
-  
-  // Mock using both approaches to ensure compatibility
-  mockESModule('node:fs/promises', fsMock, { virtual: true });
-  jest.unstable_mockModule('node:fs/promises', () => fsMock);
-  
-  return fsMock;
+
+import * as fs from 'node:fs/promises';
+import { mockDeep, MockProxy } from 'jest-mock-extended';
+import * as keytar from 'keytar';
+
+export function setupFsPromisesMock(): MockProxy<typeof fs> {
+  return mockDeep<typeof fs>();
 }
 
-/**
- * Mock keytar module
- * This provides a complete mock of the keytar module with all necessary methods
- */
-export function setupKeytarMock() {
-  const keytarMock = {
-    getPassword: jest.fn(),
-    setPassword: jest.fn(),
-    deletePassword: jest.fn(),
-    findCredentials: jest.fn()
-  };
-  
-  // Mock using both approaches to ensure compatibility
-  mockESModule('keytar', keytarMock, { virtual: true });
-  jest.unstable_mockModule('keytar', () => keytarMock);
-  
-  return keytarMock;
+export function setupKeytarMock(): MockProxy<typeof keytar> {
+  return mockDeep<typeof keytar>();
 }
 
 /**
