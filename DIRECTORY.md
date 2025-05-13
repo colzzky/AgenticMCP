@@ -43,7 +43,6 @@
 │   ├── commands/
 │   │   ├── configCommands.ts
 │   │   ├── credentialCommands.ts
-│   │   ├── di-llm-command.ts
 │   │   ├── examples/
 │   │   │   ├── basicCommand.ts
 │   │   │   └── index.ts
@@ -111,8 +110,7 @@
 │   │       ├── index.ts
 │   │       ├── logger.ts
 │   │       └── validation.ts
-│   ├── di-setup.ts
-│   ├── global.d.ts
+│   ├── global.types.ts
 │   ├── index.ts
 │   ├── mcp/
 │   │   ├── index.ts
@@ -149,11 +147,12 @@
 │   │   │   ├── index.ts
 │   │   │   └── openaiProvider.ts
 │   │   ├── providerFactory.ts
-│   │   └── providerInitializer.ts
+│   │   ├── providerInitializer.ts
+│   │   └── types.ts
 │   ├── tools/
-│   │   ├── di-local-cli-tool.ts
 │   │   ├── factory/
 │   │   │   └── di-local-cli-tool-factory.ts
+│   │   ├── localCliTool.ts
 │   │   ├── localCliToolDefinitions.ts
 │   │   ├── services/
 │   │   │   └── diff-service.ts
@@ -172,6 +171,7 @@
 │   ├── ES_MODULE_TESTING.md
 │   ├── SUMMARY.md
 │   ├── TESTING_STRATEGY.md
+│   ├── TEST_TEMPLATE.md
 │   ├── conversation/
 │   │   └── conversationManager.test.ts
 │   ├── core/
@@ -213,6 +213,9 @@
 │   │       ├── openaiProvider.toolCalling.test.ts
 │   │       └── openaiProviderTestUtils.ts
 │   ├── tools/
+│   │   ├── full-local-cli-tool.test.ts
+│   │   ├── localCliTool.test.ts
+│   │   └── minimal-local-cli-tool.test.ts
 │   ├── tsconfig.json
 │   └── utils/
 │       ├── ES_MODULE_TESTING.md
@@ -223,6 +226,7 @@
 │       ├── logger-module.ts
 │       ├── mock-example-module.ts
 │       ├── mock-example.test.ts
+│       ├── node-module-mock.ts
 │       ├── service-module.ts
 │       └── test-setup.ts
 ├── tree.sh

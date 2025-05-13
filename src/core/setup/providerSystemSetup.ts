@@ -3,8 +3,7 @@ import { ProviderInitializer } from '../../providers/providerInitializer';
 import { ToolRegistry } from '../../tools/toolRegistry';
 import { AppConfig } from '../../config/appConfig';
 import type { Logger } from '../types/logger.types';
-import type { PathDI } from '../../global.types';
-import type * as fs from 'node:fs/promises';
+import type { PathDI, FileSystemDI } from '../../global.types';
 import type { ProviderFactoryInstance } from '../../providers/types';
 
 /**
@@ -16,7 +15,7 @@ export function setupProviderSystem(
   toolRegistryInstance: ToolRegistry,
   loggerTool: Logger,
   pathDi: PathDI,
-  fsDi: typeof fs,
+  fsDi: FileSystemDI,
   appConfig: AppConfig
 ): {
   configManager: InstanceType<typeof ConfigManager>,
