@@ -3,6 +3,7 @@
  */
 
 import { jest } from '@jest/globals';
+import { mockDeep, MockProxy } from 'jest-mock-extended';
 
 /**
  * Helper to mock console methods for testing
@@ -59,14 +60,27 @@ export function makeTempValue<T>(value: T) {
 /**
  * Default mock for the logger
  */
+/**
+ * Create a mock logger instance for testing
+ */
 export function createMockLogger() {
   return {
     debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
+    log: jest.fn(),
     setLogLevel: jest.fn()
   };
+}
+
+/**
+ * Helper function to mock the logger module in tests
+ * This can be used with jest.unstable_mockModule
+ */
+export function setupLoggerMock() {
+  const mockLogger = createMockLogger();
+  return { logger: mockLogger, mockLogger };
 }
 
 /**
@@ -141,33 +155,38 @@ const moduleRegistry = new Map<string, { mock: any, factory?: ModuleFactory }>()
 /**
  * Enhanced module mocker for ES modules
  * This provides a unified way to mock modules that works in both test environments
- * 
+ *
  * @param modulePath Path to the module to mock
  * @param mockImplementation Mock implementation object or factory function
  * @param options Additional mocking options
  * @returns Function to reset the mock
  */
 export function mockESModule(
-  modulePath: string, 
+  modulePath: string,
   mockImplementation: any | ModuleFactory,
-  options: { 
+  options: {
     virtual?: boolean,
     isESM?: boolean,
-    factory?: boolean 
+    factory?: boolean
   } = {}
 ) {
   // Clear any existing mock for this module path
   jest.unmock(modulePath);
-  
+
   const mockObj = typeof mockImplementation === 'function' && !options.factory
     ? mockImplementation()
     : mockImplementation;
 
   // Store the mock in our registry for later access
-  moduleRegistry.set(modulePath, { 
+  moduleRegistry.set(modulePath, {
     mock: mockObj,
     factory: options.factory ? mockImplementation as ModuleFactory : undefined
   });
+
+  // Add default export for ES modules compatibility
+  const mockWithDefault = typeof mockObj === 'object' && mockObj !== null
+    ? { ...mockObj, default: mockObj }
+    : { default: mockObj };
 
   // For ES modules, use unstable_mockModule
   if (options.isESM) {
@@ -175,12 +194,12 @@ export function mockESModule(
     if (typeof mockImplementation === 'function' && options.factory) {
       jest.unstable_mockModule(modulePath, mockImplementation as ModuleFactory);
     } else {
-      // Otherwise, create a factory that returns the mockObj
-      jest.unstable_mockModule(modulePath, () => mockObj);
+      // Otherwise, create a factory that returns the mockObj with default export
+      jest.unstable_mockModule(modulePath, () => mockWithDefault);
     }
   } else {
     // For CommonJS modules, use jest.mock
-    jest.mock(modulePath, () => mockObj, { virtual: options.virtual });
+    jest.mock(modulePath, () => mockWithDefault, { virtual: options.virtual });
   }
 
   // Return a function to reset this specific mock
@@ -237,16 +256,80 @@ export async function dynamicESModuleMock<T = any>(
 }
 
 
-import * as fs from 'node:fs/promises';
-import { mockDeep, MockProxy } from 'jest-mock-extended';
-import * as keytar from 'keytar';
-
-export function setupFsPromisesMock(): MockProxy<typeof fs> {
-  return mockDeep<typeof fs>();
+// Define a type for the fs/promises module
+interface FsPromises {
+  access: (path: string, mode?: number) => Promise<void>;
+  stat: (path: string) => Promise<any>;
+  readFile: (path: string, options?: any) => Promise<any>;
+  writeFile: (path: string, data: string, options?: any) => Promise<void>;
+  readdir: (path: string) => Promise<any[]>;
+  unlink: (path: string) => Promise<void>;
+  mkdir: (path: string, options?: any) => Promise<void>;
+  rmdir: (path: string, options?: any) => Promise<void>;
+  rm: (path: string, options?: any) => Promise<void>;
+  constants: {
+    R_OK: number;
+    W_OK: number;
+    F_OK: number;
+  };
 }
 
-export function setupKeytarMock(): MockProxy<typeof keytar> {
-  return mockDeep<typeof keytar>();
+// Define a type for the keytar module
+interface Keytar {
+  getPassword: (service: string, account: string) => Promise<string | null>;
+  setPassword: (service: string, account: string, password: string) => Promise<void>;
+  deletePassword: (service: string, account: string) => Promise<boolean>;
+  findCredentials: (service: string) => Promise<Array<{ account: string; password: string }>>;
+}
+
+/**
+ * Creates a fully-mocked fs/promises module with default export support
+ * This supports both ESM and CommonJS import patterns:
+ * - `import fs from 'node:fs/promises'`
+ * - `import * as fs from 'node:fs/promises'`
+ *
+ * @returns A mock of the fs/promises module with both named and default exports
+ */
+export function setupFsPromisesMock(): MockProxy<FsPromises> & { default: MockProxy<FsPromises> } {
+  const mock = mockDeep<FsPromises>();
+
+  // Set up common implementations with proper types
+  mock.readFile.mockImplementation((path, options) => {
+    // Handle options.encoding to return string vs Buffer correctly
+    if (options && typeof options === 'object' && 'encoding' in options) {
+      return Promise.resolve('mock file content');
+    }
+    return Promise.resolve(Buffer.from('mock file content'));
+  });
+
+  // Add a default export to handle ES module imports with default import syntax
+  const mockWithDefault = Object.assign(mock, { default: mock });
+  return mockWithDefault;
+}
+
+/**
+ * Creates a fully-mocked keytar module for credential testing
+ *
+ * @returns A mock of the keytar module
+ */
+export function setupKeytarMock(): MockProxy<Keytar> & { default?: MockProxy<Keytar> } {
+  const mock = mockDeep<Keytar>();
+
+  // Set up common implementations
+  mock.getPassword.mockImplementation((service, account) => {
+    return Promise.resolve(`mock-password-for-${service}-${account}`);
+  });
+
+  mock.findCredentials.mockImplementation((service) => {
+    return Promise.resolve([
+      { account: 'account1', password: 'password1' },
+      { account: 'account2', password: 'password2' }
+    ]);
+  });
+
+  // Add a default export to handle potential default imports
+  const mockWithDefault = Object.assign(mock, { default: mock });
+  return mockWithDefault;
 }
 
 /**

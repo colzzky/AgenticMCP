@@ -3,25 +3,56 @@
  */
 
 import { jest } from '@jest/globals';
-import { mockConsole, setupFsPromisesMock, mockESModule } from '../utils/test-setup';
+import { mockConsole, setupFsPromisesMock, mockESModule, setupLoggerMock } from '../utils/test-setup';
 import { Dirent, Stats } from 'fs';
 
+// Set up mocks BEFORE importing modules that use them
 let mockFs: ReturnType<typeof setupFsPromisesMock>;
-beforeAll(() => {
-  mockFs = setupFsPromisesMock();
-  mockESModule('node:fs/promises', mockFs, { virtual: true });
-});
+let NodeFileSystem: any;
+let IFileSystem: any;
+let logger: any;
 
-// Now we can import the module that uses fs
-import { NodeFileSystem } from '../../src/core/adapters/node-file-system.adapter';
-import { IFileSystem } from '../../src/core/interfaces/file-system.interface';
+// Use beforeAll to set up mocks and imports
+beforeAll(async () => {
+  // Use the helper function to create a logger mock
+  const { logger: mockLogger } = setupLoggerMock();
+
+  // Set up mocks
+  mockFs = setupFsPromisesMock();
+
+  // Register mocks with proper default export structure
+  jest.unstable_mockModule('node:fs/promises', () => ({
+    default: mockFs,
+    ...mockFs
+  }));
+
+  // We need to mock the logger from the core/utils module
+  // This uses a more robust approach that doesn't depend on resolving the exact path
+  jest.mock('../../src/core/utils', () => ({
+    logger: {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    }
+  }), { virtual: true });
+
+  // Import after mocking
+  const fileSystemAdapterModule = await import('../../src/core/adapters/node-file-system.adapter');
+  const fileSystemInterfaceModule = await import('../../src/core/interfaces/file-system.interface');
+  NodeFileSystem = fileSystemAdapterModule.NodeFileSystem;
+  IFileSystem = fileSystemInterfaceModule.IFileSystem;
+
+  // Store logger for testing
+  logger = mockLogger;
+});
 
 describe('NodeFileSystem Example', () => {
   // Console mocks for verifying logging
   let consoleSpy: ReturnType<typeof mockConsole>;
-  
+
   // File system adapter instance
-  let fileSystem: IFileSystem;
+  let fileSystem: typeof IFileSystem;
   
   // Test constants
   const TEST_PATH = '/test/path';
@@ -31,59 +62,76 @@ describe('NodeFileSystem Example', () => {
   
   // Error for testing
   const TEST_ERROR = new Error('File system error');
-  
+
   beforeEach(() => {
     // Reset module state and mocks
     jest.resetModules();
     jest.clearAllMocks();
-    
+
     // Set up console mocks
     consoleSpy = mockConsole();
-    
+
     // Create file system instance
     fileSystem = new NodeFileSystem();
-    
+
     // Set up default mock implementations
     mockFs.access.mockResolvedValue(undefined);
-    const mockStats: Stats = {
-  isDirectory: () => false,
-  isFile: () => true,
-  isBlockDevice: () => false,
-  isCharacterDevice: () => false,
-  isFIFO: () => false,
-  isSocket: () => false,
-  isSymbolicLink: () => false,
-  dev: 0, ino: 0, mode: 0, nlink: 0, uid: 0, gid: 0, rdev: 0, size: 1024, blksize: 0, blocks: 0,
-  atimeMs: 0, mtimeMs: 0, ctimeMs: 0, birthtimeMs: 0,
-  atime: new Date(), mtime: new Date(), ctime: new Date(), birthtime: new Date(),
-};
-const mockDirent = Object.assign(Object.create(Dirent.prototype), {
-  name: Buffer.from('file1.txt'),
-  isDirectory: () => false,
-  isFile: () => true,
-  isBlockDevice: () => false,
-  isCharacterDevice: () => false,
-  isFIFO: () => false,
-  isSocket: () => false,
-  isSymbolicLink: () => false,
-  parentPath: Buffer.from('/test/path'),
-  path: Buffer.from('/test/path/file1.txt'),
-}) as Dirent<Buffer<ArrayBufferLike>>;
 
-mockFs.stat.mockResolvedValue(mockStats);
-mockFs.readFile.mockResolvedValue(Buffer.from(TEST_CONTENT));
-mockFs.readdir.mockResolvedValue([mockDirent] as Dirent<Buffer<ArrayBufferLike>>[]);
-mockFs.writeFile.mockResolvedValue(undefined);
-mockFs.unlink.mockResolvedValue(undefined);
-mockFs.mkdir.mockResolvedValue(undefined);
-mockFs.rmdir.mockResolvedValue(undefined);
-mockFs.rm.mockResolvedValue(undefined);
+    const mockStats = {
+      isDirectory: jest.fn().mockReturnValue(false),
+      isFile: jest.fn().mockReturnValue(true),
+      size: 1024,
+      dev: 0,
+      ino: 0,
+      mode: 0,
+      nlink: 0,
+      uid: 0,
+      gid: 0,
+      rdev: 0,
+      blksize: 0,
+      blocks: 0,
+      atimeMs: 0,
+      mtimeMs: 0,
+      ctimeMs: 0,
+      birthtimeMs: 0,
+      atime: new Date(),
+      mtime: new Date(),
+      ctime: new Date(),
+      birthtime: new Date(),
+    };
+
+    const mockDirent = {
+      name: 'file1.txt',
+      isDirectory: jest.fn().mockReturnValue(false),
+      isFile: jest.fn().mockReturnValue(true),
+      isBlockDevice: jest.fn().mockReturnValue(false),
+      isCharacterDevice: jest.fn().mockReturnValue(false),
+      isFIFO: jest.fn().mockReturnValue(false),
+      isSocket: jest.fn().mockReturnValue(false),
+      isSymbolicLink: jest.fn().mockReturnValue(false),
+    };
+
+    mockFs.stat.mockResolvedValue(mockStats);
+    // Mock readFile to return string content when encoding is provided in options
+    mockFs.readFile.mockImplementation((path, options) => {
+      if (options && options.encoding) {
+        return Promise.resolve(TEST_CONTENT);
+      }
+      return Promise.resolve(Buffer.from(TEST_CONTENT));
+    });
+    mockFs.readdir.mockResolvedValue([mockDirent]);
+    mockFs.writeFile.mockResolvedValue(undefined);
+    mockFs.unlink.mockResolvedValue(undefined);
+    mockFs.mkdir.mockResolvedValue(undefined);
+    mockFs.rmdir.mockResolvedValue(undefined);
     mockFs.rm.mockResolvedValue(undefined);
   });
   
   afterEach(() => {
     // Restore console mocks
-    consoleSpy.restore();
+    if (consoleSpy && typeof consoleSpy.restore === 'function') {
+      consoleSpy.restore();
+    }
   });
   
   describe('access', () => {
