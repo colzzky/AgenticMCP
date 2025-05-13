@@ -131,9 +131,9 @@
 │   │   ├── providerFactory.ts
 │   │   └── providerInitializer.ts
 │   ├── tools/
+│   │   ├── di-local-cli-tool.ts
 │   │   ├── factory/
 │   │   │   └── di-local-cli-tool-factory.ts
-│   │   ├── localCliTool.ts
 │   │   ├── localCliToolDefinitions.ts
 │   │   ├── services/
 │   │   │   └── diff-service.ts
@@ -195,9 +195,15 @@
 │   ├── tools/
 │   ├── tsconfig.json
 │   └── utils/
+│       ├── ES_MODULE_TESTING.md
+│       ├── config-manager-example.ts
+│       ├── fs-keytar-mock-example.test.ts
 │       ├── in-memory-filesystem.ts
+│       ├── jest-mock-extended-patterns.md
+│       ├── logger-module.ts
 │       ├── mock-example-module.ts
 │       ├── mock-example.test.ts
+│       ├── service-module.ts
 │       └── test-setup.ts
 ├── tree.sh
 ├── tsconfig.json

@@ -5,9 +5,27 @@
 import { jest } from '@jest/globals';
 import { setupFsPromisesMock, setupKeytarMock, mockConsole } from './test-setup';
 
-// Mock dependencies before importing any modules that use them
-const mockFs = setupFsPromisesMock();
-const mockKeytar = setupKeytarMock();
+// Variables to hold mocks
+let mockFs: ReturnType<typeof setupFsPromisesMock>;
+let mockKeytar: ReturnType<typeof setupKeytarMock>;
+
+// Setup mocks before importing modules
+beforeAll(async () => {
+  // Create mocks
+  mockFs = setupFsPromisesMock();
+  mockKeytar = setupKeytarMock();
+
+  // Register mocks with Jest
+  jest.unstable_mockModule('node:fs/promises', () => ({
+    default: mockFs,
+    ...mockFs
+  }));
+
+  jest.unstable_mockModule('keytar', () => ({
+    default: mockKeytar,
+    ...mockKeytar
+  }));
+});
 
 // Test constants
 const TEST_FILE_PATH = '/test/config.json';
@@ -47,7 +65,9 @@ describe('ConfigManager with Keychain Integration', () => {
 
   afterEach(() => {
     // Restore console mocks
-    consoleSpy.restore();
+    if (consoleSpy && typeof consoleSpy.restore === 'function') {
+      consoleSpy.restore();
+    }
   });
 
   describe('loadConfig', () => {

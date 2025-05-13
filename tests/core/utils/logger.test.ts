@@ -110,13 +110,14 @@ describe('Logger', () => {
     });
 
     it('should log error for invalid log level', () => {
-      // Mock error function to check it's called
-      const errorSpy = jest.spyOn(logger, 'error').mockImplementation(jest.fn());
-      
+      // Spy on the actual error method
+      const errorSpy = jest.spyOn(console, 'error');
+
       logger.setLogLevel('invalid');
-      
-      expect(errorSpy).toHaveBeenCalledWith('Invalid log level: invalid');
-      
+
+      // The logger prefixes with [ERROR], so check for that
+      expect(errorSpy).toHaveBeenCalledWith('[ERROR] Invalid log level: invalid');
+
       errorSpy.mockRestore();
     });
   });

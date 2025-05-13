@@ -3,17 +3,28 @@
  */
 
 import { jest } from '@jest/globals';
-import { mockConsole, setupKeytarMock, mockESModule } from '../utils/test-setup';
-
-let mockKeytar: ReturnType<typeof setupKeytarMock>;
-beforeAll(() => {
-  mockKeytar = setupKeytarMock();
-  mockESModule('keytar', mockKeytar, { virtual: true });
-});
-
-// Now we can import the module that uses keytar
-import { CredentialManager } from '../../src/core/credentials/credentialManager';
+import { mockConsole, setupKeytarMock } from '../utils/test-setup';
 import { CredentialIdentifier } from '../../src/core/types/credentials.types';
+
+// Set up mocks BEFORE importing modules that use them
+let mockKeytar: ReturnType<typeof setupKeytarMock>;
+let CredentialManager: any;
+
+// Use beforeAll to set up mocks and imports
+beforeAll(async () => {
+  // Set up mocks
+  mockKeytar = setupKeytarMock();
+
+  // Register mocks with Jest using unstable_mockModule
+  jest.unstable_mockModule('keytar', () => ({
+    default: mockKeytar,
+    ...mockKeytar
+  }));
+
+  // Import after mocking
+  const credentialManagerModule = await import('../../src/core/credentials/credentialManager');
+  CredentialManager = credentialManagerModule.CredentialManager;
+});
 
 describe('CredentialManager Example', () => {
   // Console mocks for verifying logging

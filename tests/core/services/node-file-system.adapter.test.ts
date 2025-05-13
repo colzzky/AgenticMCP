@@ -23,14 +23,12 @@ const mockLogger = {
   warn: jest.fn(),
   error: jest.fn()
 };
-mockESModule('../../../src/core/utils', { logger: mockLogger });
+mockESModule('../../../src/core/utils/logger', mockLogger, { virtual: true });
 
 // We need to override node:fs/promises directly so we prevent NodeFileSystem
 // from accessing the real file system which causes ENOENT errors
 const realFsPromisesModule = jest.requireActual('node:fs/promises');
-jest.unstable_mockModule('node:fs/promises', () => ({
-  ...mockFs
-}));
+jest.unstable_mockModule('node:fs/promises', () => mockFs);
 
 describe('NodeFileSystem', () => {
   // Console mocks
@@ -86,7 +84,9 @@ describe('NodeFileSystem', () => {
 
   afterEach(() => {
     // Restore console mocks
-    consoleSpy.restore();
+    if (consoleSpy && typeof consoleSpy.restore === 'function') {
+      consoleSpy.restore();
+    }
     jest.restoreAllMocks();
   });
 
@@ -124,8 +124,6 @@ describe('NodeFileSystem', () => {
       expect(mockFs.stat).toHaveBeenCalledWith(TEST_PATH);
       expect(result.isDirectory()).toBe(true);
       expect(result.size).toBe(1234);
-      expect(result.isDirectory()).toBe(false);
-      expect(result.size).toBe(1024);
     });
 
     it('should log and throw error if stat fails', async () => {

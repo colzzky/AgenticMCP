@@ -96,22 +96,23 @@ describe('DIContainer', () => {
     it('should create singleton only when requested', () => {
       // Mock factory function
       const mockFactory = jest.fn().mockReturnValue(TEST_VALUE);
-      
+
       container.registerSingleton(TEST_SINGLETON_TOKEN, mockFactory);
-      
+
       // Factory should not be called yet
       expect(mockFactory).not.toHaveBeenCalled();
-      
-      // Now get using regular get
-      const result = container.get(TEST_SINGLETON_TOKEN);
-      
-      // Should return the factory itself, not call it
-      expect(result).toBe(mockFactory);
+
+      // Now get using regular get - should return the factory
+      const factory = container.get(TEST_SINGLETON_TOKEN);
+
+      // Verify we got the factory function
+      expect(typeof factory).toBe('function');
+      expect(factory).toBe(mockFactory);
       expect(mockFactory).not.toHaveBeenCalled();
-      
+
       // Now get using getSingleton
       const singleton = container.getSingleton(TEST_SINGLETON_TOKEN);
-      
+
       // Should now call factory and return its result
       expect(singleton).toBe(TEST_VALUE);
       expect(mockFactory).toHaveBeenCalledTimes(1);

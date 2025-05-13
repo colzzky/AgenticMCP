@@ -41,8 +41,13 @@ export class DIContainer {
    * @returns The dependency implementation
    */
   public get<T>(token: string): T {
-    // Check for singleton instance
+    // Check if this is a singleton factory that hasn't been instantiated
     if (this.singletons.has(token)) {
+      // If it's a singleton that hasn't been instantiated yet, return the factory
+      if (this.singletons.get(token) === undefined) {
+        return this.dependencies.get(token) as T;
+      }
+      // Otherwise return the singleton instance
       return this.singletons.get(token) as T;
     }
 
@@ -78,7 +83,7 @@ export class DIContainer {
     }
 
     // Create singleton instance if not already created
-    if (this.singletons.get(token) === null) {
+    if (this.singletons.get(token) === undefined) {
       const factory = this.dependencies.get(token) as () => T;
       this.singletons.set(token, factory());
     }

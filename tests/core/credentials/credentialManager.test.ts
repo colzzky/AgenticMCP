@@ -4,7 +4,7 @@
 
 import { jest } from '@jest/globals';
 import { CredentialIdentifier, KeytarCredential } from '../../../src/core/types/credentials.types';
-import { mockConsole, setupKeytarMock, mockESModule } from '../../utils/test-setup';
+import { mockConsole, setupKeytarMock } from '../../utils/test-setup';
 
 // Test constants
 const SERVICE_NAME_PREFIX = 'AgenticMCP';
@@ -16,24 +16,25 @@ const FULL_SERVICE_NAME = `${SERVICE_NAME_PREFIX}-${TEST_PROVIDER}`;
 let CredentialManager: typeof import('../../../src/core/credentials/credentialManager').CredentialManager;
 let mockKeytar: ReturnType<typeof setupKeytarMock>;
 
-// Patch and import order: patch before import
+// Set up mocks before any imports
 beforeAll(async () => {
+  // Create keytar mock
   mockKeytar = setupKeytarMock();
-  mockESModule('keytar', mockKeytar, { virtual: true });
-  // Dynamically import after patch
-  ({ CredentialManager } = await import('../../../src/core/credentials/credentialManager'));
+
+  // Register the mock with Jest
+  jest.unstable_mockModule('keytar', () => ({
+    default: mockKeytar,
+    ...mockKeytar
+  }));
+
+  // Now import the module after mocking
+  const credentialManagerModule = await import('../../../src/core/credentials/credentialManager');
+  CredentialManager = credentialManagerModule.CredentialManager;
 });
 
 describe('CredentialManager', () => {
   // Console mocks
   let consoleSpy: ReturnType<typeof mockConsole>;
-
-  // Test constants
-  const SERVICE_NAME_PREFIX = 'AgenticMCP';
-  const TEST_PROVIDER = 'openai';
-  const TEST_ACCOUNT = 'test-account';
-  const TEST_SECRET = 'test-api-key-12345';
-  const FULL_SERVICE_NAME = `${SERVICE_NAME_PREFIX}-${TEST_PROVIDER}`;
 
   beforeEach(() => {
     jest.resetModules();
@@ -71,7 +72,9 @@ describe('CredentialManager', () => {
 
   afterEach(() => {
     // Restore console mocks
-    consoleSpy.restore();
+    if (consoleSpy && typeof consoleSpy.restore === 'function') {
+      consoleSpy.restore();
+    }
   });
 
   describe('getFullServiceName', () => {

@@ -8,12 +8,18 @@ import { mockConsole, setupKeytarMock, setupFsPromisesMock, mockESModule } from 
 let ConfigManager: typeof import('../../../src/core/config/configManager').ConfigManager;
 let mockKeytar: ReturnType<typeof setupKeytarMock>;
 let mockFs: ReturnType<typeof setupFsPromisesMock>;
+const mockLogger = {
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+};
 
 beforeAll(async () => {
   mockKeytar = setupKeytarMock();
   mockFs = setupFsPromisesMock();
   mockESModule('keytar', mockKeytar, { virtual: true });
-  mockESModule('node:fs/promises', mockFs, { virtual: true });
+  mockESModule('../../../src/core/utils/logger', mockLogger, { virtual: true });
   ({ ConfigManager } = await import('../../../src/core/config/configManager'));
 });
 
