@@ -10,18 +10,37 @@ import type {
   Tool,
   ToolCall,
   ToolCallOutput
-} from '@/core/types/provider.types';
-import type { AnthropicProviderSpecificConfig } from '@/core/types/config.types';
-import { info, error as logError } from '@/core/utils/logger';
+} from '../../core/types/provider.types';
+import type { AnthropicProviderSpecificConfig } from '../../core/types/config.types';
+import type { ConfigManager } from '../../core/config/configManager';
+import type { Logger } from '../../core/types/logger.types';
 import { ToolResultsRequest } from '../../core/types/provider.types';
 
+/**
+ * AnthropicProvider implements the LLMProvider interface for Anthropic Claude API.
+ * Uses dependency injection for better testability.
+ */
 export class AnthropicProvider implements LLMProvider {
   private providerConfig?: AnthropicProviderSpecificConfig;
-  private apiKey?: string;
   private client?: Anthropic;
+  private configManager: ConfigManager;
+  private logger: Logger;
   private AnthropicClass: typeof Anthropic;
 
-  constructor(AnthropicClass: typeof Anthropic = Anthropic) {
+  /**
+   * Creates a new AnthropicProvider with dependency injection.
+   * 
+   * @param configManager - Configuration manager for API keys and settings
+   * @param logger - Logger implementation
+   * @param AnthropicClass - Anthropic class constructor (useful for testing)
+   */
+  constructor(
+    configManager: ConfigManager,
+    logger: Logger,
+    AnthropicClass: typeof Anthropic = Anthropic
+  ) {
+    this.configManager = configManager;
+    this.logger = logger;
     this.AnthropicClass = AnthropicClass;
   }
 
@@ -114,25 +133,37 @@ export class AnthropicProvider implements LLMProvider {
       return typeof result === 'string' ? result : JSON.stringify(result);
     } catch (error_: unknown) {
       const errorMessage = error_ instanceof Error ? error_.message : String(error_);
-      logError(`Error executing tool call ${name}: ${errorMessage}`);
+      this.logger.error(`Error executing tool call ${name}: ${errorMessage}`);
       return JSON.stringify({ error: errorMessage });
     }
   }
 
+  /**
+   * Configures the AnthropicProvider with API keys and settings.
+   * Uses ConfigManager to resolve API key.
+   */
   async configure(config: AnthropicProviderSpecificConfig): Promise<void> {
     this.providerConfig = config;
-    this.apiKey = config.apiKey || process.env.ANTHROPIC_API_KEY;
-    if (!this.apiKey) {
-      throw new Error('Anthropic API key is required.');
+    
+    // Get API key from ConfigManager instead of direct environment access
+    const apiKey = await this.configManager.getResolvedApiKey(config);
+    
+    if (!apiKey) {
+      throw new Error(`Anthropic API key not found for providerType: ${config.providerType}`);
     }
-    this.client = new this.AnthropicClass({ apiKey: this.apiKey });
-    info(`AnthropicProvider configured for instance ${config.instanceName || 'default'}`);
+    
+    this.client = new this.AnthropicClass({ apiKey });
+    this.logger.info(`AnthropicProvider configured for instance ${config.instanceName || 'default'}`);
   }
 
+  /**
+   * Handles chat requests with Anthropic API.
+   */
   async chat(request: ProviderRequest): Promise<ProviderResponse> {
     if (!this.client || !this.providerConfig) {
       throw new Error('AnthropicProvider not configured. Call configure() first.');
     }
+    
     try {
       const model = request.model || this.providerConfig.model || 'claude-3-5-sonnet-latest';
       const max_tokens = request.maxTokens || this.providerConfig.maxTokens || 1024;
@@ -241,7 +272,7 @@ export class AnthropicProvider implements LLMProvider {
       }
 
       const completion = await this.client.messages.create(params);
-      info(`Anthropic chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${model}`);
+      this.logger.info(`Anthropic chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${model}`);
 
       // Extract text content from the response
       const content = this.extractTextFromContentBlocks(completion.content);
@@ -262,15 +293,18 @@ export class AnthropicProvider implements LLMProvider {
           promptTokens: completion.usage.input_tokens,
           completionTokens: completion.usage.output_tokens,
           totalTokens: completion.usage.input_tokens + completion.usage.output_tokens,
-        } : undefined,
-        rawResponse: completion,
+        } : undefined
       };
     } catch (error: any) {
-      logError(`AnthropicProvider chat error: ${error.message}`);
+      this.logger.error(`AnthropicProvider chat error: ${error.message}`);
       return {
         success: false,
-        error: { message: error.message, details: error },
-        rawResponse: error,
+        content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+        error: {
+          message: error.message,
+          code: error.code,
+          details: error
+        }
       };
     }
   }
@@ -328,7 +362,7 @@ export class AnthropicProvider implements LLMProvider {
    * @param request - The request object containing messages, tool calls, and tool outputs
    * @returns Promise resolving to the provider's response
    */
-  public async generateTextWithToolResults(request: any): Promise<ProviderResponse> {
+  public async generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse> {
     // For Anthropic, we handle tool results by adding them to the conversation history
     // and then continuing the conversation with a new chat request
     
@@ -351,6 +385,9 @@ export class AnthropicProvider implements LLMProvider {
     return this.generateText({ ...request, messages });
   }
 
+  /**
+   * Handles basic text completion for Anthropic
+   */
   async generateCompletion(request: ProviderRequest): Promise<ProviderResponse> {
     // For Claude, completion is similar to chat with a single user prompt
     if (!request.messages && request.prompt) {

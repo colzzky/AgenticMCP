@@ -1,3 +1,4 @@
+// Forcing re-evaluation for TS diagnostics
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import {
@@ -14,6 +15,7 @@ import {
 import type { ConfigManager } from '../../core/config/configManager';
 import type { Logger } from '../../core/types/logger.types';
 import type { ProviderSpecificConfig, OpenAIProviderSpecificConfig } from '../../core/types/config.types';
+import { mapMessageToOpenAIParam, mapToolsToOpenAIChatTools } from './openaiProviderMappers';
 
 /**
  * OpenAIProvider implements the LLMProvider interface for OpenAI API.
@@ -50,7 +52,6 @@ export class OpenAIProvider implements LLMProvider {
    */
   public setToolRegistry(toolRegistry: object): void {
     this.toolRegistry = toolRegistry;
-    this.logger.info(`Tool registry set for OpenAI provider`);
   }
 
   /**
@@ -93,17 +94,14 @@ export class OpenAIProvider implements LLMProvider {
     // Set optional base URL if provided
     if (config.baseURL) {
       clientOptions.baseURL = config.baseURL;
-      this.logger.info(`Using custom base URL for OpenAI provider: ${config.baseURL}`);
     }
 
     // Set organization ID if provided
     if (config.organization) {
       clientOptions.organization = config.organization;
-      this.logger.info(`Using organization ID for OpenAI provider: ${config.organization}`);
     }
 
     this.client = new this.OpenAIClass(clientOptions);
-    this.logger.info(`OpenAI provider configured successfully`);
   }
 
   /**
@@ -111,47 +109,20 @@ export class OpenAIProvider implements LLMProvider {
    */
   public async chat(request: ProviderRequest): Promise<ProviderResponse> {
     if (!this.client || !this.providerConfig) {
-      throw new Error('OpenAIProvider not configured. Call configure() first.');
+      return this._handleProviderError(new Error('OpenAIProvider not configured. Call configure() first.'), 'OpenAIProvider.chat');
     }
 
     const model = request.model || this.providerConfig.model || 'gpt-3.5-turbo';
     const temperature = request.temperature ?? this.providerConfig.temperature ?? 0.7;
 
-    let messages: ChatCompletionMessageParam[] = [];
-
-    if (request.messages) {
-      messages = request.messages.map((msg) => {
-        const mapped: ChatCompletionMessageParam = {
-          role: msg.role,
-          content: msg.content || '',
-        };
-
-        if (msg.name) {
-          mapped.name = msg.name;
-        }
-
-        // Handle tool calls if present
-        if (msg.tool_calls) {
-          // TypeScript fix: Use type assertion for mapped
-          const assistantMsg = mapped as any;
-          assistantMsg.tool_calls = msg.tool_calls.map((tc) => ({
-            id: tc.id || `tc_${Math.random().toString(36).substring(2, 10)}`,
-            type: 'function',
-            function: {
-              name: tc.name,
-              arguments: tc.arguments,
-            },
-          }));
-        }
-
-        return mapped;
-      });
-    }
+    const messages: ChatCompletionMessageParam[] = request.messages
+      ? request.messages.map(msg => mapMessageToOpenAIParam(msg))
+      : [];
 
     try {
       this.logger.debug(`Sending OpenAI chat request with model: ${model}`);
 
-      const requestOptions: any = {
+      const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
         model,
         messages,
         temperature,
@@ -160,20 +131,23 @@ export class OpenAIProvider implements LLMProvider {
       // Add tools support if enabled
       if (request.tools && request.tools.length > 0) {
         this.logger.debug(`Adding ${request.tools.length} tools to request`);
-        const chatTools: ChatCompletionTool[] = request.tools.map((tool) => ({
-          type: 'function',
-          function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: tool.parameters,
-          },
-        }));
-        requestOptions.tools = chatTools;
+        requestOptions.tools = mapToolsToOpenAIChatTools(request.tools);
       }
 
       // Add tool_choice if specified
       if (request.tool_choice) {
-        requestOptions.tool_choice = request.tool_choice;
+        if (typeof request.tool_choice === 'string') {
+          requestOptions.tool_choice = request.tool_choice as 'none' | 'auto' | 'required';
+        } else if (typeof request.tool_choice === 'object') {
+          // Ensure request.tool_choice is compatible with ChatCompletionNamedToolChoice
+          const toolChoiceObj = request.tool_choice as OpenAI.Chat.Completions.ChatCompletionNamedToolChoice;
+          requestOptions.tool_choice = toolChoiceObj.type === 'function' && toolChoiceObj.function?.name ? {
+              type: 'function',
+              function: { name: toolChoiceObj.function.name }
+            } : 'auto';
+        } else {
+           requestOptions.tool_choice = 'auto'; 
+        }
       }
 
       // Handle multi-reply
@@ -183,172 +157,31 @@ export class OpenAIProvider implements LLMProvider {
 
       // Add streaming support if requested
       if (request.stream && typeof request.onStream === 'function') {
-        requestOptions.stream = true;
-        const stream = await this.client.chat.completions.create(requestOptions);
-        
-        let accumulatedContent = '';
-        let toolCalls: ToolCall[] = [];
-        
-        // TypeScript fix: Use any for stream to avoid Symbol.asyncIterator error
-        for await (const chunk of stream as any) {
-          const content = chunk.choices[0]?.delta?.content || '';
-          accumulatedContent += content;
-          
-          // Handle tool calls
-          if (chunk.choices[0]?.delta?.tool_calls) {
-            for (const toolCallDelta of chunk.choices[0].delta.tool_calls) {
-              // Find or create the tool call
-              let toolCall = toolCalls.find(tc => tc.id === toolCallDelta.id);
-              if (!toolCall) {
-                toolCall = {
-                  id: toolCallDelta.id || '',
-                  type: 'function_call',
-                  name: '',
-                  arguments: ''
-                };
-                toolCalls.push(toolCall);
-              }
-              
-              // Update the tool call with new info
-              if (toolCallDelta.function?.name) {
-                toolCall.name = toolCallDelta.function.name;
-              }
-              if (toolCallDelta.function?.arguments) {
-                toolCall.arguments += toolCallDelta.function.arguments;
-              }
-            }
-          }
-          
-          // Call the stream handler
-          request.onStream({
-            content: accumulatedContent,
-            toolCalls,
-            isComplete: false
-          });
-        }
-        
-        // Final update with complete flag
-        request.onStream({
-          content: accumulatedContent,
-          toolCalls,
-          isComplete: true
-        });
-        
-        return {
-          success: true,
-          content: accumulatedContent,
-          toolCalls
-        };
+        return this._handleStreamingChatRequest(request, requestOptions);
       }
 
       // Standard non-streaming request
       const completion = await this.client.chat.completions.create(requestOptions);
-      
-      this.logger.debug(`Received response from OpenAI API`);
-      
-      const responseChoice = completion.choices[0];
-      if (!responseChoice) {
-        throw new Error('No completion choices returned from OpenAI API');
-      }
-      
-      const content = responseChoice.message.content || '';
-      
-      // Handle tool calls if present
-      const toolCalls: ToolCall[] = [];
-      if (responseChoice.message.tool_calls && responseChoice.message.tool_calls.length > 0) {
-        for (const toolCall of responseChoice.message.tool_calls) {
-          if (toolCall.type === 'function') {
-            toolCalls.push({
-              id: toolCall.id,
-              type: 'function_call',
-              name: toolCall.function.name,
-              arguments: toolCall.function.arguments
-            });
-          }
-        }
-      }
-      
-      // TypeScript fix: Only include supported fields in the response
-      return {
-        success: true,
-        content,
-        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
-        usage: completion.usage ? {
-          promptTokens: completion.usage.prompt_tokens,
-          completionTokens: completion.usage.completion_tokens,
-          totalTokens: completion.usage.total_tokens
-        } : undefined,
-        error: undefined
-      };
-    } catch (error_) {
-      this.logger.error(`Error in OpenAI chat request: ${error_ instanceof Error ? error_.message : String(error_)}`);
-      return {
-        success: false,
-        content: `Error: ${error_ instanceof Error ? error_.message : String(error_)}`,
-        error: {
-          message: error_ instanceof Error ? error_.message : String(error_),
-          code: error_ instanceof Error && 'code' in error_ ? (error_ as any).code : undefined
-        }
-      };
+      return this._buildProviderResponseFromCompletion(completion);
+    } catch (error: unknown) {
+      return this._handleProviderError(error, 'OpenAIProvider.chat');
     }
   }
 
-  /**
-   * Implement executeToolCall method required by LLMProvider interface.
-   */
-  public async executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
-    if (!availableTools) {
-      throw new Error('No tools provided for execution');
-    }
-
-    try {
-      const tool = availableTools[toolCall.name];
-      if (!tool) {
-        throw new Error(`Tool not found: ${toolCall.name}`);
-      }
-
-      // Parse arguments JSON
-      let args: Record<string, any>;
-      try {
-        args = JSON.parse(toolCall.arguments);
-      } catch (error) {
-        throw new Error(`Invalid tool arguments: ${error instanceof Error ? error.message : String(error)}`);
-      }
-
-      // Execute tool with arguments
-      const result = await tool(args);
-      return typeof result === 'string' ? result : JSON.stringify(result);
-    } catch (error) {
-      this.logger.error(`Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`);
-      return `Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`;
-    }
-  }
-
-  /**
-   * Implement generateText method required by LLMProvider interface.
-   */
-  public async generateText(request: ProviderRequest): Promise<ProviderResponse> {
-    return this.chat(request);
-  }
-
-  /**
-   * Generates text completion from OpenAI with tool results.
-   */
   public async generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse> {
     if (!this.client || !this.providerConfig) {
-      throw new Error('OpenAIProvider not configured. Call configure() first.');
+      return this._handleProviderError(new Error('OpenAIProvider not configured. Call configure() first.'), 'OpenAIProvider.generateTextWithToolResults');
     }
 
     if (!request.messages || request.messages.length === 0) {
-      throw new Error('Request must contain messages for generateTextWithToolResults.');
+      return this._handleProviderError(new Error('Request must contain messages for generateTextWithToolResults.'), 'OpenAIProvider.generateTextWithToolResults');
     }
 
     if (!request.tool_outputs || request.tool_outputs.length === 0) {
-      throw new Error('Request must contain tool_outputs for generateTextWithToolResults.');
+      return this._handleProviderError(new Error('Request must contain tool_outputs for generateTextWithToolResults.'), 'OpenAIProvider.generateTextWithToolResults');
     }
 
     try {
-      // Find the assistant's message with tool calls
       const assistantIndex = request.messages.findIndex(
         (msg) => msg.role === 'assistant' && msg.tool_calls && msg.tool_calls.length > 0
       );
@@ -357,48 +190,19 @@ export class OpenAIProvider implements LLMProvider {
         throw new Error('No assistant message with tool calls found in the conversation history.');
       }
 
-      // Create OpenAI compatible messages
-      const messages = request.messages.map((msg) => {
-        const mapped: ChatCompletionMessageParam = {
-          role: msg.role,
-          content: msg.content || '',
-        };
+      const messages: ChatCompletionMessageParam[] = request.messages.map(msg => 
+        mapMessageToOpenAIParam(msg)
+      );
 
-        if (msg.name) {
-          mapped.name = msg.name;
-        }
-
-        // Handle tool calls if present
-        if (msg.tool_calls) {
-          // TypeScript fix: Use type assertion
-          const assistantMsg = mapped as any;
-          assistantMsg.tool_calls = msg.tool_calls.map((tc) => ({
-            id: tc.id || `tc_${Math.random().toString(36).substring(2, 10)}`,
-            type: 'function',
-            function: {
-              name: tc.name,
-              arguments: tc.arguments,
-            },
-          }));
-        }
-
-        return mapped;
-      });
-
-      // Create the tool result messages
-      // TypeScript fix: tool_outputs should have correct structure
-      const toolResultMessages: any[] = request.tool_outputs.map((result) => ({
+      const toolResultMessages: ChatCompletionMessageParam[] = request.tool_outputs.map((result) => ({
         role: 'tool',
         tool_call_id: result.call_id,
         content: result.output || "No output provided",
       }));
 
-      // Insert tool results after the assistant message
-      // TypeScript fix: Type cast to avoid type error
-      messages.splice(assistantIndex + 1, 0, ...(toolResultMessages as any[]));
+      messages.splice(assistantIndex + 1, 0, ...toolResultMessages);
 
-      // Send the request to continue the conversation
-      const requestOptions = {
+      const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
         model: request.model || this.providerConfig.model || 'gpt-3.5-turbo',
         messages,
         temperature: request.temperature ?? this.providerConfig.temperature ?? 0.7,
@@ -414,26 +218,24 @@ export class OpenAIProvider implements LLMProvider {
 
       const content = responseChoice.message.content || '';
 
-      // Handle tool calls if present in the response
-      const toolCalls: ToolCall[] = [];
+      const responseToolCalls: ToolCall[] = [];
       if (responseChoice.message.tool_calls && responseChoice.message.tool_calls.length > 0) {
-        for (const toolCall of responseChoice.message.tool_calls) {
-          if (toolCall.type === 'function') {
-            toolCalls.push({
-              id: toolCall.id,
+        for (const tc of responseChoice.message.tool_calls) {
+          if (tc.type === 'function') {
+            responseToolCalls.push({
+              id: tc.id,
               type: 'function_call',
-              name: toolCall.function.name,
-              arguments: toolCall.function.arguments,
+              name: tc.function.name,
+              arguments: tc.function.arguments,
             });
           }
         }
       }
 
-      // Return response with type fixes
       return {
         success: true,
         content,
-        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        toolCalls: responseToolCalls.length > 0 ? responseToolCalls : undefined,
         usage: completion.usage
           ? {
               promptTokens: completion.usage.prompt_tokens,
@@ -442,20 +244,8 @@ export class OpenAIProvider implements LLMProvider {
             }
           : undefined,
       };
-    } catch (error_) {
-      this.logger.error(
-        `Error in OpenAI generateTextWithToolResults: ${
-          error_ instanceof Error ? error_.message : String(error_)
-        }`
-      );
-      return {
-        success: false,
-        content: `Error: ${error_ instanceof Error ? error_.message : String(error_)}`,
-        error: {
-          message: error_ instanceof Error ? error_.message : String(error_),
-          code: error_ instanceof Error && 'code' in error_ ? (error_ as any).code : undefined
-        }
-      };
+    } catch (error: unknown) {
+      return this._handleProviderError(error, 'OpenAI generateTextWithToolResults');
     }
   }
 
@@ -516,5 +306,151 @@ export class OpenAIProvider implements LLMProvider {
     };
 
     return this.chat(chatRequest);
+  }
+
+  public async executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
+    if (!availableTools) {
+      throw new Error('No tools provided for execution');
+    }
+
+    try {
+      const tool = availableTools[toolCall.name];
+      if (!tool) {
+        throw new Error(`Tool not found: ${toolCall.name}`);
+      }
+
+      // Parse arguments JSON
+      let args: Record<string, any>;
+      try {
+        args = JSON.parse(toolCall.arguments);
+      } catch (error) {
+        throw new Error(`Invalid tool arguments: ${error instanceof Error ? error.message : String(error)}`);
+      }
+
+      // Execute tool with arguments
+      const result = await tool(args);
+      return typeof result === 'string' ? result : JSON.stringify(result);
+    } catch (error: unknown) {
+      this.logger.error(`Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`);
+      return `Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
+  public async generateText(request: ProviderRequest): Promise<ProviderResponse> {
+    return this.chat(request);
+  }
+
+  // Private helper methods
+  private async _handleStreamingChatRequest(
+    request: ProviderRequest,
+    requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming
+  ): Promise<ProviderResponse> {
+    if (!this.client || typeof request.onStream !== 'function') {
+      throw new Error('Streaming misconfigured or client not available.');
+    }
+
+    const streamRequestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming = {
+      ...requestOptions,
+      stream: true,
+    };
+    const stream = await this.client.chat.completions.create(streamRequestOptions);
+    
+    let accumulatedContent = '';
+    let toolCalls: ToolCall[] = [];
+    
+    for await (const chunk of stream) {
+      const contentChunk = chunk.choices[0]?.delta?.content || '';
+      accumulatedContent += contentChunk;
+      
+      if (chunk.choices[0]?.delta?.tool_calls) {
+        this._processStreamToolCallChunk(chunk.choices[0].delta.tool_calls, toolCalls);
+      }
+      
+      request.onStream({
+        content: accumulatedContent,
+        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        isComplete: false,
+      });
+    }
+    
+    request.onStream({
+      content: accumulatedContent,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+      isComplete: true,
+    });
+    
+    return {
+      success: true,
+      content: accumulatedContent,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+    };
+  }
+
+  private _processStreamToolCallChunk(
+    toolCallDeltas: OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta.ToolCall[],
+    existingToolCalls: ToolCall[]
+  ): void {
+    for (const toolCallDelta of toolCallDeltas) {
+      let toolCall = existingToolCalls.find(tc => tc.id === toolCallDelta.id);
+      if (!toolCall && toolCallDelta.id) { 
+        toolCall = {
+          id: toolCallDelta.id,
+          type: 'function_call', 
+          name: toolCallDelta.function?.name || '',
+          arguments: toolCallDelta.function?.arguments || ''
+        };
+        existingToolCalls.push(toolCall);
+      } else if (toolCall) {
+        if (toolCallDelta.function?.name) {
+          toolCall.name = toolCallDelta.function.name;
+        }
+        if (toolCallDelta.function?.arguments) {
+          toolCall.arguments += toolCallDelta.function.arguments;
+        }
+      }
+    }
+  }
+
+  private _handleProviderError(error: unknown, context: string): ProviderResponse {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    this.logger.error(`Error in ${context}: ${errorMessage}`);
+    return { success: false, error: { message: errorMessage } };
+  }
+
+  private _buildProviderResponseFromCompletion(
+    completion: OpenAI.Chat.Completions.ChatCompletion
+  ): ProviderResponse {
+    this.logger.debug(`Received response from OpenAI API`);
+
+    const responseChoice = completion.choices[0];
+    if (!responseChoice) {
+      this.logger.error('No completion choices returned from OpenAI API');
+      throw new Error('No completion choices returned from OpenAI API');
+    }
+
+    const content = responseChoice.message.content || '';
+
+    const responseToolCalls: ToolCall[] = (responseChoice.message.tool_calls || [])
+      .filter(tc => tc.type === 'function')
+      .map(tc => ({
+        id: tc.id,
+        type: 'function_call' as const,
+        name: tc.function.name,
+        arguments: tc.function.arguments,
+      }));
+
+    return {
+      success: true,
+      content,
+      toolCalls: responseToolCalls.length > 0 ? responseToolCalls : undefined,
+      usage: completion.usage ? {
+        promptTokens: completion.usage.prompt_tokens,
+        completionTokens: completion.usage.completion_tokens,
+        totalTokens: completion.usage.total_tokens,
+      } : undefined,
+      id: completion.id,
+      model: completion.model,
+      finishReason: responseChoice.finish_reason as ProviderResponse['finishReason'], 
+    };
   }
 }

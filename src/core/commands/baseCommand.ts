@@ -4,14 +4,16 @@
 
 import type { Command, CommandContext, CommandOutput } from '../types/command.types';
 import type { Logger } from '../types/logger.types';
-import { FilePathProcessor } from '../../context/filePathProcessor';
+import { DIFilePathProcessor as FilePathProcessor } from '../../context/filePathProcessor';
 import type { PathDI, FileSystemDI } from '../../global.types';
+import { IFileSystem } from '../interfaces/file-system.interface';
 
 /**
  * Factory interface for creating FilePathProcessors
  */
 export interface FilePathProcessorFactory {
   pathDI: PathDI;
+  fileSystem: IFileSystem;
   fileSystemDI: FileSystemDI;
   processDi: NodeJS.Process;
   factory: typeof FilePathProcessor;
@@ -23,17 +25,20 @@ export interface FilePathProcessorFactory {
  */
 export class DefaultFilePathProcessorFactory implements FilePathProcessorFactory {
   pathDI: PathDI;
+  fileSystem: IFileSystem;
   fileSystemDI: FileSystemDI;
   processDi: NodeJS.Process;
   factory: typeof FilePathProcessor;
 
   constructor(
     pathDI: PathDI,
+    fileSystem: IFileSystem,
     fileSystemDI: FileSystemDI,
     processDi: NodeJS.Process,
     factory: typeof FilePathProcessor
   ) {
     this.pathDI = pathDI;
+    this.fileSystem = fileSystem;
     this.fileSystemDI = fileSystemDI;
     this.processDi = processDi;
     this.factory = factory;
@@ -41,7 +46,12 @@ export class DefaultFilePathProcessorFactory implements FilePathProcessorFactory
 
   create(logger: Logger): FilePathProcessor {
     return new this.factory(
-      logger,this.pathDI, this.fileSystemDI, this.processDi
+    logger,
+    this.fileSystem,
+    this.pathDI,
+    this.fileSystemDI,
+    this.processDi,
+    {}
     );
   }
 }

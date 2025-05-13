@@ -1,7 +1,7 @@
 import type { RoleBasedToolsRegistrar } from './types';
 import type { Logger } from '../../core/types/logger.types.js';
 import type { PathDI } from '../../global.types';
-import { registerRoleBasedTools } from './index.js';
+import { registerRoleBasedTools } from './roleBasedTools';
 
 /**
  * Factory for creating RoleBasedToolsRegistrar implementations

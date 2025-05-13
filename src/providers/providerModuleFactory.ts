@@ -64,5 +64,5 @@ export function registerAdditionalProviders(
     factory.registerProvider(type, providerClass);
   }
   
-  logger.info(`Registered additional providers: ${Array.from(providerMap.keys()).join(', ')}`);
+  logger.info(`Registered additional providers: ${[...providerMap.keys()].join(', ')}`);
 }

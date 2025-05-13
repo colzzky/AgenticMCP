@@ -1,12 +1,12 @@
 /**
- * @file Implementation of the Google/Gemini Provider adapter
+ * @file Implementation of the Google/Gemini Provider adapter with dependency injection
  */
 
-import { GoogleGenAI, Content, GenerateContentResponse, Part } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import type { LLMProvider, ProviderRequest, ProviderResponse, Tool, ToolCall, ChatMessage, ToolResultsRequest, Message, ToolCallOutput } from '../../core/types/provider.types';
-import type { GoogleProviderSpecificConfig } from '@/core/types/config.types';
-import { ConfigManager } from '@/core/config/configManager';
-import { info, error as logError, debug } from '@/core/utils/logger';
+import type { GoogleProviderSpecificConfig } from '../../core/types/config.types';
+import type { ConfigManager } from '../../core/config/configManager';
+import type { Logger } from '../../core/types/logger.types';
 
 import {
   GoogleGenAIResponse,
@@ -14,9 +14,7 @@ import {
   GoogleResponsePart,
   GoogleGenerateContentConfig,
   GoogleGenAIModelInstance,
-  GenerationConfig,
-  GoogleToolConfig,
-  GoogleToolCallingConfig
+  GenerationConfig
 } from './googleTypes';
 import { convertToolsToGoogleFormat, convertToolChoiceToGoogleFormat } from './googleTypes';
 import { extractToolCallsFromGenAIResponse } from './googleToolExtraction';
@@ -25,34 +23,29 @@ import { convertMessagesToGenAIFormat } from './googleMessageConversion';
 /**
  * GoogleProvider adapter for the Google Gemini API
  * Supports both the Gemini Developer API and Vertex AI
+ * Uses dependency injection for better testability.
  */
 export class GoogleProvider implements LLMProvider {
-  private configManager?: ConfigManager;
-  private GoogleGenAIClass: typeof GoogleGenAI;
-
   private providerConfig?: GoogleProviderSpecificConfig;
   private client?: GoogleGenAI;
-  private model?: string;
-  private temperature?: number;
-  private maxTokens?: number;
-  private vertexAI?: boolean;
-  private vertexProject?: string;
-  private vertexLocation?: string;
-  private vertexEndpoint?: string;
-  private vertexCredentials?: string;
-  private vertexApiEndpoint?: string;
-  private vertexModelId?: string;
-  private vertexPublisher?: string;
-  private vertexPublisherModel?: string;
-  private vertexVersion?: string;
+  private configManager: ConfigManager;
+  private logger: Logger;
+  private GoogleGenAIClass: typeof GoogleGenAI;
 
   /**
-   * Constructor for GoogleProvider
-   * @param configManager Optional ConfigManager for secure credential storage
-   * @param GoogleGenAIClass For dependency injection and testing
+   * Creates a new GoogleProvider with dependency injection.
+   * 
+   * @param configManager - Configuration manager for API keys and settings
+   * @param logger - Logger implementation
+   * @param GoogleGenAIClass - GoogleGenAI class constructor (useful for testing)
    */
-  constructor(configManager?: ConfigManager, GoogleGenAIClass: typeof GoogleGenAI = GoogleGenAI) {
+  constructor(
+    configManager: ConfigManager,
+    logger: Logger,
+    GoogleGenAIClass: typeof GoogleGenAI = GoogleGenAI
+  ) {
     this.configManager = configManager;
+    this.logger = logger;
     this.GoogleGenAIClass = GoogleGenAIClass;
   }
 
@@ -70,30 +63,25 @@ export class GoogleProvider implements LLMProvider {
   public async configure(config: GoogleProviderSpecificConfig): Promise<void> {
     this.providerConfig = { ...config }; // Clone to avoid modifying original test config object
 
-    let keyToUse = config.apiKey; // Start with the provided key
-
-    console.log('[GoogleProvider.configure] Initial keyToUse:', keyToUse);
-    console.log('[GoogleProvider.configure] this.configManager exists:', !!this.configManager);
-    if (this.configManager) {
-      console.log('[GoogleProvider.configure] this.configManager.getResolvedApiKey type:', typeof this.configManager.getResolvedApiKey);
-    }
-
-    const resolvedKey = this.configManager && typeof this.configManager.getResolvedApiKey === 'function' 
-      ? await this.configManager.getResolvedApiKey(config) 
-      : undefined;
-    console.log('[GoogleProvider.configure] resolvedKey from ConfigManager:', resolvedKey);
-    keyToUse = resolvedKey || keyToUse;
-    console.log('[GoogleProvider.configure] keyToUse updated by ConfigManager:', keyToUse);
-
-    // Ensure providerConfig.apiKey has the final key to be used
-    this.providerConfig.apiKey = keyToUse;
-
     if (!this.providerConfig.providerType) {
       throw new Error('ProviderConfig is missing \'providerType\' for GoogleProvider');
     }
 
+    // Resolve API key using ConfigManager
+    const apiKey = await this.configManager.getResolvedApiKey(config);
+    
+    if (!apiKey && !config.vertexAI) {
+      throw new Error(
+        `Google Gemini API key not found for providerType: ${this.providerConfig.providerType}` +
+        (this.providerConfig.instanceName ? ` (instance: ${this.providerConfig.instanceName})` : '') +
+        `. Please configure it using the CLI.`
+      );
+    }
+
+    // Ensure providerConfig.apiKey has the final key to be used
+    this.providerConfig.apiKey = apiKey;
+
     // Initialize client differently based on whether we're using Vertex AI or the Gemini API
-    // Check if using Vertex AI or the Gemini Developer API
     const useVertexAI = this.providerConfig.vertexAI;
     
     // Initialize client based on the configuration
@@ -117,7 +105,7 @@ export class GoogleProvider implements LLMProvider {
       vertexai: true
     });
     
-    info(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Vertex AI`);
+    this.logger.info(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Vertex AI`);
   }
   
   /**
@@ -134,17 +122,12 @@ export class GoogleProvider implements LLMProvider {
       if (!vertexProject || !vertexLocation) {
         throw new Error('Vertex AI requires vertexProject and vertexLocation to be specified.');
       }
-      // For Vertex AI, the GoogleGenAI constructor might be called differently (e.g., without arguments
-      // relying on Application Default Credentials, or with specific auth clients).
-      // Our mock is set up to receive an object that can contain project/location.
+      
       this.client = new this.GoogleGenAIClass({ 
         project: vertexProject, 
         location: vertexLocation 
-        // We might add a flag like isVertex: true if the mock needs to differentiate more clearly
       });
     } else if (apiKey) {
-      // Assuming the SDK constructor can take an options object like { apiKey: string }
-      // This matches the previous live code structure for API key usage.
       this.client = new this.GoogleGenAIClass({ apiKey });
     } else {
       throw new Error(
@@ -157,6 +140,8 @@ export class GoogleProvider implements LLMProvider {
     if (!this.client) {
       throw new Error('Failed to initialize Google Gemini API client.');
     }
+    
+    this.logger.info(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Gemini API`);
   }
 
   /**
@@ -178,9 +163,8 @@ export class GoogleProvider implements LLMProvider {
       throw new Error('GoogleProvider not configured. Call configure() first.');
     }
     if (!this.client) {
-      // Attempt to initialize if not already (e.g. configure was called but client init failed silently or was deferred)
-      // This path might indicate a flaw in initial setup logic if hit often.
-      await this.initializeGeminiAPI(); // Assuming this sets this.client or throws
+      // Attempt to initialize if not already
+      await this.initializeGeminiAPI();
       if (!this.client) {
         throw new Error('Google API client failed to initialize. Check configuration and API key.');
       }
@@ -280,7 +264,7 @@ export class GoogleProvider implements LLMProvider {
 
       if (!content && resultResponse.promptFeedback?.blockReason) {
         const blockMessage = `Content generation blocked. Reason: ${resultResponse.promptFeedback.blockReason}. ${resultResponse.promptFeedback.blockReasonMessage || ''}`;
-        logError(blockMessage);
+        this.logger.error(blockMessage);
         return {
             success: false,
             content: '',
@@ -291,7 +275,7 @@ export class GoogleProvider implements LLMProvider {
       // Extract tool calls from the response
       const toolCalls = extractToolCallsFromGenAIResponse(resultResponse);
       
-      info(`Google Gemini chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${modelName}`);
+      this.logger.info(`Google Gemini chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${modelName}`);
       
       return {
         success: true,
@@ -308,7 +292,7 @@ export class GoogleProvider implements LLMProvider {
       };
     } catch (error_) {
       const message = error_ instanceof Error ? error_.message : String(error_);
-      logError(`Error in GoogleProvider.chat: ${message}`);
+      this.logger.error(`Error in GoogleProvider.generateText: ${message}`);
       return {
         success: false,
         content: '',
@@ -355,15 +339,6 @@ export class GoogleProvider implements LLMProvider {
     // Continue the conversation with the updated messages
     return this.generateText({ ...request, messages });
   }
-
-  /**
-   * Convert messages from the common format to Google GenAI specific format
-   */
-  // Method moved to googleMessageConversion.ts
-
-  // Method for converting tools to Google format moved to googleTypes.ts
-
-  // Helper utility methods moved to separate files
   
   /**
    * Executes a tool call and returns the result
@@ -372,7 +347,13 @@ export class GoogleProvider implements LLMProvider {
    * @returns Promise with the tool call result as a string
    */
   public async executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
-    if (!availableTools || !availableTools[toolCall.name]) throw new Error(`Tool ${toolCall.name} not found`);
+    if (!availableTools) {
+      throw new Error('No tools available to execute');
+    }
+    
+    if (!availableTools[toolCall.name]) {
+      throw new Error(`Tool ${toolCall.name} not found`);
+    }
 
     try {
       const args = JSON.parse(toolCall.arguments);
@@ -380,7 +361,7 @@ export class GoogleProvider implements LLMProvider {
       return typeof result === 'string' ? result : JSON.stringify(result);
     } catch (error_: unknown) {
       const errorMessage = error_ instanceof Error ? error_.message : String(error_);
-      logError(`Error executing tool call ${toolCall.name}: ${errorMessage}`);
+      this.logger.error(`Error executing tool call ${toolCall.name}: ${errorMessage}`);
       return JSON.stringify({ error: errorMessage });
     }
   }
@@ -414,11 +395,8 @@ export class GoogleProvider implements LLMProvider {
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: initialResponse.content || '',
+        tool_calls: initialResponse.toolCalls
       };
-      // Add tool_calls as a separate property if they exist
-      if (initialResponse.toolCalls && initialResponse.toolCalls.length > 0) {
-        assistantMessage.tool_calls = initialResponse.toolCalls;
-      }
       newMessages.push(assistantMessage);
     } else {
       newMessages.push({
@@ -438,5 +416,3 @@ export class GoogleProvider implements LLMProvider {
     return this.generateTextWithToolResults(toolResultsRequest);
   }
 }
-
-export default GoogleProvider;

@@ -21,11 +21,12 @@ import { DefaultFilePathProcessorFactory } from './core/commands/baseCommand';
 import { McpServer } from "./mcp/mcpServer";
 import { McpServer as BaseMcpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { FilePathProcessor } from './context/filePathProcessor';
+import { DIFilePathProcessor } from './context/filePathProcessor';
 import { CredentialManager } from './core/credentials/credentialManager';
 import { ProviderFactory } from './providers/providerFactory';
 import { RoleBasedToolsRegistrarFactory } from './mcp/tools/registrarFactory';
 import { defaultAppConfig } from './config/appConfig';
+import { NodeFileSystem } from './core/adapters/nodeFileSystemAdapter';
 import {
   setupDependencyInjection,
   setupToolSystem,
@@ -39,10 +40,10 @@ async function main(): Promise<void> {
   try {
     const program = new Command();
     program.version(pkg.version).description(pkg.description);
-    
+
     // Create the role-based tools registrar
     const roleRegistrar = RoleBasedToolsRegistrarFactory.createDefault();
-    
+
     // Set up the dependency injection container
     const container = DIContainer.getInstance();
     const diResult = setupDependencyInjection(
@@ -55,7 +56,7 @@ async function main(): Promise<void> {
       process,
       DILocalCliTool
     );
-    
+
     // Set up the tools system
     const tools = setupToolSystem(
       diResult.localCliToolInstance,
@@ -64,7 +65,7 @@ async function main(): Promise<void> {
       ToolResultFormatter,
       logger
     );
-    
+
     // Set up provider system with app config
     const providers = setupProviderSystem(
       ConfigManager,
@@ -76,20 +77,23 @@ async function main(): Promise<void> {
       defaultAppConfig,
       ProviderFactory
     );
-    
+
+    const nfsInstance = new NodeFileSystem(path, fs);
+
     // Create file path processor factory
     const filePathProcessorFactory = new DefaultFilePathProcessorFactory(
       path,
+      nfsInstance,
       fs,
       process,
-      FilePathProcessor
+      DIFilePathProcessor
     );
 
     const providerFactoryInstance = new ProviderFactory(
       providers.configManager,
       logger
     );
-    
+
     // Configure and register CLI commands
     setupCliCommands(
       program,
@@ -112,7 +116,7 @@ async function main(): Promise<void> {
       CredentialManager,
       roleRegistrar
     );
-    
+
     // Run the program
     await runProgram(program, process, logger);
   } catch (error) {

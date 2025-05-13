@@ -85,6 +85,9 @@ export interface ProviderResponse {
   content?: string; // Generated text content
   choices?: Array<{ text?: string; message?: { role: string; content: string } }>; // For multiple choices or detailed chat messages
   toolCalls?: ToolCall[]; // Tool calls requested by the model
+  id?: string; // Optional ID of the response, e.g., from OpenAI
+  model?: string; // Optional model used for the response
+  finishReason?: 'stop' | 'length' | 'tool_calls' | 'content_filter' | 'function_call' | string; // Optional reason the model stopped generating tokens
   usage?: {
     promptTokens?: number;
     completionTokens?: number;

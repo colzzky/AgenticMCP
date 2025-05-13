@@ -1,10 +1,11 @@
 /**
- * @file Utility for processing file path arguments into context
+ * @file Utility for processing file path arguments into context - DI enabled version
  */
 
 import type { PathDI, FileSystemDI } from '../global.types';
 import { FileContextManager } from './contextManager';
 import type { Logger } from '../core/types/logger.types';
+import { IFileSystem } from '../core/interfaces/file-system.interface';
 
 /**
  * Options for file path processing
@@ -32,36 +33,36 @@ const DEFAULT_OPTIONS: FilePathProcessorOptions = {
 
 /**
  * Utility class for processing file path arguments into context
+ * This version uses dependency injection for testability
  */
-export class FilePathProcessor {
+export class DIFilePathProcessor {
   private contextManager: FileContextManager;
   private logger: Logger;
+  private fileSystem: IFileSystem;
   private options: FilePathProcessorOptions;
   private pathDI: PathDI;
-  private fileSystemDI: FileSystemDI;
   private processDi: NodeJS.Process;
 
   /**
-   * Creates a new FilePathProcessor
+   * Creates a new FilePathProcessor with dependency injection
    * @param logger - Logger instance
-   * @param pathDI - Path DI instance
-   * @param fileSystemDI - File system DI instance
-   * @param processDi - Process DI instance
+   * @param fileSystem - File system implementation 
    * @param options - Processing options
    */
   constructor(
     logger: Logger, 
-    pathDI: PathDI, 
-    fileSystemDI: FileSystemDI, 
-    processDi: NodeJS.Process, 
+    fileSystem: IFileSystem,
+    pathDI: PathDI,
+    fileSystemDI: FileSystemDI,
+    processDi: NodeJS.Process,
     options: FilePathProcessorOptions = {}
   ) {
     this.logger = logger;
+    this.fileSystem = fileSystem;
+    this.pathDI = pathDI;
+    this.processDi = processDi;
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.contextManager = new FileContextManager(pathDI, fileSystemDI);
-    this.pathDI = pathDI;
-    this.fileSystemDI = fileSystemDI;
-    this.processDi = processDi;
   }
 
   /**
@@ -103,7 +104,7 @@ export class FilePathProcessor {
       for (const item of contextItems) {
         if (item.content) {
           if (context) context += '\n\n';
-          context += `--- ${this.pathDI.basename(item.sourcePath || '')} ---\n`;
+          context += `--- ${ this.pathDI.basename(item.sourcePath || '')} ---\n`;
           context += item.content;
         }
       }
@@ -123,11 +124,11 @@ export class FilePathProcessor {
   private async isExistingPath(pathStr: string): Promise<boolean> {
     try {
       // Resolve relative paths against base directory
-      const resolvedPath = this.pathDI.isAbsolute(pathStr) 
+      const resolvedPath =  this.pathDI.isAbsolute(pathStr) 
         ? pathStr 
-        : this.pathDI.resolve(this.options.baseDir || this.processDi.cwd(), pathStr);
+        :  this.pathDI.resolve(this.options.baseDir || this.processDi.cwd(), pathStr);
       
-      await this.fileSystemDI.access(resolvedPath);
+      await this.fileSystem.access(resolvedPath);
       return true;
     } catch {
       return false;
@@ -146,11 +147,11 @@ export class FilePathProcessor {
     for (const filePath of filePaths) {
       try {
         // Resolve relative paths against base directory
-        const resolvedPath = this.pathDI.isAbsolute(filePath) 
+        const resolvedPath =  this.pathDI.isAbsolute(filePath) 
           ? filePath 
-          : this.pathDI.resolve(this.options.baseDir || this.processDi.cwd(), filePath);
+          :  this.pathDI.resolve(this.options.baseDir || this.processDi.cwd(), filePath);
         
-        const stat = await this.fileSystemDI.stat(resolvedPath);
+        const stat = await this.fileSystem.stat(resolvedPath);
         
         // Add as a context source
         await this.contextManager.addSource({

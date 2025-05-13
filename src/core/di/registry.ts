@@ -5,10 +5,10 @@
 
 import { DIContainer } from './container';
 import { DI_TOKENS } from './tokens';
-import { NodeFileSystem } from '../adapters/node-file-system.adapter';
+import { NodeFileSystem } from '../adapters/nodeFileSystemAdapter';
 import { IFileSystem } from '../interfaces/file-system.interface';
 import type { Logger } from '../types/logger.types';
-import { DIFilePathProcessor } from '../../context/di-file-path-processor';
+import { DIFilePathProcessor } from '../../context/filePathProcessor';
 import { PathDI, FileSystemDI } from '@/global.types';
 import { DiffService } from '../../tools/services/diffService';
 
