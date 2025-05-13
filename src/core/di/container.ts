@@ -26,7 +26,7 @@ export class DIContainer {
   /**
    * Private constructor for singleton pattern
    */
-  private constructor() { }
+  private constructor() {}
 
   /**
    * Register a dependency with the container

@@ -57,5 +57,6 @@ export interface Command {
    * Optional method to provide help/usage information for the command.
    * If not provided, a default help message might be generated.
    */
-  getHelp?(): string;
+  getHelp?(): string;  
+
 }

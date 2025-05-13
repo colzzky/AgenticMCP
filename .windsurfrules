@@ -1,4 +1,4 @@
-1. Write robust and testable code by fully adopting dependency injection
+1. Write robust and testable code by fully adopting dependency injection - refer to ** Dependency Injection Policy/Standards for TypeScript (Without Third-Party Libraries)**
 
 2. Always log your Progress to PROGRESS.jsonl - each line should be a valid JSON object and should contain the following fields:
     - timestamp: the current time in ISO 8601 format
@@ -20,13 +20,11 @@
     - assigned_to: the person assigned to the task
     - status: the status of the task
 
-
 4. For Any new files added, run the "bash tree.sh" CLI command to list all the files and directories and update DIRECTORY.md
 
 5. Always read the DIRECTORY.md to understand the project structure before working on a task
  - 5.1 when looking for files, always first refer to the DIRECTORY.md before using filesystem search tool
  - 5.2 if DIRECTORY.md is not helpful, only then should you use the filesystem search tool
-
 
 6. Always read the TASKS.jsonl to understand the task list, and to understand the current task and its status before working on a task
 
@@ -290,3 +288,320 @@ beforeEach(() => {
 | `jest.resetModules()` used in `beforeEach`? | ✅    |
 | No hardcoded fake structures?               | ✅    |
 | All mock types inferred from real classes?  | ✅    |
+
+## ** Dependency Injection Policy/Standards for TypeScript (Without Third-Party Libraries)**
+
+The goal of this policy is to promote best practices for applying the **Dependency Injection (DI)** pattern in TypeScript, ensuring that the resulting code is modular, maintainable, and easily testable. The pattern will be implemented using **constructor injection** without relying on third-party libraries. The emphasis is on clear dependency management, loose coupling, and high testability.
+
+---
+
+### **1. Constructor Injection as the Primary Method**
+
+* **Rule**: **Constructor injection** must be the default approach for passing dependencies into classes.
+* **Reason**: Constructor injection enforces the explicit declaration of dependencies and guarantees that all required dependencies are available when the object is instantiated. It promotes immutability and makes testing easier by allowing direct control over what dependencies are passed into the object.
+
+```typescript
+class DatabaseService {
+  private connectionString: string;
+
+  constructor(connectionString: string) {
+    this.connectionString = connectionString;
+  }
+
+  connect() {
+    console.log(`Connecting to ${this.connectionString}`);
+  }
+}
+```
+
+---
+
+### **2. Avoid Global State or `globalThis` for Dependency Injection**
+
+* **Rule**: **Never use `globalThis` or global variables** to manage or store shared dependencies.
+* **Reason**: Storing dependencies globally (in the global scope or in a singleton pattern) leads to tight coupling, harder-to-track dependencies, and makes the code difficult to unit test. Tests might become unreliable, as the global state can be modified between tests.
+* **Alternative**: Inject dependencies at the constructor level, and pass them explicitly to where they are needed.
+
+```typescript
+// Bad Example
+globalThis.databaseConnection = new DatabaseService('mongodb://localhost');
+```
+
+```typescript
+// Good Example
+class UserService {
+  private dbService: DatabaseService;
+
+  constructor(dbService: DatabaseService) {
+    this.dbService = dbService;
+  }
+}
+```
+
+---
+
+### **3. Avoid the Service Locator Pattern**
+
+* **Rule**: **Do not use service locator or registry patterns** to fetch or manage dependencies.
+* **Reason**: The **service locator** pattern hides dependencies and makes it unclear where and how objects are constructed. It forces classes to retrieve their dependencies through a global or static registry, leading to a hidden and fragile dependency graph, making testing and maintenance difficult.
+
+```typescript
+// Bad Example
+class ServiceLocator {
+  static getService(serviceName: string) {
+    // Returns services from a registry or static store
+  }
+}
+
+class UserService {
+  private logger: Logger;
+
+  constructor() {
+    this.logger = ServiceLocator.getService('Logger');
+  }
+}
+```
+
+* **Alternative**: Dependencies should be injected through constructors and not fetched from a registry.
+
+---
+
+### **4. Avoid Multiple Dependency Injection Mechanisms**
+
+* **Rule**: **Always inject dependencies via the constructor, never mix with setter or interface injection**.
+* **Reason**: Mixing different dependency injection mechanisms within the same project (e.g., constructor, setter, and interface injection) leads to confusion and an unclear dependency model. For consistency and clarity, constructor injection should be the sole mechanism for providing dependencies.
+
+```typescript
+// Bad Example: Mixing constructor and setter injection
+class UserService {
+  private logger: Logger;
+
+  constructor() {}
+
+  setLogger(logger: Logger) {
+    this.logger = logger;
+  }
+}
+```
+
+---
+
+### **5. Define Dependencies Clearly with Interfaces**
+
+* **Rule**: **Use interfaces or abstract classes** to define the contracts of dependencies, especially for services and external APIs.
+* **Reason**: Interfaces allow for **flexibility** in choosing different implementations without changing the dependent class. It also enhances testability, as mocks or stubs can be provided easily for unit testing.
+* **Example**:
+
+```typescript
+interface Logger {
+  log(message: string): void;
+}
+
+class ConsoleLogger implements Logger {
+  log(message: string): void {
+    console.log(`Log: ${message}`);
+  }
+}
+
+class UserService {
+  private logger: Logger;
+
+  constructor(logger: Logger) {
+    this.logger = logger;
+  }
+
+  getUserInfo(userId: string): string {
+    this.logger.log(`Fetching user info for ${userId}`);
+    return `User info for ${userId}`;
+  }
+}
+```
+
+---
+
+### **6. Avoid Instantiating Dependencies Within a Class**
+
+* **Rule**: **Never instantiate dependencies inside the class** itself; always inject them via the constructor.
+* **Reason**: Instantiating dependencies within the class leads to tight coupling and reduced testability. It forces the class to manage the lifecycle of its dependencies, making it hard to substitute real dependencies with mock ones during testing.
+* **Example**:
+
+```typescript
+// Bad Example: Instantiating dependency inside class
+class UserService {
+  private logger: Logger = new ConsoleLogger();
+
+  getUserInfo(userId: string): string {
+    this.logger.log(`Fetching user info for ${userId}`);
+    return `User info for ${userId}`;
+  }
+}
+```
+
+* **Alternative**: Inject the `Logger` dependency through the constructor.
+
+---
+
+### **7. Minimize Constructor Parameter Length**
+
+* **Rule**: **Avoid constructors with too many parameters** (i.e., more than 3–4). If a class requires many dependencies, consider refactoring it or grouping related dependencies into a new class or service.
+* **Reason**: A constructor with many dependencies can make it hard to understand and maintain the class. It can also make testing more complex. If a class has too many dependencies, it might be doing too much and could benefit from refactoring into smaller, more focused classes.
+
+```typescript
+// Bad Example: Too many constructor parameters
+class UserService {
+  constructor(
+    private logger: Logger,
+    private userRepository: UserRepository,
+    private authService: AuthService,
+    private paymentService: PaymentService
+  ) {}
+}
+```
+
+* **Alternative**: Refactor the `UserService` class into smaller, focused services.
+
+---
+
+### **8. Ensure Explicit Dependency Management**
+
+* **Rule**: **Always inject and pass down all dependencies explicitly**, even if a class doesn’t directly use a particular dependency.
+* **Reason**: Implicit dependencies can lead to hidden complexities and make testing difficult. Always be clear about what a class needs and pass dependencies explicitly to it.
+* **Example**:
+
+```typescript
+// Bad Example: Implicit dependency through other classes
+class UserService {
+  private logger: Logger;
+
+  constructor(logger: Logger) {
+    // Dependency is only set when needed indirectly
+    // This is a poor practice
+  }
+
+  getUserInfo(userId: string): string {
+    return `User info for ${userId}`;
+  }
+}
+```
+
+* **Alternative**: Dependencies should be injected explicitly and kept clear throughout the object graph.
+
+---
+
+### **9. Testability First**
+
+* **Rule**: **Always think about the testability of the code** when injecting dependencies. The dependencies should be easily mockable or stubbed in tests.
+* **Reason**: DI makes it easier to write unit tests because it allows for mocking or stubbing dependencies. For good testability, keep dependencies clear and isolated in your classes.
+* **Example**:
+
+```typescript
+// Testable code with DI
+const loggerMock = { log: jest.fn() };
+const userService = new UserService(loggerMock);
+
+// Now, you can test the service without real logging.
+expect(userService.getUserInfo('123')).toBe('User info for 123');
+expect(loggerMock.log).toHaveBeenCalled();
+```
+
+---
+
+### **10. Single Responsibility Principle (SRP) and DI**
+
+* **Rule**: **Each class should only be responsible for one thing**, and dependencies should align with that responsibility.
+* **Reason**: If a class is receiving many dependencies, it's a signal that it might be violating the **Single Responsibility Principle** (SRP). Refactor the class to separate concerns, and inject only the dependencies that are strictly necessary for the class to fulfill its single responsibility.
+
+---
+
+### **11. Inject Instances, Not Constructors**
+
+* **Rule**: **Inject instances of dependencies**, not the constructor types (i.e., `typeof Class`).
+* **Reason**: Injecting **instances** (using `InstanceType<typeof Class>`) ensures that you're working with an actual object, not the class itself. This avoids unnecessary instantiations inside the class and promotes better clarity, testability, and separation of concerns.
+* **Example**:
+
+```typescript
+// Bad Pattern: Injecting the constructor type of Logger
+class UserService {
+  private logger: typeof Logger;
+
+  constructor(logger: typeof Logger) {
+    this.logger = logger;
+  }
+
+  getUserInfo(userId: string): string {
+    const loggerInstance = new this.logger();
+  }
+}
+
+// Good Pattern: Injecting an instance of Logger
+class UserService {
+  private logger: InstanceType<typeof Logger>;
+
+  constructor(logger: InstanceType<typeof Logger>) {
+    this.logger = logger;
+  }
+
+  getUserInfo(userId: string): string {
+    const loggerInstance = this.logger;
+  }
+}
+```
+
+---
+
+### **12. Inject External Utility Modules (e.g., `path`, `fs`) via Constructor**
+
+* **Rule**: **Always inject external dependencies like `path` and `fs` (or any other utility modules) through the constructor** instead of directly importing them inside the class.
+* **Reason**: Directly importing utility modules like `path` or `fs` within a class leads to tight coupling, making the class less flexible, harder to test, and harder to reuse in other contexts. By injecting the dependencies via the constructor, you can mock or stub these modules in unit tests and swap them for different implementations without modifying the class itself.
+* **Example**:
+
+```typescript
+import * as path from 'node:path';
+import * as fs from 'node:fs/promises';
+
+// Bad Pattern: Directly importing path and fs
+class UserService {
+  getPath(sourcePath: string): string {
+    return path.basename(sourcePath || '')
+  }
+
+  getSize(sourcePath: string): number {
+    return fs.stat(sourcePath);
+  }
+}
+
+// Good Pattern: Injecting path and fs via constructor
+class UserService {
+  pathDi: typeof path;
+  fsDi: typeof fs;
+
+  constructor(pathDi: typeof path, fsDi: typeof fs) {
+    this.pathDi = pathDi;
+    this.fsDi = fsDi;
+  }
+
+  getPath(sourcePath: string): string {
+    return this.pathDi.basename(sourcePath || '')
+  }
+
+  getSize(sourcePath: string): number {
+    return this.fsDi.stat(sourcePath);
+  }
+}
+```
+
+---
+
+### **Summary of Key Rules**
+
+* Use **constructor injection** for all dependency management.
+* **Avoid using global state**, `globalThis`, or any form of a global registry.
+* **Don’t use the service locator pattern**; dependencies should be explicit in the constructor.
+* **Keep dependency chains clean and consistent** — avoid mixing injection styles.
+* Always define dependencies via **interfaces** for flexibility and testability.
+* **Keep constructor length reasonable** and consider **refactoring** when it gets too long.
+* **Testability** should be your first concern — always design for mockability.
+* **Inject instances**, not class constructors (`typeof Class`).
+* **Inject external utility modules** like `path` and `fs` via constructor to avoid tight coupling and enhance flexibility.
+
+By adhering to these guidelines, your TypeScript codebase will be modular, testable, and easy to maintain. Each class will have a clear set of dependencies, and testing them in isolation will be simple and straightforward.

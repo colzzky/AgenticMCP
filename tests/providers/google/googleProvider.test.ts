@@ -44,7 +44,7 @@ describe('GoogleProvider', () => {
 
   beforeEach(() => {
     // Get mocks from global registry
-    mockGoogleGenAI = global.__mocks__.googleGenAI;
+    mockGoogleGenAI = globalThis.__mocks__.googleGenAI;
     
     // Create a mock response with success=true for our tests
     const mockSuccessResponse = {

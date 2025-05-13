@@ -6,7 +6,7 @@ import type {
   McpServerTransport,
   BaseMcpServer,
   BaseMcpServerInstance
-} from "../mcp/types"
+} from "./types.js"
 
 /**
  * MCP Server class that wraps the MCP SDK server and provides integration

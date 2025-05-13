@@ -4,11 +4,11 @@
 
 // Import Jest
 import { jest } from '@jest/globals';
-import { Stats, Dirent } from 'fs';
+import { Stats, Dirent } from 'node:fs';
 import { mock } from 'jest-mock-extended';
 
 // Create global mock registry
-global.__mocks__ = {};
+globalThis.__mocks__ = {};
 
 /**
  * Create a mock implementation for fs/promises
@@ -16,7 +16,7 @@ global.__mocks__ = {};
  */
 const createFsMock = () => ({
   // File access methods
-  access: jest.fn().mockResolvedValue(undefined),
+  access: jest.fn().mockResolvedValue(),
 
   // File info methods
   stat: jest.fn().mockImplementation(() => {
@@ -47,8 +47,8 @@ const createFsMock = () => ({
     const content = 'mock file content';
     return Promise.resolve(encoding ? content : Buffer.from(content));
   }),
-  writeFile: jest.fn().mockResolvedValue(undefined),
-  appendFile: jest.fn().mockResolvedValue(undefined),
+  writeFile: jest.fn().mockResolvedValue(),
+  appendFile: jest.fn().mockResolvedValue(),
   readdir: jest.fn().mockImplementation((path) => {
     // Create mock Dirent objects
     const createDirent = (name, isDir = false) => {
@@ -72,12 +72,12 @@ const createFsMock = () => ({
   }),
 
   // File/directory manipulation methods
-  unlink: jest.fn().mockResolvedValue(undefined),
-  mkdir: jest.fn().mockResolvedValue(undefined),
-  rmdir: jest.fn().mockResolvedValue(undefined),
-  rm: jest.fn().mockResolvedValue(undefined),
-  rename: jest.fn().mockResolvedValue(undefined),
-  copyFile: jest.fn().mockResolvedValue(undefined),
+  unlink: jest.fn().mockResolvedValue(),
+  mkdir: jest.fn().mockResolvedValue(),
+  rmdir: jest.fn().mockResolvedValue(),
+  rm: jest.fn().mockResolvedValue(),
+  rename: jest.fn().mockResolvedValue(),
+  copyFile: jest.fn().mockResolvedValue(),
 
   // Constants
   constants: {
@@ -96,7 +96,7 @@ const createFsMock = () => ({
  */
 const createKeytarMock = () => ({
   getPassword: jest.fn().mockResolvedValue('mock-password'),
-  setPassword: jest.fn().mockResolvedValue(undefined),
+  setPassword: jest.fn().mockResolvedValue(),
   deletePassword: jest.fn().mockResolvedValue(true),
   findCredentials: jest.fn().mockResolvedValue([
     { account: 'mock-account', password: 'mock-password' }
@@ -111,8 +111,8 @@ const createPathMock = () => {
   return {
     ...originalPath,
     // Override specific methods for testing
-    join: jest.fn().mockImplementation((...args) => args.join('/')),
-    resolve: jest.fn().mockImplementation((...args) => args.join('/')),
+    join: jest.fn().mockImplementation((...arguments_) => arguments_.join('/')),
+    resolve: jest.fn().mockImplementation((...arguments_) => arguments_.join('/')),
     dirname: jest.fn().mockImplementation((p) => p.split('/').slice(0, -1).join('/')),
     basename: jest.fn().mockImplementation((p) => p.split('/').pop()),
     extname: jest.fn().mockImplementation((p) => {
@@ -191,7 +191,7 @@ jest.unstable_mockModule('os', () => ({ ...osMock, default: osMock }));
 jest.unstable_mockModule('@google/genai', () => googleGenAIMock);
 
 // Store mocks in global registry for easy access in tests
-global.__mocks__ = {
+globalThis.__mocks__ = {
   fs: fsMock,
   keytar: keytarMock,
   path: pathMock,
@@ -200,18 +200,18 @@ global.__mocks__ = {
 };
 
 // Helper function for accessing mocks from tests
-global.getMock = (name) => global.__mocks__[name];
+globalThis.getMock = (name) => globalThis.__mocks__[name];
 
 // Reset all mocks before each test
 beforeEach(() => {
   // Reset all registered mocks
-  Object.values(global.__mocks__).forEach(mock => {
-    Object.values(mock).forEach(fn => {
-      if (typeof fn === 'function' && typeof fn.mockReset === 'function') {
-        fn.mockReset();
+  for (const mock of Object.values(globalThis.__mocks__)) {
+    for (const function_ of Object.values(mock)) {
+      if (typeof function_ === 'function' && typeof function_.mockReset === 'function') {
+        function_.mockReset();
       }
-    });
-  });
+    }
+  }
 });
 
 // Optional: Log when Jest setup is complete

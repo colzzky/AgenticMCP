@@ -23,7 +23,7 @@ describe.skip('GoogleProvider Tool Calling', () => {
 
   beforeEach(async () => {
     // Get mocks from global registry
-    mockGoogleGenAI = global.__mocks__.googleGenAI;
+    mockGoogleGenAI = globalThis.__mocks__.googleGenAI;
     
     // Create mock ConfigManager
     mockConfigManager = {

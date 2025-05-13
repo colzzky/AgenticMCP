@@ -2,6 +2,7 @@
 .
 ├── CLAUDE.md
 ├── DIRECTORY.md
+├── FIXED_TESTS.md
 ├── KNOWLEDGE.md
 ├── LICENSE
 ├── PROGRESS.jsonl
@@ -22,14 +23,18 @@
 │   └── xm-based-prompting.md
 ├── docs/
 │   ├── ARCHITECTURE.md
+│   ├── ES_MODULE_TESTING.md
 │   ├── MCP_MODE.md
 │   └── TOOLS.md
 ├── eslint.config.js
 ├── examples/
-│   └── mcp/
-│       ├── anthropic-integration.js
-│       ├── http-client.js
-│       └── stdio-client.js
+│   ├── es-module-testing.md
+│   ├── fix-test-modules.md
+│   ├── mcp/
+│   │   ├── anthropic-integration.js
+│   │   ├── http-client.js
+│   │   └── stdio-client.js
+│   └── mock-utility-test.ts
 ├── jest.config.js
 ├── package-lock.json
 ├── package.json
@@ -47,6 +52,8 @@
 │   │   ├── mcpCommands.ts
 │   │   ├── toolCommands.ts
 │   │   └── writerCommand.ts
+│   ├── config/
+│   │   └── appConfig.ts
 │   ├── context/
 │   │   ├── contextManager.ts
 │   │   ├── di-file-path-processor.ts
@@ -63,7 +70,8 @@
 │   │   │   ├── di-base-command.ts
 │   │   │   ├── index.ts
 │   │   │   ├── initializer.ts
-│   │   │   └── registry.ts
+│   │   │   ├── registry.ts
+│   │   │   └── type.ts
 │   │   ├── config/
 │   │   │   ├── configManager.ts
 │   │   │   └── index.ts
@@ -81,6 +89,15 @@
 │   │   ├── services/
 │   │   │   ├── diff.service.ts
 │   │   │   └── file-system.service.ts
+│   │   ├── setup/
+│   │   │   ├── cliCommandsSetup.ts
+│   │   │   ├── dependencySetup.ts
+│   │   │   ├── index.ts
+│   │   │   ├── llmCommandSetup.ts
+│   │   │   ├── programSetup.ts
+│   │   │   ├── providerSystemSetup.ts
+│   │   │   ├── toolCommandsSetup.ts
+│   │   │   └── toolSystemSetup.ts
 │   │   ├── types/
 │   │   │   ├── cli.types.ts
 │   │   │   ├── command.types.ts
@@ -102,15 +119,18 @@
 │   │   ├── mcpServer.ts
 │   │   ├── tools/
 │   │   │   ├── index.ts
+│   │   │   ├── registrarFactory.ts
 │   │   │   ├── roleBasedTools.ts
 │   │   │   ├── roleHandlers.ts
 │   │   │   ├── roleSchemas.ts
+│   │   │   ├── types.ts
 │   │   │   ├── xmlPromptUtils.ts
 │   │   │   └── xmlPromptUtilsHelpers.ts
-│   │   └── transports/
-│   │       ├── httpTransport.ts
-│   │       ├── index.ts
-│   │       └── stdioTransport.ts
+│   │   ├── transports/
+│   │   │   ├── httpTransport.ts
+│   │   │   ├── index.ts
+│   │   │   └── stdioTransport.ts
+│   │   └── types.ts
 │   ├── providers/
 │   │   ├── anthropic/
 │   │   │   ├── anthropicProvider.ts

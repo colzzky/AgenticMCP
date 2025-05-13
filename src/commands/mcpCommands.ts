@@ -4,7 +4,7 @@ import { CommandHandler } from '../core/commands/decorators.js';
 import type { Logger } from '../core/types/logger.types.js';
 import { ConfigManager } from '../core/config/configManager.js';
 import type { McpServerType, McpServerTransport, BaseMcpServer } from '../mcp/types.js';
-import { registerRoleBasedTools } from '../mcp/tools/index.js';
+import type { RoleBasedToolsRegistrar } from '../mcp/tools/types';
 import type { ProviderFactoryType } from '../providers/types.js';
 
 /**
@@ -38,6 +38,7 @@ export class McpCommands {
   private process: NodeJS.Process
   private transport: McpServerTransport;
   private providerFactory: ProviderFactoryType;
+  private roleBasedToolsRegistrar: RoleBasedToolsRegistrar;
 
   constructor(
     configManager: ConfigManager,
@@ -47,7 +48,8 @@ export class McpCommands {
     baseMcpServer: BaseMcpServer,
     process: NodeJS.Process,
     transport: McpServerTransport,
-    providerFactory: ProviderFactoryType
+    providerFactory: ProviderFactoryType,
+    roleBasedToolsRegistrar: RoleBasedToolsRegistrar
   ) {
     this.configManager = configManager;
     this.logger = logger;
@@ -57,6 +59,7 @@ export class McpCommands {
     this.process = process;
     this.transport = transport;
     this.providerFactory = providerFactory;
+    this.roleBasedToolsRegistrar = roleBasedToolsRegistrar;
   }
 
   /**
@@ -114,7 +117,7 @@ export class McpCommands {
       const llmProvider = providerFactory.getProvider(providerName as any);
 
       // Register role-based tools
-      registerRoleBasedTools(mcpServer, this.logger, llmProvider, this.pathDI);
+      this.roleBasedToolsRegistrar.register(mcpServer, this.logger, llmProvider, this.pathDI);
 
       this.logger.info(`Starting HTTP MCP server`);
       await mcpServer.connect(this.transport);

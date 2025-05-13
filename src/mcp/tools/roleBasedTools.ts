@@ -13,7 +13,7 @@ import {
   customSchema
 } from './roleSchemas.js';
 import { handleRoleBasedTool } from './roleHandlers.js';
-import { roleEnums } from './roleSchemas';
+import { roleEnums } from './roleSchemas.js';
 import type {
   CoderSchema,
   QASchema,
@@ -24,8 +24,8 @@ import type {
   RewriterSchema,
   AnalystSchema,
   CustomSchema
-} from './roleSchemas';
-import type { PathDI } from '../../global.types';
+} from './roleSchemas.js';
+import type { PathDI } from '../../global.types.js';
 
 /**
  * Register role-based tools with the MCP server
