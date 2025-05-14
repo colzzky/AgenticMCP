@@ -6,7 +6,7 @@ import type { CommandContext, CommandOutput } from '../core/types/command.types'
 import type { LLMProvider } from '../core/types/provider.types';
 import { BaseCommand, type FilePathProcessorFactory } from '../core/commands/baseCommand';
 import type { Logger } from '../core/types/logger.types';
-import type { ProviderFactoryInstance } from '../providers/types';
+import type { ProviderFactoryInterface } from '../providers/types';
 
 /**
  * LLMCommand - Interact with LLMs using file paths as context
@@ -26,15 +26,15 @@ export class LLMCommand extends BaseCommand {
     }
   ];
 
-  providerFactory: ProviderFactoryInstance;
+  providerFactoryInstance: ProviderFactoryInterface;
 
   constructor(
     logger: Logger,
     filePathProcessorFactory: FilePathProcessorFactory,
-    providerFactory: ProviderFactoryInstance
+    providerFactoryInstance: ProviderFactoryInterface
   ) {
     super(logger, filePathProcessorFactory);
-    this.providerFactory = providerFactory;
+    this.providerFactoryInstance = providerFactoryInstance;
   }
 
   /**
@@ -69,14 +69,14 @@ export class LLMCommand extends BaseCommand {
       const modelName = context.options?.model as string;
 
       // Get provider from global provider factory
-      if (!this.providerFactory) {
+      if (!this.providerFactoryInstance) {
         return {
           success: false,
           message: 'Provider factory not initialized.'
         };
       }
 
-      const provider = this.providerFactory.getProvider(providerName as any);
+      const provider = this.providerFactoryInstance.getProvider(providerName as any);
 
       // Configure the provider if model is specified
       if (modelName && provider.configure) {

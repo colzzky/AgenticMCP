@@ -145,11 +145,19 @@ export class AnthropicProvider implements LLMProvider {
   async configure(config: AnthropicProviderSpecificConfig): Promise<void> {
     this.providerConfig = config;
     
-    // Get API key from ConfigManager instead of direct environment access
-    const apiKey = await this.configManager.getResolvedApiKey(config);
+    // Check for environment variable first
+    let apiKey = process.env.ANTHROPIC_API_KEY;
+    
+    // Fall back to credential store if environment variable is not set
+    if (!apiKey) {
+      apiKey = await this.configManager.getResolvedApiKey(config);
+    }
     
     if (!apiKey) {
-      throw new Error(`Anthropic API key not found for providerType: ${config.providerType}`);
+      throw new Error(
+        `Anthropic API key not found for providerType: ${config.providerType}. ` +
+        `Ensure it's set in credentials or as ANTHROPIC_API_KEY environment variable.`
+      );
     }
     
     this.client = new this.AnthropicClass({ apiKey });

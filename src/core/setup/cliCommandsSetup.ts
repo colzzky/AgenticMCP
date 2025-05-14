@@ -11,14 +11,13 @@ import { FilePathProcessorFactory } from '../commands/type';
 import { McpServer } from "../../mcp/mcpServer";
 import { McpServer as BaseMcpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { ProviderFactory } from '../../providers/providerFactory';
 import { CredentialManager } from '../credentials/credentialManager';
 import { registerLlmCommand } from './llmCommandSetup';
 import { registerToolCommands } from './toolCommandsSetup';
 import type { RoleBasedToolsRegistrar } from '../../mcp/tools/types';
 import type { PathDI } from '../../types/global.types';
 import type { Logger } from '../types/logger.types';
-import type { ProviderFactoryInstance } from '../../providers/types';
+import type { ProviderFactoryInterface } from '../../providers/types';
 
 export type SetupCliCommandsFn = (
   program: Command,
@@ -33,11 +32,10 @@ export type SetupCliCommandsFn = (
   toolExecutorInstance: ToolExecutor,
   processDi: NodeJS.Process,
   filePathProcessorFactory: FilePathProcessorFactory,
-  providerFactoryInstance: ProviderFactoryInstance,
+  providerFactoryInstance: ProviderFactoryInterface,
   mcpServer: typeof McpServer,
   baseMcpServer: typeof BaseMcpServer,
   stdioServerTransport: typeof StdioServerTransport,
-  providerFactory: typeof ProviderFactory,
   credentialManager: InstanceType<typeof CredentialManager>,
   roleBasedToolsRegistrar: RoleBasedToolsRegistrar
 ) => void;
@@ -58,11 +56,10 @@ export const setupCliCommands: SetupCliCommandsFn = (
   toolExecutorInstance: ToolExecutor,
   processDi: NodeJS.Process,
   filePathProcessorFactory: FilePathProcessorFactory,
-  providerFactoryInstance: ProviderFactoryInstance,
+  providerFactoryInstance: ProviderFactoryInterface,
   mcpServer: typeof McpServer,
   baseMcpServer: typeof BaseMcpServer,
   stdioServerTransport: typeof StdioServerTransport,
-  providerFactory: typeof ProviderFactory,
   credentialManager: InstanceType<typeof CredentialManager>,
   roleBasedToolsRegistrar: RoleBasedToolsRegistrar
 ) => {
@@ -83,7 +80,7 @@ export const setupCliCommands: SetupCliCommandsFn = (
     baseMcpServer,
     processDi,
     stdioServerTransport,
-    providerFactory,
+    providerFactoryInstance,
     roleBasedToolsRegistrar
   );
   mcpCommandsInstance.registerCommands(program);
@@ -105,4 +102,5 @@ export const setupCliCommands: SetupCliCommandsFn = (
     toolRegistryInstance,
     toolExecutorInstance
   );
+
 }

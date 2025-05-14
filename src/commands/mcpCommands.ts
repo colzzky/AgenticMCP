@@ -5,7 +5,7 @@ import type { Logger } from '../core/types/logger.types.js';
 import { ConfigManager } from '../core/config/configManager.js';
 import type { McpServerType, McpServerTransport, BaseMcpServer } from '../mcp/types.js';
 import type { RoleBasedToolsRegistrar } from '../mcp/tools/types';
-import type { ProviderFactoryType } from '../providers/types.js';
+import type { ProviderFactoryInterface } from '../providers/types.js';
 import type { ProviderType } from '../core/types/provider.types.js';
 
 
@@ -39,7 +39,7 @@ export class McpCommands {
   private baseMcpServer: BaseMcpServer;
   private process: NodeJS.Process
   private transport: McpServerTransport;
-  private providerFactory: ProviderFactoryType;
+  private providerFactoryInstance: ProviderFactoryInterface;
   private roleBasedToolsRegistrar: RoleBasedToolsRegistrar;
 
   constructor(
@@ -50,7 +50,7 @@ export class McpCommands {
     baseMcpServer: BaseMcpServer,
     process: NodeJS.Process,
     transport: McpServerTransport,
-    providerFactory: ProviderFactoryType,
+    providerFactoryInstance: ProviderFactoryInterface,
     roleBasedToolsRegistrar: RoleBasedToolsRegistrar
   ) {
     this.configManager = configManager;
@@ -60,7 +60,7 @@ export class McpCommands {
     this.baseMcpServer = baseMcpServer;
     this.process = process;
     this.transport = transport;
-    this.providerFactory = providerFactory;
+    this.providerFactoryInstance = providerFactoryInstance;
     this.roleBasedToolsRegistrar = roleBasedToolsRegistrar;
   }
 
@@ -124,8 +124,7 @@ export class McpCommands {
       }
 
       // Create a provider factory with the proper injected dependencies
-      const providerFactory = new this.providerFactory(this.configManager, this.logger);
-      const llmProvider = providerFactory.getProvider(providerName as any);
+      const llmProvider = this.providerFactoryInstance.getProvider(providerName as any);
 
       // Register role-based tools
       this.roleBasedToolsRegistrar.register(mcpServer, this.logger, llmProvider, this.pathDI);

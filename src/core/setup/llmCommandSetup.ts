@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { LLMCommand } from '../../commands/llmCommand';
 import { FilePathProcessorFactory } from '../commands/type';
 import type { Logger } from '../types/logger.types';
-import type { ProviderFactoryInstance } from '../../providers/types';
+import type { ProviderFactoryInterface } from '../../providers/types';
 
 /**
  * Registers the LLM command with the CLI program
@@ -12,7 +12,7 @@ export function registerLlmCommand(
   llmCommand: typeof LLMCommand,
   loggerTool: Logger,
   filePathProcessorFactory: FilePathProcessorFactory,
-  providerFactoryInstance: ProviderFactoryInstance
+  providerFactoryInstance: ProviderFactoryInterface
 ): void {
   const llmCommandInstance = new llmCommand(
     loggerTool, filePathProcessorFactory, providerFactoryInstance

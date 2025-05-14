@@ -7,6 +7,10 @@ import type { Logger } from '../types/logger.types';
 import type { PathDI, FileSystemDI } from '../../types/global.types';
 import type { ProviderFactoryInterface } from '../../providers/types';
 import { CredentialManager } from '../credentials';
+import { OpenAIProvider } from '../../providers/openai/openaiProvider';
+import { AnthropicProvider } from '../../providers/anthropic/anthropicProvider';
+import { GoogleProvider } from '../../providers/google/googleProvider';
+import { GrokProvider } from '../../providers/grok/grokProvider';
 
 export type SetupProviderSystemFn = (
   configManager: typeof ConfigManager,
@@ -20,8 +24,7 @@ export type SetupProviderSystemFn = (
   credentialManagerInstance: InstanceType<typeof CredentialManager>
 ) => {
   configManager: InstanceType<typeof ConfigManager>,
-  providerInitializer: InstanceType<typeof ProviderInitializer>,
-  providerFactory: ProviderFactoryInterface
+  providerFactoryInstance: ProviderFactoryInterface
 };
 
 /**
@@ -49,14 +52,23 @@ export const setupProviderSystem: SetupProviderSystemFn = (
     loggerTool
   );
 
-  // Create provider factory and pass the required dependencies
-  const providerFactory = new factory(configManagerInstance, loggerTool);
+  // --- Register all providers here ---
+  const providerClasses = new Map();
+  providerClasses.set('openai', OpenAIProvider);
+  providerClasses.set('anthropic', AnthropicProvider);
+  providerClasses.set('google', GoogleProvider);
+  providerClasses.set('grok', GrokProvider);
+  // --- End provider registration ---
 
   // Initialize provider system with dependency injection
   const providerInitializerInstance = new providerInitializer(
-    providerFactory,
-    loggerTool
+    new factory(configManagerInstance, loggerTool),
+    loggerTool,
+    providerClasses
   );
+
+  // Get provider factory instance
+  const providerFactory = providerInitializerInstance.getFactory();
 
   // Connect provider factory with tool registry
   providerFactory.setToolRegistry(toolRegistryInstance);
@@ -64,7 +76,6 @@ export const setupProviderSystem: SetupProviderSystemFn = (
 
   return {
     configManager: configManagerInstance,
-    providerInitializer: providerInitializerInstance,
-    providerFactory
+    providerFactoryInstance: providerFactory
   };
 }

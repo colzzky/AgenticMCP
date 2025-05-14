@@ -97,11 +97,17 @@ AgenticMCP (Agentic Model Communication Protocol) is a TypeScript-based command-
      - The AgenticMCP CLI utilizes the `keytar` library to securely store and retrieve API keys for LLM providers.
      - API keys are stored in the operating system's native credential store (e.g., macOS Keychain, Freedesktop Secret Service on Linux, Windows Credential Manager), rather than in plaintext configuration files.
      - **Configuration Precedence for API Keys**:
-         - If an `api_key` is explicitly defined for a provider instance in your `config.json` file, that key will be used.
-         - If the `api_key` field is *missing or left empty* in `config.json`, the CLI will attempt to retrieve it from the system's keychain.
+         - If an environment variable with the provider name is set (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `GROK_API_KEY`), that key will be used.
+         - If the environment variable is not set and an `api_key` is explicitly defined for a provider instance in your `config.json` file, that key will be used.
+         - If both options above are unavailable, the CLI will attempt to retrieve it from the system's keychain.
          - The keychain service name used is `agenticmcp_cli`.
          - The account name (or username) in the keychain is structured as `provider_type-instance_name` (e.g., `openai-my_personal_account`, `anthropic-work_key`).
-     - **Prerequisites**: To use this feature, users must have `keytar` properly installed, which may require additional system dependencies depending on the OS.
+     - **Environment Variables**: For CI/CD or containerized environments, you can use the following standard environment variables:
+         - `OPENAI_API_KEY`: For OpenAI providers
+         - `ANTHROPIC_API_KEY`: For Anthropic/Claude providers
+         - `GEMINI_API_KEY`: For Google/Gemini providers
+         - `GROK_API_KEY`: For Grok/X AI providers
+     - **Prerequisites**: To use the keychain feature, users must have `keytar` properly installed, which may require additional system dependencies depending on the OS.
      - **Managing Stored Credentials**: CLI commands (e.g., `agenticmcp credentials set ...`, `agenticmcp credentials delete ...`) will be provided in a future update to allow users to easily manage these stored API keys.
    - FR4.2: Support default configurations with user overrides
    - FR4.3: Enable environment-specific configuration profiles

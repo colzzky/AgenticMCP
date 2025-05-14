@@ -79,11 +79,18 @@ export class OpenAIProvider implements LLMProvider {
       );
     }
 
-    const apiKey = await this.configManager.getResolvedApiKey(this.providerConfig);
+    // Check for environment variable first
+    let apiKey = process.env.OPENAI_API_KEY;
+    
+    // Fall back to credential store if environment variable is not set
+    if (!apiKey) {
+      apiKey = await this.configManager.getResolvedApiKey(this.providerConfig);
+    }
 
     if (!apiKey) {
       throw new Error(
-        `OpenAI API key not found for providerType: ${this.providerConfig.providerType}`
+        `OpenAI API key not found for providerType: ${this.providerConfig.providerType}. ` +
+        `Ensure it's set in credentials or as OPENAI_API_KEY environment variable.`
       );
     }
 

@@ -67,14 +67,19 @@ export class GoogleProvider implements LLMProvider {
       throw new Error('ProviderConfig is missing \'providerType\' for GoogleProvider');
     }
 
-    // Resolve API key using ConfigManager
-    const apiKey = await this.configManager.getResolvedApiKey(config);
+    // Check for environment variable first
+    let apiKey = process.env.GEMINI_API_KEY;
+    
+    // Fall back to credential store if environment variable is not set
+    if (!apiKey) {
+      apiKey = await this.configManager.getResolvedApiKey(config);
+    }
     
     if (!apiKey && !config.vertexAI) {
       throw new Error(
         `Google Gemini API key not found for providerType: ${this.providerConfig.providerType}` +
         (this.providerConfig.instanceName ? ` (instance: ${this.providerConfig.instanceName})` : '') +
-        `. Please configure it using the CLI.`
+        `. Ensure it's set in credentials or as GEMINI_API_KEY environment variable.`
       );
     }
 

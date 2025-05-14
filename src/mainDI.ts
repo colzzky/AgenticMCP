@@ -161,12 +161,6 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       deps.DIFilePathProcessor
     );
 
-    // Create provider factory instance
-    const providerFactoryInstance = new deps.ProviderFactory(
-      providers.configManager,
-      deps.logger
-    );
-
     // Configure and register CLI commands
     deps.setupCliCommands(
       program,
@@ -181,11 +175,10 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       tools.toolExecutor,
       deps.process,
       filePathProcessorFactory,
-      providerFactoryInstance,
+      providers.providerFactoryInstance,
       deps.McpServer,
       deps.BaseMcpServer,
       deps.StdioServerTransport,
-      deps.ProviderFactory,
       credentialManagerInstance,
       roleRegistrar
     );
