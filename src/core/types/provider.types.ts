@@ -74,6 +74,7 @@ export interface ProviderRequest {
   tools?: Tool[]; // Tools (functions) the model can call
   tool_choice?: 'auto' | 'required' | 'none' | { type: 'function'; function: { name: string } }; // Control when tools are called
   parallelToolCalls?: boolean; // Whether multiple tools can be called in parallel
+  parallel_tool_calls?: boolean; // Legacy name for parallelToolCalls
   [key: string]: unknown; // Allow other provider-specific parameters
 }
 

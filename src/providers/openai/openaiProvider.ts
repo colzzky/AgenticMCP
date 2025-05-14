@@ -152,7 +152,10 @@ export class OpenAIProvider implements LLMProvider {
       }
       
       // Add parallel_tool_calls if specified
-      if (request.parallel_tool_calls !== undefined) {
+      if (request.parallelToolCalls !== undefined) {
+        requestOptions.parallel_tool_calls = request.parallelToolCalls;
+      } else if (request.parallel_tool_calls !== undefined) {
+        // Support legacy property name
         requestOptions.parallel_tool_calls = request.parallel_tool_calls;
       }
 

@@ -266,7 +266,11 @@ export class AnthropicProvider implements LLMProvider {
           }
         }
         // For specific tool choice
-        else if (typeof request.toolChoice === 'object' && request.toolChoice.type === 'function') {
+        else if (request.toolChoice && typeof request.toolChoice === 'object' && 
+                 'type' in request.toolChoice && request.toolChoice.type === 'function' && 
+                 'function' in request.toolChoice && 
+                 request.toolChoice.function && typeof request.toolChoice.function === 'object' &&
+                 'name' in request.toolChoice.function) {
           params.tool_choice = { name: request.toolChoice.function.name } as any;
         }
       }
