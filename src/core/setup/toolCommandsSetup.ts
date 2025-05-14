@@ -21,7 +21,7 @@ export function registerToolCommands(
     .action(async (options) => {
       try {
         const result = await toolCommandsInstance.execute({ options }, options);
-        console.log(JSON.stringify(result, undefined, 2));
+        loggerTool.info(JSON.stringify(result, undefined, 2));
       } catch (error) {
         if (error instanceof Error) {
           loggerTool.error(`Error executing tool commands: ${error.message}`);
@@ -50,7 +50,7 @@ export function setupToolSubcommands(
     .action(async () => {
       try {
         const result = await toolCommandsInstance.listTools();
-        console.log(JSON.stringify(result, undefined, 2));
+        loggerTool.info(JSON.stringify(result, undefined, 2));
       } catch (error) {
         if (error instanceof Error) {
           loggerTool.error(`Error listing tools: ${error.message}`);
@@ -75,7 +75,7 @@ export function setupToolSubcommands(
         }
 
         const result = await toolCommandsInstance.executeTool(name, args);
-        console.log(JSON.stringify(result, undefined, 2));
+        loggerTool.info(JSON.stringify(result, undefined, 2));
       } catch (error) {
         if (error instanceof Error) {
           loggerTool.error(`Error executing tool: ${error.message}`);

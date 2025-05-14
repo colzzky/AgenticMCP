@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-
 import { logger } from './core/utils/logger';
 import { ConfigManager } from './core/config/configManager';
 import { DIContainer } from './core/di/container';
@@ -21,6 +20,7 @@ import { LLMCommand } from './commands/llmCommand';
 import { ToolCommands } from './commands/toolCommands';
 import path from 'node:path';
 import * as fs from 'node:fs/promises';
+import * as keytar from 'keytar';
 import { DefaultFilePathProcessorFactory } from './core/commands/baseCommand';
 import { McpServer } from "./mcp/mcpServer";
 import { McpServer as BaseMcpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -43,18 +43,18 @@ import { mainDI, MainDependencies } from './mainDI';
 
 // Main application entry point
 export async function main(): Promise<void> {
-  // Dynamically import package.json
-  const pkgModule = await import('../package.json', { assert: { type: 'json' } });
-  const pkg = pkgModule.default;
-  // Create dependencies object with all required dependencies
   const dependencies: MainDependencies = {
     // Core dependencies
-    pkg,
+    pkg: {
+      version: '1.0.0',
+      description: 'AgenticMCP',
+    },
     logger,
     process,
     path,
     fs,
     spawn,
+    keytar,
     
     // Setup functions
     setupDependencyInjection,

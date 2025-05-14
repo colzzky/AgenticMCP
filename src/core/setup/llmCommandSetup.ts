@@ -29,14 +29,13 @@ export function registerLlmCommand(
         const result = await llmCommandInstance.execute({ options }, ...args);
 
         if (result.success) {
-          console.log(result.message);
+          loggerTool.info(result.message || "");
         } else {
-          console.error(result.message);
+          loggerTool.error(result.message || "");
         }
       } catch (error) {
         if (error instanceof Error) {
           loggerTool.error(`Error executing LLM command: ${error.message}`);
-          console.error(`Error: ${error.message}`);
         }
       }
     });

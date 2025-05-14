@@ -1,18 +1,25 @@
 import { Command } from 'commander';
 import type { Logger } from '../types/logger.types';
 
+
+export type RunProgramFn = (
+  program: InstanceType<typeof Command>,
+  process: NodeJS.Process,
+  logger: Logger
+) => Promise<void>;
+
 /**
  * Runs the CLI program with proper error handling
  */
-export async function runProgram(
+export const runProgram: RunProgramFn = async (
   program: Command,
   processDi: NodeJS.Process,
   loggerTool: Logger
-): Promise<void> {
+) => {
   // Add help handler
   program.on('--help', () => {
-    console.log('');
-    console.log('Use "[command] --help" for more information on a command.');
+    loggerTool.info('');
+    loggerTool.info('Use "[command] --help" for more information on a command.');
     loggerTool.info('Displaying help information.');
   });
 

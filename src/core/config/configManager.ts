@@ -3,10 +3,10 @@
  */
 import type { PathDI, FileSystemDI } from '../../types/global.types';
 import envPaths from 'env-paths';
-import { AppConfig, ProviderSpecificConfig, OpenAIProviderSpecificConfig, McpServerConfig } from '../types/config.types'; 
-import { CredentialManager } from '../credentials/credentialManager'; 
-import { CredentialIdentifier } from '../types/credentials.types'; 
-import { logger } from '../utils/index';
+import { AppConfig, ProviderSpecificConfig, OpenAIProviderSpecificConfig, McpServerConfig } from '../types/config.types';
+import { CredentialManager } from '../credentials/credentialManager';
+import { CredentialIdentifier } from '../types/credentials.types';
+import { Logger } from '../types/logger.types';
 
 const APP_NAME = 'agenticmcp';
 const CONFIG_FILE_NAME = 'config.json';
@@ -19,12 +19,22 @@ export class ConfigManager {
   private config: AppConfig | undefined = undefined;
   private pathDI: PathDI;
   private fileSystemDI: FileSystemDI;
+  private credentialManager: InstanceType<typeof CredentialManager>;
+  private logger: Logger;
 
-  constructor(appName: string = APP_NAME, pathDI: PathDI, fileSystemDI: FileSystemDI) {
+  constructor(
+    appName: string = APP_NAME,
+    pathDI: PathDI,
+    fileSystemDI: FileSystemDI,
+    credentialManager: InstanceType<typeof CredentialManager>,
+    logger: Logger
+  ) {
     const paths = envPaths(appName, { suffix: '' });
     this.configPath = pathDI.join(paths.config, CONFIG_FILE_NAME);
     this.pathDI = pathDI;
     this.fileSystemDI = fileSystemDI;
+    this.credentialManager = credentialManager;
+    this.logger = logger;
   }
 
   /**
@@ -41,7 +51,7 @@ export class ConfigManager {
         'code' in error &&
         (error as { code?: string }).code !== 'EEXIST'
       ) {
-        console.error(`Failed to create config directory at ${dir}:`, error);
+        this.logger.error(`Failed to create config directory at ${dir}:`, error);
         throw error;
       }
     }
@@ -69,11 +79,11 @@ export class ConfigManager {
         'code' in error &&
         (error as { code?: string }).code === 'ENOENT'
       ) {
-        console.log(`Config file not found at ${this.configPath}. Initializing with defaults.`);
+        this.logger.warn(`Config file not found at ${this.configPath}. Initializing with defaults.`);
         this.config = this.getDefaults();
         await this.saveConfig();
       } else {
-        console.error(`Error reading config file ${this.configPath}:`, error);
+        this.logger.error(`Error reading config file ${this.configPath}:`, error);
         this.config = this.getDefaults();
       }
     }
@@ -90,16 +100,16 @@ export class ConfigManager {
       this.config = { ...this.config, ...newConfig }; // Merge newConfig into current config
     }
     if (!this.config) {
-      console.warn('No configuration to save. Load or initialize defaults first.');
+      this.logger.warn('No configuration to save. Load or initialize defaults first.');
       return;
     }
     await this.ensureConfigDirectory();
     try {
       const fileContent = JSON.stringify(this.config, undefined, 2);
       await this.fileSystemDI.writeFile(this.configPath, fileContent, 'utf-8');
-      console.log(`Configuration saved to ${this.configPath}`);
+      this.logger.info(`Configuration saved to ${this.configPath}`);
     } catch (error) {
-      console.error(`Error saving config file ${this.configPath}:`, error);
+      this.logger.error(`Error saving config file ${this.configPath}:`, error);
       throw error;
     }
   }
@@ -153,11 +163,11 @@ export class ConfigManager {
     }
     // Ensure config is not undefined before modifying and saving
     if (this.config) {
-        this.config[key] = value;
-        await this.saveConfig();
+      this.config[key] = value;
+      await this.saveConfig();
     } else {
-        console.error('Configuration could not be loaded or initialized. Set operation failed.');
-        // In a real app, might throw an error here
+      this.logger.error('Configuration could not be loaded or initialized. Set operation failed.');
+      // In a real app, might throw an error here
     }
   }
 
@@ -181,33 +191,33 @@ export class ConfigManager {
    */
   public async getResolvedApiKey(providerConfig: ProviderSpecificConfig): Promise<string | undefined> {
     if (!providerConfig || !providerConfig.providerType) {
-      console.error('Invalid providerConfig (or missing providerType) passed to getResolvedApiKey.');
+      this.logger.error('Invalid providerConfig (or missing providerType) passed to getResolvedApiKey.');
       return undefined;
     }
 
     const actualProviderType = providerConfig.providerType;
     // Use instanceName as the accountName for credentials if available,
     // otherwise fall back to 'apiKey' as a default account name for that providerType's credential.
-    const accountNameForCredentials = providerConfig.instanceName || 'apiKey'; 
+    const accountNameForCredentials = providerConfig.instanceName || 'apiKey';
 
-    const credentialIdentifier: CredentialIdentifier = { 
+    const credentialIdentifier: CredentialIdentifier = {
       providerType: actualProviderType,
-      accountName: accountNameForCredentials 
+      accountName: accountNameForCredentials
     };
 
     try {
-      const secret = await CredentialManager.getSecret(credentialIdentifier);
+      const secret = await this.credentialManager.getSecret(credentialIdentifier);
       if (secret) {
-        console.log(`API key for ${actualProviderType} (account: ${accountNameForCredentials}) resolved from secure storage.`);
+        this.logger.info(`API key for ${actualProviderType} (account: ${accountNameForCredentials}) resolved from secure storage.`);
         return secret;
       }
     } catch (error) {
-      console.error(`Error retrieving API key for ${actualProviderType} (account: ${accountNameForCredentials}) from secure storage:`, error);
+      this.logger.error(`Error retrieving API key for ${actualProviderType} (account: ${accountNameForCredentials}) from secure storage:`, error);
       // It's important to return undefined or throw, not to fall through to 'not found' if it's an actual error.
-      return undefined; 
+      return undefined;
     }
-    
-    console.log(`API key for ${actualProviderType} (account: ${accountNameForCredentials}) not found in secure storage.`);
+
+    this.logger.warn(`API key for ${actualProviderType} (account: ${accountNameForCredentials}) not found in secure storage.`);
     return undefined;
   }
 

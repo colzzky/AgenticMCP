@@ -238,7 +238,6 @@ export class ToolExecutor {
    * @example
    * ```typescript
    * const result = await toolExecutor.executeTool('read_file', { path: './example.txt' });
-   * console.log(result);
    * ```
    */
   public async executeTool(name: string, args: Record<string, unknown>): Promise<unknown> {

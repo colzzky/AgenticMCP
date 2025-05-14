@@ -5,14 +5,12 @@ import { DiffService } from '../services/diff.service';
 import { DILocalCliTool, LocalCliToolConfig } from '../../tools/localCliTool';
 import type { PathDI, FileSystemDI, SpawnDi } from '../../types/global.types';
 import type { Logger } from '../types/logger.types';
-import type { DILocalShellCliTool } from '../../tools/localShellCliTool';
+import { DILocalShellCliTool } from '../../tools/localShellCliTool';
 import { DefaultShellCommandWrapper } from '../../tools/shellCommandWrapper';
 import { SHELL_COMMANDS } from '../../tools/localShellCliToolDefinitions';
 
-/**
- * Sets up the dependency injection container with core services and utilities
- */
-export function setupDependencyInjection(
+// Define properly typed setup function signatures
+export type SetupDependencyInjectionFn = (
   container: DIContainer,
   loggerTool: Logger,
   fileSystem: typeof FileSystemService,
@@ -22,8 +20,27 @@ export function setupDependencyInjection(
   processDi: NodeJS.Process,
   spawnDi: SpawnDi,
   localCliTool: typeof DILocalCliTool,
-  DILocalShellCliTool: typeof import('../../tools/localShellCliTool').DILocalShellCliTool
-): { localCliToolInstance: InstanceType<typeof DILocalCliTool>, localShellCliToolInstance: InstanceType<typeof DILocalShellCliTool> } {
+  dILocalShellCliTool: typeof DILocalShellCliTool
+) => {
+  localCliToolInstance: InstanceType<typeof DILocalCliTool>,
+  localShellCliToolInstance: InstanceType<typeof DILocalShellCliTool>
+};
+
+/**
+ * Sets up the dependency injection container with core services and utilities
+ */
+export const setupDependencyInjection: SetupDependencyInjectionFn = (
+  container: DIContainer,
+  loggerTool: Logger,
+  fileSystem: typeof FileSystemService,
+  diffServiceInstance: typeof DiffService,
+  pathDi: PathDI,
+  fsDi: FileSystemDI,
+  processDi: NodeJS.Process,
+  spawnDi: SpawnDi,
+  localCliTool: typeof DILocalCliTool,
+  dILocalShellCliTool: typeof DILocalShellCliTool
+) => {
   // 1. Register Logger
   container.register<Logger>(DI_TOKENS.LOGGER, loggerTool);
 
@@ -62,7 +79,7 @@ export function setupDependencyInjection(
   // Instantiate dependencies needed for shell tool instantiation
   const shellWrapper = new DefaultShellCommandWrapper(spawnDi, [...SHELL_COMMANDS], loggerTool);
   const shellCliToolConfig = { allowedCommands: [...SHELL_COMMANDS] };
-  const localShellCliToolInstance = new DILocalShellCliTool(shellCliToolConfig, shellWrapper, loggerTool);
+  const localShellCliToolInstance = new dILocalShellCliTool(shellCliToolConfig, shellWrapper, loggerTool);
   container.register<DILocalShellCliTool>(DI_TOKENS.LOCAL_SHELL_CLI_TOOL, localShellCliToolInstance);
 
   return { localCliToolInstance, localShellCliToolInstance };

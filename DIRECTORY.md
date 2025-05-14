@@ -2,17 +2,19 @@
 .
 ├── AUDIT.md
 ├── CLAUDE.md
-├── DIRECTORY.md +6
+├── DIRECTORY.md
+├── FIXED_TESTS.md
 ├── KNOWLEDGE.md
 ├── LICENSE
-├── PROGRESS.jsonl +1
+├── PROGRESS.jsonl
 ├── README.md
+├── SHELL_TOOL_INTEGRATION.md
 ├── TASKS.jsonl
 ├── TESTING.md
 ├── commands/
 │   └── turnover.txt
 ├── context/
-│   ├── anthropic-docs.md
+│   ├── README.md
 │   ├── anthropic-tool-use.md
 │   ├── gemini-docs.md
 │   ├── gemini-tool-calling.md
@@ -36,13 +38,13 @@
 │   │   └── stdio-client.js
 │   └── mock-utility-test.ts
 ├── jest.config.js
-├── package-lock.json
-├── package.json
+├── package-lock.json +88
+├── package.json +4
 ├── project-summary.md
 ├── src/
 │   ├── commands/
 │   │   ├── configCommands.ts
-│   │   ├── credentialCommands.ts
+│   │   ├── credentialCommands.ts +4
 │   │   ├── llmCommand.ts
 │   │   ├── mcpCommands.ts
 │   │   └── toolCommands.ts
@@ -60,15 +62,15 @@
 │   │   │   ├── decorators.ts
 │   │   │   └── type.ts
 │   │   ├── config/
-│   │   │   ├── configManager.ts
+│   │   │   ├── configManager.ts +35
 │   │   │   └── index.ts
 │   │   ├── credentials/
-│   │   │   ├── credentialManager.ts
+│   │   │   ├── credentialManager.ts +35
 │   │   │   └── index.ts
 │   │   ├── di/
 │   │   │   ├── container.ts
 │   │   │   ├── registry.ts
-│   │   │   └── tokens.ts +1
+│   │   │   └── tokens.ts
 │   │   ├── interfaces/
 │   │   │   ├── diff-service.interface.ts
 │   │   │   └── file-system.interface.ts
@@ -76,14 +78,14 @@
 │   │   │   ├── diff.service.ts
 │   │   │   └── file-system.service.ts
 │   │   ├── setup/
-│   │   │   ├── cliCommandsSetup.ts
-│   │   │   ├── dependencySetup.ts +18
+│   │   │   ├── cliCommandsSetup.ts +1
+│   │   │   ├── dependencySetup.ts
 │   │   │   ├── index.ts
 │   │   │   ├── llmCommandSetup.ts
 │   │   │   ├── programSetup.ts
-│   │   │   ├── providerSystemSetup.ts
+│   │   │   ├── providerSystemSetup.ts +12
 │   │   │   ├── toolCommandsSetup.ts
-│   │   │   └── toolSystemSetup.ts +11
+│   │   │   └── toolSystemSetup.ts
 │   │   ├── types/
 │   │   │   ├── cli.types.ts
 │   │   │   ├── command.types.ts
@@ -97,9 +99,8 @@
 │   │       ├── index.ts
 │   │       ├── logger.ts
 │   │       └── validation.ts
-│   ├── global.types.ts +2
-│   ├── index.ts +8
-│   ├── mainDI.ts +19
+│   ├── index.ts +6
+│   ├── mainDI.ts +35
 │   ├── mcp/
 │   │   ├── index.ts
 │   │   ├── mcpServer.ts
@@ -139,12 +140,20 @@
 │   │   │   └── localCliToolFactory.ts
 │   │   ├── localCliTool.ts
 │   │   ├── localCliToolDefinitions.ts
+│   │   ├── localShellCliTool.ts
+│   │   ├── localShellCliToolDefinitions.ts
 │   │   ├── services/
 │   │   │   └── diffService.ts
+│   │   ├── shellCommandWrapper.ts
 │   │   ├── toolExecutor.ts
 │   │   ├── toolRegistry.ts
 │   │   └── toolResultFormatter.ts
-│   └── tsconfig.json
+│   ├── tsconfig.json
+│   └── types/
+│       ├── global.types.ts +3
+│       ├── shell.types.d.ts
+│       ├── shell.types.js
+│       └── shell.types.ts
 ├── tests/
 │   ├── ENTRY_POINT_TESTS.md
 │   ├── EXPANDED_COVERAGE.md
@@ -179,6 +188,7 @@
 │   │   │   ├── providerSystemSetup.test.ts
 │   │   │   └── toolSystemSetup.test.ts
 │   │   └── utils/
+│   │       ├── logger.test.ts
 │   │       └── validation.test.ts
 │   ├── entry-point.test.ts
 │   ├── index.test.ts
@@ -190,6 +200,7 @@
 │   │   └── tools/
 │   │       ├── processFileOperations.test.ts
 │   │       ├── registrarFactory.test.ts
+│   │       ├── roleBasedTools.test.ts
 │   │       ├── roleHandlers.test.ts
 │   │       ├── roleSchemas.test.ts
 │   │       ├── xmlPromptUtils.test.ts
@@ -217,15 +228,19 @@
 │   │   ├── factory/
 │   │   │   ├── di-local-cli-tool-factory.test.ts
 │   │   │   ├── factoryMocks.ts
+│   │   │   └── localCliToolFactory.test.ts
 │   │   ├── localCliTool.test.ts
 │   │   ├── localCliToolDefinitions.test.ts
 │   │   ├── localShellCliTool.test.ts
+│   │   ├── localShellCliToolDefinitions.test.ts
+│   │   ├── services/
+│   │   │   └── diffService.test.ts
+│   │   ├── shellCommandWrapper.test.ts
 │   │   ├── toolExecutor.test.ts
 │   │   ├── toolRegistry.test.ts
 │   │   └── toolResultFormatter.test.ts
 │   └── tsconfig.json
 ├── tree.sh
 ├── tsconfig.json
-├── turn-over-details.md +50
-└── types/
+└── turn-over-details.md
 ```

@@ -5,7 +5,7 @@
 import { Command } from 'commander';
 import { ConfigManager } from '../core/config/configManager';
 import { AppConfig } from '../core/types/config.types';
-import { logger } from '../core/utils/index';
+import { Logger } from './../core/types/logger.types';
 
 /**
  * Registers the 'config' command and its subcommands with the main program.
@@ -15,7 +15,8 @@ import { logger } from '../core/utils/index';
 export function registerConfigCommands(
   program: Command,
   configManager: InstanceType<typeof ConfigManager>,
-  processDi: NodeJS.Process
+  processDi: NodeJS.Process,
+  logger: Logger
 ): void {
 
   // Show help if no command is specified
@@ -29,7 +30,7 @@ export function registerConfigCommands(
     .command('path')
     .description('Display the path to the configuration file')
     .action(() => {
-      console.log('Configuration file path:', configManager.getConfigFilePath());
+      logger.info('Configuration file path:', configManager.getConfigFilePath());
     });
 
   configCommand
@@ -38,10 +39,10 @@ export function registerConfigCommands(
     .action(async () => {
       try {
         const currentConfig = await configManager.loadConfig();
-        console.log('Current configuration:');
-        console.log(JSON.stringify(currentConfig, undefined, 2));
+        logger.info('Current configuration:');
+        logger.info(JSON.stringify(currentConfig, undefined, 2));
       } catch (error) {
-        console.error('Failed to load configuration:', error);
+        logger.error('Failed to load configuration:', error);
       }
     });
 
@@ -54,13 +55,13 @@ export function registerConfigCommands(
         if (value) {
           const currentConfig = await configManager.loadConfig(); // Load to check if key exists
           if (key in currentConfig) {
-            console.log(`${key}:`, value); // Value is explicitly undefined or undefined
+            logger.info(`${key}:`, value); // Value is explicitly undefined or undefined
           } else {
-            console.log(`Configuration key '${key}' not found.`);
+            logger.info(`Configuration key '${key}' not found.`);
           }
         }
       } catch (error) {
-        console.error(`Failed to get configuration for key '${key}':`, error);
+        logger.error(`Failed to get configuration for key '${key}':`, error);
       }
     });
 
@@ -71,28 +72,28 @@ export function registerConfigCommands(
       try {
         if (key === 'defaultProvider') {
           if (typeof value !== 'string' || ['true', 'false'].includes(value.toLowerCase()) || (!Number.isNaN(Number(value)) && Number.isFinite(Number(value)))) {
-             console.error(`Invalid value for 'defaultProvider'. It must be a string (e.g., 'openai').`);
+             logger.error(`Invalid value for 'defaultProvider'. It must be a string (e.g., 'openai').`);
              return;
           }
           await configManager.set('defaultProvider', value);
-          console.log(`Configuration 'defaultProvider' set to:`, value);
+          logger.info(`Configuration 'defaultProvider' set to:`, value);
         } else if (key === 'providers') {
           try {
             const providersObject = JSON.parse(value);
             // TODO: Add a type guard or schema validation for providersObject structure
             await configManager.set('providers', providersObject);
-            console.log(`Configuration 'providers' set to:`, providersObject);
+            logger.info(`Configuration 'providers' set to:`, providersObject);
           } catch {
-            console.error(`Invalid JSON string for 'providers'. Please provide a valid JSON object string.`);
-            console.error('Example: config set providers \'{ "myOpenAI": { "providerType": "openai", "model": "gpt-4" } }\'');
+            logger.error(`Invalid JSON string for 'providers'. Please provide a valid JSON object string.`);
+            logger.error('Example: config set providers \'{ "myOpenAI": { "providerType": "openai", "model": "gpt-4" } }\'');
             return;
           }
         } else {
-          console.error(`Invalid configuration key: ${key}. Allowed keys are 'defaultProvider' or 'providers'.`);
+          logger.error(`Invalid configuration key: ${key}. Allowed keys are 'defaultProvider' or 'providers'.`);
           return;
         }
       } catch (error) {
-        console.error(`Failed to set configuration for key '${key}':`, error);
+        logger.error(`Failed to set configuration for key '${key}':`, error);
       }
     });
 
@@ -107,10 +108,10 @@ export function registerConfigCommands(
           await configManager.saveConfig(currentConfig);
           logger.info(`Configuration key "${key}" removed successfully.`);
         } else {
-          console.log(`Configuration key '${key}' not found.`);
+          logger.info(`Configuration key '${key}' not found.`);
         }
       } catch (error) {
-        console.error(`Failed to remove configuration for key '${key}':`, error);
+        logger.error(`Failed to remove configuration for key '${key}':`, error);
       }
     });
 }

@@ -6,7 +6,7 @@
 import { Command } from 'commander';
 import type { Logger } from './core/types/logger.types';
 import type { AppConfig } from './config/appConfig';
-import type { PathDI, FileSystemDI, SpawnDi } from './types/global.types';
+import type { PathDI, FileSystemDI, SpawnDi, KeytarDi } from './types/global.types';
 
 // Import more specific types for proper type checking
 import type { DIContainer as DIContainerType } from './core/di/container';
@@ -21,70 +21,26 @@ import type { ToolCommands as ToolCommandsType } from './commands/toolCommands';
 import type { ConfigManager as ConfigManagerType } from './core/config/configManager';
 import type { ProviderInitializer as ProviderInitializerType } from './providers/providerInitializer';
 import type { ProviderFactory as ProviderFactoryType } from './providers/providerFactory';
+import type { CredentialManager } from './core/credentials';
+import { NodeFileSystem } from './core/adapters/nodeFileSystemAdapter';
+import type { DefaultFilePathProcessorFactory } from './core/commands/baseCommand';
+import type { DIFilePathProcessor } from './context/filePathProcessor';
+import type { McpServer } from './mcp/mcpServer';
+import type { McpServer as BaseMcpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { StdioServerTransport as StdioServerTransportType } from '@modelcontextprotocol/sdk/server/stdio.js';
+import type { RoleBasedToolsRegistrar } from './mcp/tools/types';
+import type { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';
+
 import { DILocalShellCliTool } from './tools/localShellCliTool';
 import { DILocalCliTool } from './tools/localCliTool';
 
-// Define properly typed setup function signatures
-export type SetupDependencyInjectionFn = (
-  container: DIContainerType, 
-  logger: Logger, 
-  fileSystemService: typeof FileSystemServiceType, 
-  diffService: typeof DiffServiceType, 
-  path: PathDI, 
-  fs: FileSystemDI, 
-  process: NodeJS.Process, 
-  spawn: SpawnDi,
-  localCliTool: typeof DILocalCliTool,
-  localShellCliTool: typeof DILocalShellCliTool
-) => { localCliToolInstance: InstanceType<typeof DILocalCliTool>, localShellCliToolInstance: InstanceType<typeof DILocalShellCliTool> };
-
-export type SetupToolSystemFn = (
-  localCliToolInstance: InstanceType<typeof DILocalCliTool>, 
-  localShellCliToolInstance: InstanceType<typeof DILocalShellCliTool>,
-  toolRegistry: typeof ToolRegistryType, 
-  toolExecutor: typeof ToolExecutorType, 
-  toolResultFormatter: typeof ToolResultFormatterType, 
-  logger: Logger
-) => { toolRegistry: InstanceType<typeof ToolRegistryType>; toolExecutor: InstanceType<typeof ToolExecutorType>; toolResultFormatter: InstanceType<typeof ToolResultFormatterType> };
-
-export type SetupProviderSystemFn = (
-  configManager: typeof ConfigManagerType, 
-  providerInitializer: typeof ProviderInitializerType, 
-  toolRegistry: InstanceType<typeof ToolRegistryType>, 
-  logger: Logger, 
-  path: PathDI, 
-  fs: FileSystemDI, 
-  appConfig: AppConfig, 
-  factory: typeof ProviderFactoryType
-) => { configManager: InstanceType<typeof ConfigManagerType>; providerInitializer: InstanceType<typeof ProviderInitializerType>; providerFactory: any };
-
-export type SetupCliCommandsFn = (
-  program: InstanceType<typeof Command>,
-  path: PathDI,
-  fs: FileSystemDI,
-  mcpCommands: typeof McpCommandsType,
-  llmCommand: typeof LLMCommandType,
-  toolCommands: typeof ToolCommandsType,
-  configManagerInstance: InstanceType<typeof ConfigManagerType>,
-  logger: Logger,
-  toolRegistryInstance: InstanceType<typeof ToolRegistryType>,
-  toolExecutorInstance: InstanceType<typeof ToolExecutorType>,
-  process: NodeJS.Process,
-  filePathProcessorFactory: any,
-  providerFactoryInstance: any,
-  mcpServer: any,
-  baseMcpServer: any,
-  stdioServerTransport: any,
-  providerFactory: typeof ProviderFactoryType,
-  credentialManager: any,
-  roleBasedToolsRegistrar: any
-) => void;
-
-export type RunProgramFn = (
-  program: InstanceType<typeof Command>,
-  process: NodeJS.Process,
-  logger: Logger
-) => Promise<void>;
+import type {
+  SetupCliCommandsFn,
+  SetupDependencyInjectionFn,
+  SetupToolSystemFn,
+  SetupProviderSystemFn,
+  RunProgramFn
+} from './core/setup'
 
 // Types for all the classes and constructors that main uses
 export interface MainDependencies {
@@ -95,6 +51,7 @@ export interface MainDependencies {
   path: PathDI;
   fs: FileSystemDI;
   spawn: SpawnDi;
+  keytar: KeytarDi;
   
   // Setup functions with proper type signatures
   setupDependencyInjection: SetupDependencyInjectionFn;
@@ -108,28 +65,28 @@ export interface MainDependencies {
   DIContainer: { getInstance: () => DIContainerType };
   FileSystemService: typeof FileSystemServiceType; 
   DiffService: typeof DiffServiceType;
-  DILocalCliTool: any; // Can be improved further
+  DILocalCliTool: typeof DILocalCliTool;
   ToolRegistry: typeof ToolRegistryType;
   ToolExecutor: typeof ToolExecutorType;
   ToolResultFormatter: typeof ToolResultFormatterType;
   ConfigManager: typeof ConfigManagerType;
   ProviderInitializer: typeof ProviderInitializerType;
   ProviderFactory: typeof ProviderFactoryType;
-  NodeFileSystem: any; // Can be improved
-  DefaultFilePathProcessorFactory: any; // Can be improved
-  DIFilePathProcessor: any; // Can be improved
+  NodeFileSystem: typeof NodeFileSystem;
+  DefaultFilePathProcessorFactory: typeof DefaultFilePathProcessorFactory;
+  DIFilePathProcessor: typeof DIFilePathProcessor;
   McpCommands: typeof McpCommandsType;
   LLMCommand: typeof LLMCommandType;
   ToolCommands: typeof ToolCommandsType;
-  McpServer: any; // Can be improved
-  BaseMcpServer: any; // Can be improved
-  StdioServerTransport: any; // Can be improved
-  CredentialManager: any; // Can be improved
-  RoleBasedToolsRegistrarFactory: { createDefault: () => any }; // Can be improved
+  McpServer: typeof McpServer;
+  BaseMcpServer: typeof BaseMcpServer;
+  StdioServerTransport: typeof StdioServerTransportType;
+  CredentialManager: typeof CredentialManager;
+  RoleBasedToolsRegistrarFactory: { createDefault: () => RoleBasedToolsRegistrar };
 
   // Shell Tool
-  DILocalShellCliTool: any;
-  DefaultShellCommandWrapper: any;
+  DILocalShellCliTool: typeof DILocalShellCliTool;
+  DefaultShellCommandWrapper: typeof DefaultShellCommandWrapper;
   SHELL_COMMANDS: readonly string[];
   
   // Configuration
@@ -174,6 +131,11 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       deps.logger
     );
 
+    const credentialManagerInstance = new deps.CredentialManager(
+      deps.keytar,
+      deps.logger
+    )
+
     // Set up provider system with app config
     const providers = deps.setupProviderSystem(
       deps.ConfigManager,
@@ -183,11 +145,12 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       deps.path,
       deps.fs,
       deps.defaultAppConfig,
-      deps.ProviderFactory
+      deps.ProviderFactory,
+      credentialManagerInstance
     );
 
     // Create NodeFileSystem instance
-    const nfsInstance = new deps.NodeFileSystem(deps.path, deps.fs);
+    const nfsInstance = new deps.NodeFileSystem(deps.path, deps.fs); // NodeFileSystem is used here
 
     // Create file path processor factory
     const filePathProcessorFactory = new deps.DefaultFilePathProcessorFactory(
@@ -223,7 +186,7 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       deps.BaseMcpServer,
       deps.StdioServerTransport,
       deps.ProviderFactory,
-      deps.CredentialManager,
+      credentialManagerInstance,
       roleRegistrar
     );
 

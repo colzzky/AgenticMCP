@@ -20,10 +20,7 @@ import type { PathDI } from '../../types/global.types';
 import type { Logger } from '../types/logger.types';
 import type { ProviderFactoryInstance } from '../../providers/types';
 
-/**
- * Sets up all CLI commands for the application
- */
-export function setupCliCommands(
+export type SetupCliCommandsFn = (
   program: Command,
   pathDi: PathDI,
   fsDi: any,
@@ -41,9 +38,34 @@ export function setupCliCommands(
   baseMcpServer: typeof BaseMcpServer,
   stdioServerTransport: typeof StdioServerTransport,
   providerFactory: typeof ProviderFactory,
-  credentialManager: typeof CredentialManager,
+  credentialManager: InstanceType<typeof CredentialManager>,
   roleBasedToolsRegistrar: RoleBasedToolsRegistrar
-): void {
+) => void;
+
+/**
+ * Sets up all CLI commands for the application
+ */
+export const setupCliCommands: SetupCliCommandsFn = (
+  program: Command,
+  pathDi: PathDI,
+  fsDi: any,
+  mcpCommands: typeof McpCommands,
+  llmCommand: typeof LLMCommand,
+  toolCommands: typeof ToolCommands,
+  configManagerInstance: ConfigManager,
+  loggerTool: Logger,
+  toolRegistryInstance: ToolRegistry,
+  toolExecutorInstance: ToolExecutor,
+  processDi: NodeJS.Process,
+  filePathProcessorFactory: FilePathProcessorFactory,
+  providerFactoryInstance: ProviderFactoryInstance,
+  mcpServer: typeof McpServer,
+  baseMcpServer: typeof BaseMcpServer,
+  stdioServerTransport: typeof StdioServerTransport,
+  providerFactory: typeof ProviderFactory,
+  credentialManager: InstanceType<typeof CredentialManager>,
+  roleBasedToolsRegistrar: RoleBasedToolsRegistrar
+) => {
   // Register config and credential commands
   registerConfigCommands(program, configManagerInstance, processDi);
   registerCredentialCommands(

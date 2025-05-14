@@ -5,10 +5,11 @@ import { Logger } from '../core/types/logger.types';
 
 export function registerCredentialCommands(
   program: Command, 
-  credentialManager: typeof CredentialManager,
+  credentialManager: InstanceType<typeof CredentialManager>,
   loggerTool: Logger
 ): void {
-  const credentialsCommand = program.command('credentials').description('Manage API keys and other secure credentials.');
+  const credentialsCommand = program.command('credentials');
+  credentialsCommand.description('Manage API keys and other secure credentials.');
   // CredentialManager methods are static, no instance needed for these calls.
 
   credentialsCommand
@@ -100,5 +101,5 @@ export function registerCredentialCommands(
       }
     });
 
-  program.addCommand(credentialsCommand);
+
 }

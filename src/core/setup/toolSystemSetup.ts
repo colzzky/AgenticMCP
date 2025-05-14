@@ -7,21 +7,31 @@ import { ToolResultFormatter } from '../../tools/toolResultFormatter';
 import type { Logger } from '../types/logger.types';
 import type { Tool } from '../../core/types/provider.types';
 
-/**
- * Sets up the tool system with registry, executor, and formatter
- */
-export function setupToolSystem(
+
+export type SetupToolSystemFn = (
   localCliToolInstance: DILocalCliTool,
   localShellCliToolInstance: DILocalShellCliTool,
   toolRegistry: typeof ToolRegistry,
   toolExecutor: typeof ToolExecutor,
   toolResultFormatter: typeof ToolResultFormatter,
   loggerTool: Logger
-): {
+) => {
   toolRegistry: InstanceType<typeof ToolRegistry>,
   toolExecutor: InstanceType<typeof ToolExecutor>,
   toolResultFormatter: InstanceType<typeof ToolResultFormatter>
-} {
+}
+
+/**
+ * Sets up the tool system with registry, executor, and formatter
+ */
+export const setupToolSystem: SetupToolSystemFn = (
+  localCliToolInstance: DILocalCliTool,
+  localShellCliToolInstance: DILocalShellCliTool,
+  toolRegistry: typeof ToolRegistry,
+  toolExecutor: typeof ToolExecutor,
+  toolResultFormatter: typeof ToolResultFormatter,
+  loggerTool: Logger
+) => {
   // Create tool registry and register local CLI tools
   const toolRegistryInstance = new toolRegistry(loggerTool);
   const registeredToolCount = toolRegistryInstance.registerLocalCliTools(localCliToolInstance);

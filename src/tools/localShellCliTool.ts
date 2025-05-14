@@ -51,5 +51,3 @@ export class DILocalShellCliTool {
     return this.shellWrapper.execute(command, args);
   }
 }
-
-export default DILocalShellCliTool;
