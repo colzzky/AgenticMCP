@@ -60,8 +60,8 @@ export class LLMCommand extends BaseCommand {
       // Prepare the full prompt with file context
       let fullPrompt = promptText;
       if (fileContext) {
-        fullPrompt = `${promptText}\n\nContext from files:\n${fileContext}`;
-        this.logger.info('Added context from files to prompt');
+        fullPrompt = `${promptText}\n\n<Context_from_files>\n${fileContext}\n</Context_from_files>\n\n${promptText}`;
+        this.logger.debug('Added context from files to prompt');
       }
 
       // Get provider from context or use default
