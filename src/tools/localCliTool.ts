@@ -97,7 +97,7 @@ export class DILocalCliTool {
       find_files: this._findFiles.bind(this),
     };
 
-    this.logger.info(`LocalCliTool initialized. Base directory: ${this.baseDir}, Allow file overwrite: ${this.allowFileOverwrite}, Allowed commands: ${[...this.allowedCommands]}`);
+    this.logger.debug(`LocalCliTool initialized. Base directory: ${this.baseDir}, Allow file overwrite: ${this.allowFileOverwrite}, Allowed commands: ${[...this.allowedCommands]}`);
   }
 
   /**

@@ -30,7 +30,7 @@ export class DILocalShellCliTool {
         return this.shellWrapper.execute(cmd, args);
       };
     }
-    this.logger.info(`LocalShellCliTool initialized. Allowed commands: ${[...this.allowedCommands].join(', ')}`);
+    this.logger.debug(`LocalShellCliTool initialized. Allowed commands: ${[...this.allowedCommands].join(', ')}`);
   }
 
   public getCommandMap(): Readonly<ShellCommandMap> {

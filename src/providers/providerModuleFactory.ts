@@ -1,6 +1,7 @@
 import { OpenAIProvider } from './openai';
 import { AnthropicProvider } from './anthropic';
 import { GoogleProvider } from './google';
+import { GrokProvider } from './grok';
 import type { ConfigManager } from '../core/config/configManager';
 import type { Logger } from '../core/types/logger.types';
 import type { ProviderType, LLMProvider } from '../core/types/provider.types';
@@ -38,7 +39,8 @@ export function createProviderModule(
   providerClasses.set('openai', OpenAIProvider as unknown as ProviderClass);
   providerClasses.set('anthropic', AnthropicProvider as unknown as ProviderClass);
   providerClasses.set('google', GoogleProvider as unknown as ProviderClass);
-  
+  providerClasses.set('grok', GrokProvider as unknown as ProviderClass);  
+
   // Create factory with injected dependencies
   const factory = new ProviderFactory(configManager, logger);
   

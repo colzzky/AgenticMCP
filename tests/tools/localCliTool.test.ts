@@ -70,7 +70,7 @@ describe('DILocalCliTool', () => {
   describe('constructor', () => {
     it('should initialize with valid config', () => {
       expect(localCliTool).toBeDefined();
-      expect(mockLogger.info).toHaveBeenCalled();
+      expect(mockLogger.debug).toHaveBeenCalled();
     });
     
     it('should throw error if baseDir is not specified', () => {

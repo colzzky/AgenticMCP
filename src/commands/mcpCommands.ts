@@ -6,6 +6,8 @@ import { ConfigManager } from '../core/config/configManager.js';
 import type { McpServerType, McpServerTransport, BaseMcpServer } from '../mcp/types.js';
 import type { RoleBasedToolsRegistrar } from '../mcp/tools/types';
 import type { ProviderFactoryType } from '../providers/types.js';
+import type { ProviderType } from '../core/types/provider.types.js';
+
 
 /**
  * Command options for serving the MCP server
@@ -116,8 +118,8 @@ export class McpCommands {
       );
 
       // Check if the provider exists
-      const providerName = provider.toLowerCase();
-      if (!['openai', 'anthropic', 'google'].includes(providerName)) {
+      const providerName = provider.toLowerCase() as ProviderType;
+      if (!['openai', 'anthropic', 'google', 'grok'].includes(providerName)) {
         throw new Error(`Provider "${providerName}" not supported. Please configure it first.`);
       }
 

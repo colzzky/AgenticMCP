@@ -8,6 +8,7 @@ export enum DI_TOKENS {
   FILE_SYSTEM = 'core:fileSystem',
   LOGGER = 'core:logger',
   CONFIG_MANAGER = 'core:configManager',
+  CREDENTIAL_MANAGER = 'core:credentialManager',
   
   // File processing
   FILE_PATH_PROCESSOR = 'context:filePathProcessor',
@@ -26,6 +27,7 @@ export enum DI_TOKENS {
   // File system
   PATH_DI = 'fileSystem:pathDI',
   FILE_SYSTEM_DI = 'fileSystem:fileSystemDI',
+  KEYTAR_DI = 'fileSystem:keytarDI',
 
   PROCESS_DI = 'process:processDi',
   LOCAL_SHELL_CLI_TOOL = 'tools:localShellCliTool',
