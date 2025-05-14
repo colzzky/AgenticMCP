@@ -1,6 +1,6 @@
 import { CredentialIdentifier, KeytarCredential } from '../types/credentials.types';
 import { Logger } from '../types/logger.types';
-import { KeytarDi } from '../../types/global.types';
+import { FileKeytar } from './file-keytar';
 
 const SERVICE_NAME_PREFIX = 'AgenticMCP'; // General prefix for all services
 
@@ -9,10 +9,10 @@ const SERVICE_NAME_PREFIX = 'AgenticMCP'; // General prefix for all services
  */
 export class CredentialManager {
 
-  private keytarDi: KeytarDi;
+  private keytarDi: FileKeytar;
   private loggerDi: Logger;
 
-  constructor(keytarDi: KeytarDi, loggerDi: Logger) {
+  constructor(keytarDi: FileKeytar, loggerDi: Logger) {
     this.keytarDi = keytarDi;
     this.loggerDi = loggerDi;
   }

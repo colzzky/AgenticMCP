@@ -20,7 +20,7 @@ import { LLMCommand } from './commands/llmCommand';
 import { ToolCommands } from './commands/toolCommands';
 import path from 'node:path';
 import * as fs from 'node:fs/promises';
-import * as keytar from 'keytar';
+import { createFileKeytar } from './core/credentials/file-keytar';
 import { DefaultFilePathProcessorFactory } from './core/commands/baseCommand';
 import { McpServer } from "./mcp/mcpServer";
 import { McpServer as BaseMcpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -54,7 +54,7 @@ export async function main(): Promise<void> {
     path,
     fs,
     spawn,
-    keytar,
+    keytar: createFileKeytar(),
     
     // Setup functions
     setupDependencyInjection,

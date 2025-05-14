@@ -6,7 +6,7 @@
 import { Command } from 'commander';
 import type { Logger } from './core/types/logger.types';
 import type { AppConfig } from './config/appConfig';
-import type { PathDI, FileSystemDI, SpawnDi, KeytarDi } from './types/global.types';
+import type { PathDI, FileSystemDI, SpawnDi } from './types/global.types';
 
 // Import more specific types for proper type checking
 import type { DIContainer as DIContainerType } from './core/di/container';
@@ -30,7 +30,7 @@ import type { McpServer as BaseMcpServer } from '@modelcontextprotocol/sdk/serve
 import type { StdioServerTransport as StdioServerTransportType } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { RoleBasedToolsRegistrar } from './mcp/tools/types';
 import type { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';
-
+import { FileKeytar } from './core/credentials/file-keytar';
 import { DILocalShellCliTool } from './tools/localShellCliTool';
 import { DILocalCliTool } from './tools/localCliTool';
 
@@ -51,7 +51,7 @@ export interface MainDependencies {
   path: PathDI;
   fs: FileSystemDI;
   spawn: SpawnDi;
-  keytar: KeytarDi;
+  keytar: FileKeytar;
   
   // Setup functions with proper type signatures
   setupDependencyInjection: SetupDependencyInjectionFn;

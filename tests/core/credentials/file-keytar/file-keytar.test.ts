@@ -83,7 +83,7 @@ describe('FileKeytarImpl', () => {
       const result = await fileKeytar.getPassword('test-service', 'test-account');
       
       // Assert
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
     
     it('should return null when no credentials file exists', async () => {
@@ -94,7 +94,7 @@ describe('FileKeytarImpl', () => {
       const result = await fileKeytar.getPassword('test-service', 'test-account');
       
       // Assert
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
       expect(mockCryptoService.decrypt).not.toHaveBeenCalled();
     });
     
@@ -107,7 +107,7 @@ describe('FileKeytarImpl', () => {
       const result = await fileKeytar.getPassword('test-service', 'test-account');
       
       // Assert
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
       expect(console.error).toHaveBeenCalled();
     });
   });
@@ -348,7 +348,7 @@ describe('FileKeytarImpl', () => {
       const result = await fileKeytar.findPassword('test-service');
       
       // Assert
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
     
     it('should return null and handle errors gracefully', async () => {
@@ -359,7 +359,7 @@ describe('FileKeytarImpl', () => {
       const result = await fileKeytar.findPassword('test-service');
       
       // Assert
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
       expect(console.error).toHaveBeenCalled();
     });
   });
