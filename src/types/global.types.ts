@@ -1,6 +1,6 @@
 import path from 'node:path';
 import * as fs from 'node:fs/promises';
-import { spawn } from 'child_process';
+import { spawn } from 'node:child_process';
 import * as keytar from 'keytar';
 
 export type SpawnDi = typeof spawn;

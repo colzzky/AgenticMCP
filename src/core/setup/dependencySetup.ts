@@ -63,7 +63,7 @@ export const setupDependencyInjection: SetupDependencyInjectionFn = (
     allowFileOverwrite: false
   };
   container.register<LocalCliToolConfig>(DI_TOKENS.LOCAL_CLI_TOOL, localCliToolConfig);
-  loggerTool.info(`Base directory for tool operations: ${baseDir}`);
+  loggerTool.debug(`Base directory for tool operations: ${baseDir}`);
 
   // 6. Instantiate and register DILocalCliTool
   const localCliToolInstance = new localCliTool(

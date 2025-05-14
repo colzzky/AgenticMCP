@@ -90,11 +90,11 @@ describe('toolSystemSetup', () => {
     // Verify tool registry initialization
     expect(MockToolRegistry).toHaveBeenCalledWith(mockLogger);
     expect(mockRegistryInstance.registerLocalCliTools).toHaveBeenCalledWith(mockLocalCliTool);
-    expect(mockLogger.info).toHaveBeenCalledWith('Registered 3 local CLI tools');
+    expect(mockLogger.debug).toHaveBeenCalledWith('Registered 3 local CLI tools');
     
     // Verify shell tools registration
     expect(mockRegistryInstance.registerTools).toHaveBeenCalled();
-    expect(mockLogger.info).toHaveBeenCalledWith('Registered 1 shell CLI tools');
+    expect(mockLogger.debug).toHaveBeenCalledWith('Registered 1 shell CLI tools');
     
     // Verify command map retrieval
     expect(mockLocalCliTool.getCommandMap).toHaveBeenCalled();
@@ -134,8 +134,8 @@ describe('toolSystemSetup', () => {
     );
     
     // Assert
-    expect(mockLogger.info).toHaveBeenCalledWith('Registered 0 local CLI tools');
-    expect(mockLogger.info).toHaveBeenCalledWith('Registered 0 shell CLI tools');
+    expect(mockLogger.debug).toHaveBeenCalledWith('Registered 0 local CLI tools');
+    expect(mockLogger.debug).toHaveBeenCalledWith('Registered 0 shell CLI tools');
     
     // Verify tool executor is still initialized
     expect(MockToolExecutor).toHaveBeenCalledWith(

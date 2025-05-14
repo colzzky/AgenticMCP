@@ -45,22 +45,8 @@ describe('llmCommandSetup', () => {
     createProvider: jest.fn()
   };
   
-  // Save original console.log and console.error
-  const originalConsoleLog = console.log;
-  const originalConsoleError = console.error;
-  
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    // Mock console.log and console.error
-    console.log = jest.fn();
-    console.error = jest.fn();
-  });
-  
-  // Restore console.log and console.error after tests
-  afterEach(() => {
-    console.log = originalConsoleLog;
-    console.error = originalConsoleError;
   });
   
   it('should register LLM command with the CLI program', () => {
@@ -128,8 +114,8 @@ describe('llmCommandSetup', () => {
       'input.txt'
     );
     
-    // Verify console output
-    expect(console.log).toHaveBeenCalledWith('Command executed successfully');
+    // Verify log output
+    expect(mockLogger.info).toHaveBeenCalledWith('Command executed successfully');
   });
   
   it('should handle command execution errors', async () => {
@@ -157,7 +143,6 @@ describe('llmCommandSetup', () => {
     // Assert
     // Verify error logging
     expect(mockLogger.error).toHaveBeenCalledWith('Error executing LLM command: Command failed');
-    expect(console.error).toHaveBeenCalledWith('Error: Command failed');
   });
   
   it('should handle command result with error', async () => {
@@ -186,7 +171,7 @@ describe('llmCommandSetup', () => {
     );
     
     // Assert
-    // Verify error console output
-    expect(console.error).toHaveBeenCalledWith('Invalid provider specified');
+    // Verify error logging output
+    expect(mockLogger.error).toHaveBeenCalledWith('Invalid provider specified');
   });
 });

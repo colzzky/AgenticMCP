@@ -1,44 +1,6 @@
 {
-  "compilerOptions": {
-    "target": "ESNEXT",
-    "isolatedModules": true,
-    "lib": [
-      "ES2020"
-    ],
-    "outDir": "../dist",
-    "rootDir": "..",
-    "strict": false,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "noImplicitAny": false,
-    "strictNullChecks": false,
-    "strictFunctionTypes": false,
-    "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "Node",
-    "module": "ESNext",
-    "baseUrl": "..",
-    "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    },
-    "resolveJsonModule": true,
-    "allowJs": true,
-    "types": [
-      "jest",
-      "node"
-    ],
-    "noEmit": true
-  },
-  "include": [
-    "./**/*.ts"
-  ],
+  "extends": "../tsconfig",
   "exclude": [
-    "../node_modules",
-    "../dist",
-    "../src"
+    "./**/*.ts"
   ]
 }

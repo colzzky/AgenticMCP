@@ -35,13 +35,13 @@ export const setupToolSystem: SetupToolSystemFn = (
   // Create tool registry and register local CLI tools
   const toolRegistryInstance = new toolRegistry(loggerTool);
   const registeredToolCount = toolRegistryInstance.registerLocalCliTools(localCliToolInstance);
-  loggerTool.info(`Registered ${registeredToolCount} local CLI tools`);
+  loggerTool.debug(`Registered ${registeredToolCount} local CLI tools`);
 
   // Register local shell CLI tool definitions
   const shellToolDefs = localShellCliToolInstance.getToolDefinitions();
   // Cast to Tool[] since we know the structure is compatible
   const shellRegisteredCount = toolRegistryInstance.registerTools(shellToolDefs as Tool[]);
-  loggerTool.info(`Registered ${shellRegisteredCount} shell CLI tools`);
+  loggerTool.debug(`Registered ${shellRegisteredCount} shell CLI tools`);
 
   // Get command maps and create tool implementations map
   const commandMap = localCliToolInstance.getCommandMap();

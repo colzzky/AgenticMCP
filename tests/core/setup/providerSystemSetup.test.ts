@@ -3,11 +3,11 @@
  * Tests the setup of provider system components
  */
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { setupProviderSystem } from '../../../src/core/setup/providerSystemSetup.js';
-import type { Logger } from '../../../src/core/types/logger.types.js';
-import type { PathDI, FileSystemDI } from '../../../src/global.types.js';
-import type { ToolRegistry } from '../../../src/tools/toolRegistry.js';
-import type { AppConfig } from '../../../src/config/appConfig.js';
+import { setupProviderSystem } from '../../../src/core/setup/providerSystemSetup';
+import type { Logger } from '../../../src/core/types/logger.types';
+import type { PathDI, FileSystemDI } from '../../../src/types/global.types';
+import type { ToolRegistry } from '../../../src/tools/toolRegistry';
+import type { AppConfig } from '../../../src/core/types/config.types';
 
 describe('providerSystemSetup', () => {
   // Mock dependencies
@@ -80,6 +80,14 @@ describe('providerSystemSetup', () => {
   };
   const MockProviderFactory = jest.fn().mockImplementation(() => mockProviderFactoryInstance);
   
+  // Mock CredentialManager
+  const mockCredentialManagerInstance = {
+    getSecret: jest.fn(),
+    setSecret: jest.fn(),
+    deleteSecret: jest.fn(),
+    findCredentialsByProvider: jest.fn()
+  };
+  
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -94,18 +102,21 @@ describe('providerSystemSetup', () => {
       mockPathDI,
       mockFsDI,
       mockAppConfig,
-      MockProviderFactory as any
+      MockProviderFactory as any,
+      mockCredentialManagerInstance as any
     );
     
     // Assert
     // Verify logger was used
-    expect(mockLogger.info).toHaveBeenCalledWith('Initializing provider system');
+    expect(mockLogger.debug).toHaveBeenCalledWith('Initializing provider system');
     
     // Verify ConfigManager initialization
     expect(MockConfigManager).toHaveBeenCalledWith(
       'test-app',
       mockPathDI,
-      mockFsDI
+      mockFsDI,
+      mockCredentialManagerInstance,
+      mockLogger
     );
     
     // Verify ProviderFactory initialization
@@ -122,7 +133,7 @@ describe('providerSystemSetup', () => {
     
     // Verify tool registry connection
     expect(mockProviderFactoryInstance.setToolRegistry).toHaveBeenCalledWith(mockToolRegistry);
-    expect(mockLogger.info).toHaveBeenCalledWith('Connected tool registry with provider factory');
+    expect(mockLogger.debug).toHaveBeenCalledWith('Connected tool registry with provider factory');
     
     // Verify return value structure
     expect(result).toEqual({

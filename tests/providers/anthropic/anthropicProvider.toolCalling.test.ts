@@ -5,11 +5,12 @@
  */
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { AnthropicProvider } from '../../../src/providers/anthropic/anthropicProvider.js';
+import { mock, MockProxy, mockReset } from 'jest-mock-extended';
 import type { ConfigManager } from '../../../src/core/config/configManager.js';
 import type { Logger } from '../../../src/core/types/logger.types.js';
-import type { 
-  ProviderRequest, 
-  ProviderResponse, 
+import type {
+  ProviderRequest,
+  ProviderResponse,
   Tool,
   ToolCall,
   ToolCallOutput,
@@ -30,44 +31,35 @@ jest.mock('@anthropic-ai/sdk', () => {
 });
 
 describe('AnthropicProvider - Tool Calling', () => {
-  // Mock dependencies
-  const mockLogger: Logger = {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    setLevel: jest.fn()
-  };
-
-  const mockConfigManager = {
-    loadConfig: jest.fn(),
-    getConfig: jest.fn(),
-    saveConfig: jest.fn(),
-    get: jest.fn(),
-    set: jest.fn(),
-    getProviderConfigByAlias: jest.fn(),
-    getResolvedApiKey: jest.fn().mockResolvedValue('mock-api-key'),
-    getDefaults: jest.fn(),
-    getMcpConfig: jest.fn()
-  } as unknown as ConfigManager;
-
-  // Mock Anthropic client
-  const mockAnthropicClient = {
-    messages: {
-      create: jest.fn()
-    }
-  };
-  
-  const MockAnthropicClass = jest.fn().mockImplementation(() => mockAnthropicClient);
-
+  let mockLogger: MockProxy<Logger>;
+  let mockConfigManager: MockProxy<ConfigManager>;
   let provider: AnthropicProvider;
+  let mockAnthropicClient: any;
+  let MockAnthropicClass: any;
+
   const mockConfig: AnthropicProviderSpecificConfig = {
     providerType: 'anthropic',
     model: 'claude-3-7-sonnet-latest',
     temperature: 0.7
   };
 
-  // Sample tools for testing - follow Anthropic's expected format from their docs
+  beforeEach(() => {
+    mockLogger = mock<Logger>();
+    mockConfigManager = mock<ConfigManager>();
+    mockAnthropicClient = {
+      messages: {
+        create: jest.fn()
+      }
+    };
+    MockAnthropicClass = jest.fn().mockImplementation(() => mockAnthropicClient);
+    mockReset(mockLogger);
+    mockReset(mockConfigManager);
+    // You may need to mock AnthropicProvider's internal Anthropic class usage here if relevant
+    provider = new AnthropicProvider(mockConfig, mockConfigManager, mockLogger);
+    // If AnthropicProvider expects Anthropic SDK, you may want to inject or override as needed
+  });
+
+  // Sample tools for testing - follow Anthropic's expected format from their docshropic's expected format from their docs
   const getWeatherTool: Tool = {
     type: 'function',
     name: 'get_weather',
@@ -144,11 +136,11 @@ describe('AnthropicProvider - Tool Calling', () => {
       const requestOptions = mockAnthropicClient.messages.create.mock.calls[0][0];
       expect(requestOptions.tools).toBeDefined();
       expect(requestOptions.tools).toHaveLength(1);
-      
+
       const tool = requestOptions.tools[0];
       expect(tool.name).toBe('get_weather');
       expect(tool.description).toBe('Get the current weather in a given location');
-      
+
       // Check input_schema matches the format in Anthropic's documentation
       expect(tool.input_schema).toEqual({
         type: 'object',
@@ -169,20 +161,20 @@ describe('AnthropicProvider - Tool Calling', () => {
 
     it('should handle tool_choice parameter', async () => {
       const toolChoiceTests = [
-        { 
-          choice: 'auto', 
+        {
+          choice: 'auto',
           expected: undefined // Anthropic uses undefined for 'auto'
         },
-        { 
-          choice: 'none', 
+        {
+          choice: 'none',
           expected: 'none'
         },
-        { 
-          choice: 'required', 
+        {
+          choice: 'required',
           expected: 'required'
         },
-        { 
-          choice: { type: 'function', function: { name: 'get_weather' } }, 
+        {
+          choice: { type: 'function', function: { name: 'get_weather' } },
           expected: { name: 'get_weather' } // Anthropic's format for specific tool choice
         }
       ];
@@ -205,7 +197,7 @@ describe('AnthropicProvider - Tool Calling', () => {
         await provider.chat(request);
 
         const requestOptions = mockAnthropicClient.messages.create.mock.calls[0][0];
-        
+
         if (test.expected === undefined) {
           expect(requestOptions.tool_choice).toBeUndefined();
         } else {
@@ -255,7 +247,7 @@ describe('AnthropicProvider - Tool Calling', () => {
       expect(response.content).toContain('I need to call the get_weather function');
       expect(response.toolCalls).toBeDefined();
       expect(response.toolCalls).toHaveLength(1);
-      
+
       const toolCall = response.toolCalls![0];
       expect(toolCall.id).toBe('toolu_01A09q90qw90lq917835lq9');
       expect(toolCall.call_id).toBe('toolu_01A09q90qw90lq917835lq9');
@@ -392,15 +384,15 @@ describe('AnthropicProvider - Tool Calling', () => {
 
       // Verify the tool result was properly formatted as per Anthropic docs
       const secondRequest = mockAnthropicClient.messages.create.mock.calls[1][0];
-      
+
       // Should have 3 messages: user question, assistant tool use, user tool result
       expect(secondRequest.messages).toHaveLength(3);
-      
+
       // Verify the tool result message format exactly matches Anthropic docs
       const toolResultMessage = secondRequest.messages[2];
       expect(toolResultMessage.role).toBe('user');
       expect(toolResultMessage.content).toHaveLength(1);
-      
+
       const toolResultContent = toolResultMessage.content[0];
       expect(toolResultContent.type).toBe('tool_result');
       expect(toolResultContent.tool_use_id).toBe('toolu_01A09q90qw90lq917835lq9');
@@ -549,7 +541,7 @@ describe('AnthropicProvider - Tool Calling', () => {
 
       // Get final response
       const finalResponse = await provider.generateTextWithToolResults(weatherResult);
-      
+
       // Verify final response matches the expected structure from docs
       expect(finalResponse.success).toBe(true);
       expect(finalResponse.content).toContain('San Francisco');
@@ -580,7 +572,7 @@ describe('AnthropicProvider - Tool Calling', () => {
     it('should handle tool execution errors', async () => {
       // Mock the tool function that will throw an error
       const mockToolFunction = jest.fn().mockRejectedValue(new Error('Weather API is down'));
-      
+
       // Test the executeToolCall method
       const toolCall: ToolCall = {
         id: 'toolu_01A09q90qw90lq917835lq9',
@@ -642,13 +634,13 @@ describe('AnthropicProvider - Tool Calling', () => {
       // Verify generateTextWithToolResults was called correctly
       expect(generateTextWithToolResultsSpy).toHaveBeenCalledTimes(1);
       const toolResultsRequest = generateTextWithToolResultsSpy.mock.calls[0][0];
-      
+
       // The new messages should include the assistant's response with tool calls
       expect(toolResultsRequest.messages).toHaveLength(2);
       expect(toolResultsRequest.messages[0]).toBe(initialRequest.messages[0]);
       expect(toolResultsRequest.messages[1].role).toBe('assistant');
       expect(toolResultsRequest.messages[1].tool_calls).toBe(initialResponse.toolCalls);
-      
+
       // The tool_outputs should be passed through
       expect(toolResultsRequest.tool_outputs).toBe(toolResults);
     });

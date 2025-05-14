@@ -8,8 +8,36 @@ import type { LLMProvider, ProviderType } from '../../src/core/types/provider.ty
 import type { Logger } from '../../src/core/types/logger.types.js';
 import type { ConfigManager } from '../../src/core/config/configManager.js';
 import type { ToolRegistry } from '../../src/tools/toolRegistry.js';
+import { mock, MockProxy } from 'jest-mock-extended';
+import { OpenAIProvider } from '../../src/providers/openai/openaiProvider.js';
+import { AnthropicProvider } from '../../src/providers/anthropic/anthropicProvider.js';
+
+// Mock provider classes for registration tests
+class MockOpenAIProvider implements LLMProvider {
+  get name() { return 'openai'; }
+  configure = jest.fn().mockResolvedValue(undefined);
+  setToolRegistry = jest.fn();
+  getAvailableTools = jest.fn().mockReturnValue([]);
+  generateCompletion = jest.fn().mockResolvedValue({ success: true });
+  chat = jest.fn().mockResolvedValue({ success: true });
+  executeToolCall = jest.fn().mockResolvedValue('');
+  generateText = jest.fn().mockResolvedValue({ success: true });
+  generateTextWithToolResults = jest.fn().mockResolvedValue({ success: true });
+}
+class MockAnthropicProvider implements LLMProvider {
+  get name() { return 'anthropic'; }
+  configure = jest.fn().mockResolvedValue(undefined);
+  generateCompletion = jest.fn().mockResolvedValue({ success: true });
+  chat = jest.fn().mockResolvedValue({ success: true });
+  executeToolCall = jest.fn().mockResolvedValue('');
+  generateText = jest.fn().mockResolvedValue({ success: true });
+  generateTextWithToolResults = jest.fn().mockResolvedValue({ success: true });
+  // No setToolRegistry on purpose
+}
 
 describe('ProviderFactory', () => {
+  let mockOpenAIProvider: MockProxy<OpenAIProvider>;
+  let mockAnthropicProvider: MockProxy<AnthropicProvider>;
   // Mock dependencies
   const mockLogger: Logger = {
     debug: jest.fn(),
@@ -41,52 +69,21 @@ describe('ProviderFactory', () => {
     registerLocalCliTools: jest.fn()
   } as unknown as ToolRegistry;
 
-  // Mock provider implementation
-  class MockOpenAIProvider implements LLMProvider {
-    private logger: Logger;
-    private configManager: ConfigManager;
-    private toolRegistry?: ToolRegistry;
 
-    constructor(configManager: ConfigManager, logger: Logger) {
-      this.configManager = configManager;
-      this.logger = logger;
-    }
+  beforeEach(() => {
+    mockOpenAIProvider = mock<OpenAIProvider>();
+    mockOpenAIProvider.name = 'openai';
+    mockOpenAIProvider.setToolRegistry.mockImplementation(() => {});
+    // ...set up any other method overrides or return values as needed
 
-    get name(): string {
-      return 'openai';
-    }
+    mockAnthropicProvider = mock<AnthropicProvider>();
+    mockAnthropicProvider.name = 'anthropic';
+    // To simulate missing setToolRegistry:
+    // @ts-expect-error
+    delete mockAnthropicProvider.setToolRegistry;
+    // ...set up any other method overrides or return values as needed
+  });
 
-    configure = jest.fn().mockResolvedValue(undefined);
-    setToolRegistry = jest.fn();
-    getAvailableTools = jest.fn().mockReturnValue([]);
-    generateCompletion = jest.fn().mockResolvedValue({ success: true });
-    chat = jest.fn().mockResolvedValue({ success: true });
-    executeToolCall = jest.fn().mockResolvedValue('');
-    generateText = jest.fn().mockResolvedValue({ success: true });
-    generateTextWithToolResults = jest.fn().mockResolvedValue({ success: true });
-  }
-
-  class MockAnthropicProvider implements LLMProvider {
-    private logger: Logger;
-    private configManager: ConfigManager;
-
-    constructor(configManager: ConfigManager, logger: Logger) {
-      this.configManager = configManager;
-      this.logger = logger;
-    }
-
-    get name(): string {
-      return 'anthropic';
-    }
-
-    configure = jest.fn().mockResolvedValue(undefined);
-    generateCompletion = jest.fn().mockResolvedValue({ success: true });
-    chat = jest.fn().mockResolvedValue({ success: true });
-    executeToolCall = jest.fn().mockResolvedValue('');
-    generateText = jest.fn().mockResolvedValue({ success: true });
-    generateTextWithToolResults = jest.fn().mockResolvedValue({ success: true });
-    // Intentionally not implementing setToolRegistry to test that case
-  }
 
   // Sample provider types
   const openaiProviderType: ProviderType = 'openai';
@@ -293,7 +290,7 @@ describe('ProviderFactory', () => {
       
       // Assert
       expect(providerFactory.getToolRegistry()).toBe(mockToolRegistry);
-      expect(mockLogger.info).toHaveBeenCalledWith('Set tool registry for provider factory');
+      expect(mockLogger.debug).toHaveBeenCalledWith('Set tool registry for provider factory');
     });
 
     it('should update existing provider instances that support tool registry', () => {

@@ -3,8 +3,8 @@
  * Tests the application configuration management functionality
  */
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { AppConfig, McpServerConfig } from '../../../src/core/types/config.types.js';
-import type { PathDI, FileSystemDI } from '../../../src/global.types.js';
+import { AppConfig, McpServerConfig } from '../../../src/core/types/config.types';
+import type { PathDI, FileSystemDI } from '../../../src/types/global.types';
 
 // Mock dependencies before imports
 jest.mock('env-paths', () => {
@@ -14,7 +14,7 @@ jest.mock('env-paths', () => {
 });
 
 // Import the ConfigManager class to test
-import { ConfigManager } from '../../../src/core/config/configManager.js';
+import { ConfigManager } from '../../../src/core/config/configManager';
 
 describe('ConfigManager', () => {
   // Create mock implementations
@@ -29,19 +29,35 @@ describe('ConfigManager', () => {
     writeFile: jest.fn().mockResolvedValue(undefined),
   } as unknown as FileSystemDI;
 
+  // Mock logger
+  const mockLogger = {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn()
+  };
+
+  // Mock credential manager
+  const mockCredentialManager = {
+    getSecret: jest.fn(),
+    setSecret: jest.fn(),
+    deleteSecret: jest.fn()
+  };
+
   let configManager: ConfigManager;
   const mockedConfigPath = '/mock/config/path/config.json';
 
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Mock console methods to avoid cluttering test output
-    jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(console, 'warn').mockImplementation();
-    
     // Create a new ConfigManager instance for each test
-    configManager = new ConfigManager('test-app', mockPathDI, mockFileSystemDI);
+    configManager = new ConfigManager(
+      'test-app', 
+      mockPathDI, 
+      mockFileSystemDI, 
+      mockCredentialManager as any, 
+      mockLogger as any
+    );
     (configManager as any).configPath = mockedConfigPath;
   });
 
@@ -58,6 +74,7 @@ describe('ConfigManager', () => {
       (mockFileSystemDI.mkdir as jest.Mock).mockRejectedValueOnce(eexistError);
       
       await expect((configManager as any).ensureConfigDirectory()).resolves.not.toThrow();
+      expect(mockLogger.error).not.toHaveBeenCalled();
     });
 
     it('should throw other errors when creating the directory', async () => {
@@ -65,6 +82,7 @@ describe('ConfigManager', () => {
       (mockFileSystemDI.mkdir as jest.Mock).mockRejectedValueOnce(otherError);
       
       await expect((configManager as any).ensureConfigDirectory()).rejects.toEqual(otherError);
+      expect(mockLogger.error).toHaveBeenCalled();
     });
   });
 
@@ -103,6 +121,7 @@ describe('ConfigManager', () => {
       
       expect(getDefaultsSpy).toHaveBeenCalled();
       expect(saveConfigSpy).toHaveBeenCalled();
+      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Config file not found'));
       expect(result).toEqual({
         defaultProvider: 'default-provider',
         providers: {},
@@ -122,6 +141,10 @@ describe('ConfigManager', () => {
       const result = await configManager.loadConfig();
       
       expect(getDefaultsSpy).toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Error reading config file'), 
+        expect.objectContaining(otherError)
+      );
       expect(result).toEqual({
         defaultProvider: 'default-provider',
         providers: {},
@@ -142,6 +165,7 @@ describe('ConfigManager', () => {
         JSON.stringify(mockConfig, undefined, 2),
         'utf-8'
       );
+      expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('Configuration saved'));
     });
 
     it('should merge and save new config with existing config', async () => {
@@ -164,6 +188,7 @@ describe('ConfigManager', () => {
         }, undefined, 2),
         'utf-8'
       );
+      expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('Configuration saved'));
     });
 
     it('should not save if config is not initialized', async () => {
@@ -172,7 +197,7 @@ describe('ConfigManager', () => {
       await configManager.saveConfig();
       
       expect(mockFileSystemDI.writeFile).not.toHaveBeenCalled();
-      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('No configuration to save'));
+      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('No configuration to save'));
     });
 
     it('should propagate errors when saving fails', async () => {
@@ -181,6 +206,7 @@ describe('ConfigManager', () => {
       (mockFileSystemDI.writeFile as jest.Mock).mockRejectedValueOnce(saveError);
       
       await expect(configManager.saveConfig()).rejects.toThrow(saveError);
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Error saving config file'), saveError);
     });
   });
 
@@ -310,7 +336,7 @@ describe('ConfigManager', () => {
       
       await configManager.set('defaultProvider', 'new-provider');
       
-      expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Configuration could not be loaded'));
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Configuration could not be loaded'));
     });
   });
 

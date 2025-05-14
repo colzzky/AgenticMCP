@@ -32,7 +32,7 @@ export const runProgram: RunProgramFn = async (
     if (error instanceof Error) {
       loggerTool.error(`Command execution failed: ${error.message}`);
       if (processDi.env.DEBUG === 'true') {
-        console.error(error.stack);
+        loggerTool.error(error.stack ?? '');
       }
     } else {
       loggerTool.error('An unknown error occurred during command execution.');

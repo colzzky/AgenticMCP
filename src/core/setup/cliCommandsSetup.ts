@@ -67,7 +67,7 @@ export const setupCliCommands: SetupCliCommandsFn = (
   roleBasedToolsRegistrar: RoleBasedToolsRegistrar
 ) => {
   // Register config and credential commands
-  registerConfigCommands(program, configManagerInstance, processDi);
+  registerConfigCommands(program, configManagerInstance, processDi, loggerTool);
   registerCredentialCommands(
     program,
     credentialManager,

@@ -150,7 +150,7 @@ export class ProviderFactory implements ProviderFactoryInterface {
       }
     }
     
-    this.logger.info('Set tool registry for provider factory');
+    this.logger.debug('Set tool registry for provider factory');
   }
 
   /**

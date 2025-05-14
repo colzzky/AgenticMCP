@@ -38,7 +38,7 @@ export const setupProviderSystem: SetupProviderSystemFn = (
   factory: typeof ProviderFactory,
   credentialManagerInstance: InstanceType<typeof CredentialManager>
 ) => {
-  loggerTool.info('Initializing provider system');
+  loggerTool.debug('Initializing provider system');
 
   // Initialize config manager
   const configManagerInstance = new configManager(
@@ -60,7 +60,7 @@ export const setupProviderSystem: SetupProviderSystemFn = (
 
   // Connect provider factory with tool registry
   providerFactory.setToolRegistry(toolRegistryInstance);
-  loggerTool.info('Connected tool registry with provider factory');
+  loggerTool.debug('Connected tool registry with provider factory');
 
   return {
     configManager: configManagerInstance,

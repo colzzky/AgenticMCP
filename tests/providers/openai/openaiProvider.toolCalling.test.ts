@@ -4,7 +4,8 @@
  */
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { OpenAIProvider } from '../../../src/providers/openai/openaiProvider.js';
-import type { ConfigManager } from '../../../src/core/config/configManager.js';
+import { mock, MockProxy } from 'jest-mock-extended';
+import { ConfigManager } from '../../../src/core/config/configManager.js';
 import type { Logger } from '../../../src/core/types/logger.types.js';
 import type { 
   ProviderRequest, 
@@ -31,26 +32,9 @@ jest.mock('openai', () => {
 });
 
 describe('OpenAIProvider - Tool Calling', () => {
-  // Mock dependencies
-  const mockLogger: Logger = {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    setLevel: jest.fn()
-  };
-
-  const mockConfigManager = {
-    loadConfig: jest.fn(),
-    getConfig: jest.fn(),
-    saveConfig: jest.fn(),
-    get: jest.fn(),
-    set: jest.fn(),
-    getProviderConfigByAlias: jest.fn(),
-    getResolvedApiKey: jest.fn().mockResolvedValue('mock-api-key'),
-    getDefaults: jest.fn(),
-    getMcpConfig: jest.fn()
-  } as unknown as ConfigManager;
+  let mockLogger: MockProxy<Logger>;
+  let mockConfigManager: MockProxy<ConfigManager>;
+  let provider: OpenAIProvider;
 
   // Mock OpenAI client
   const mockOpenAIClient = {
@@ -63,12 +47,19 @@ describe('OpenAIProvider - Tool Calling', () => {
   
   const MockOpenAIClass = jest.fn().mockImplementation(() => mockOpenAIClient);
 
-  let provider: OpenAIProvider;
   const mockConfig: OpenAIProviderSpecificConfig = {
     providerType: 'openai',
     model: 'gpt-4',
     temperature: 0.7
   };
+
+
+  beforeEach(() => {
+    mockLogger = mock<Logger>();
+    mockConfigManager = mock<ConfigManager>();
+    mockConfigManager.getResolvedApiKey.mockResolvedValue('mock-api-key');
+    provider = new OpenAIProvider(mockConfig, mockConfigManager, mockLogger);
+  });
 
   // Sample tools for testing
   const sampleTools: Tool[] = [

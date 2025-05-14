@@ -3,6 +3,7 @@
  * Tests the program execution flow
  */
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { runProgram } from './../../../src/core/setup/programSetup';
 
 // Define logger interface
 interface LoggerMock {
@@ -53,61 +54,18 @@ describe('Program Setup', () => {
     env: {}
   };
   
-  // Mock console methods
-  const originalConsoleLog = console.log;
-  const originalConsoleError = console.error;
-  
   beforeEach(() => {
     jest.clearAllMocks();
     mockHelpHandler = null;
-    
-    // Mock console methods for testing
-    console.log = jest.fn();
-    console.error = jest.fn();
   });
-  
-  afterEach(() => {
-    // Restore console methods
-    console.log = originalConsoleLog;
-    console.error = originalConsoleError;
-  });
-  
-  // Function that simulates runProgram
-  async function runProgram(
-    program: CommandMock,
-    processDi: any,
-    loggerTool: LoggerMock
-  ): Promise<void> {
-    // Add help handler
-    program.on('--help', () => {
-      console.log('');
-      console.log('Use "[command] --help" for more information on a command.');
-      loggerTool.info('Displaying help information.');
-    });
-  
-    try {
-      await program.parseAsync(processDi.argv);
-      if (processDi.argv.slice(2).length === 0) {
-        program.outputHelp();
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        loggerTool.error(`Command execution failed: ${error.message}`);
-        if (processDi.env.DEBUG === 'true') {
-          console.error(error.stack);
-        }
-      } else if (error === undefined) {
-        loggerTool.error('An unknown error occurred during command execution.');
-      } else {
-        loggerTool.error(`Command execution failed: ${String(error)}`);
-      }
-      processDi.exit(1);
-    }
-  }
   
   it('should register help handler and display usage information', async () => {
     // Act
-    await runProgram(mockCommand, mockProcess, mockLogger);
+    await runProgram(
+      mockCommand as any,
+      mockProcess as any,
+      mockLogger as any
+    );
     
     // Assert
     expect(mockCommand.on).toHaveBeenCalledWith('--help', expect.any(Function));
@@ -116,9 +74,9 @@ describe('Program Setup', () => {
     if (mockHelpHandler) {
       (mockHelpHandler as Function)();
       
-      // Verify console output
-      expect(console.log).toHaveBeenCalledWith('');
-      expect(console.log).toHaveBeenCalledWith('Use "[command] --help" for more information on a command.');
+      // Verify logger output
+      expect(mockLogger.info).toHaveBeenCalledWith('');
+      expect(mockLogger.info).toHaveBeenCalledWith('Use "[command] --help" for more information on a command.');
       expect(mockLogger.info).toHaveBeenCalledWith('Displaying help information.');
     } else {
       fail('Help handler was not registered');
@@ -133,7 +91,7 @@ describe('Program Setup', () => {
     };
     
     // Act
-    await runProgram(mockCommand, emptyArgsProcess, mockLogger);
+    await runProgram(mockCommand as any, emptyArgsProcess as any, mockLogger as any);
     
     // Assert
     expect(mockCommand.outputHelp).toHaveBeenCalled();
@@ -147,7 +105,7 @@ describe('Program Setup', () => {
     };
     
     // Act
-    await runProgram(mockCommand, processWithArgs, mockLogger);
+    await runProgram(mockCommand as any, processWithArgs as any, mockLogger as any);
     
     // Assert
     expect(mockCommand.outputHelp).not.toHaveBeenCalled();
@@ -159,7 +117,7 @@ describe('Program Setup', () => {
     mockCommand.parseAsync.mockRejectedValueOnce(error);
     
     // Act
-    await runProgram(mockCommand, mockProcess, mockLogger);
+    await runProgram(mockCommand as any, mockProcess as any, mockLogger as any);
     
     // Assert
     expect(mockLogger.error).toHaveBeenCalledWith('Command execution failed: Command failed');
@@ -178,11 +136,11 @@ describe('Program Setup', () => {
     };
     
     // Act
-    await runProgram(mockCommand, debugProcess, mockLogger);
+    await runProgram(mockCommand as any, debugProcess as any, mockLogger as any);
     
     // Assert
     expect(mockLogger.error).toHaveBeenCalledWith('Command execution failed: Debug error');
-    expect(console.error).toHaveBeenCalledWith(error.stack);
+    expect(mockLogger.error).toHaveBeenCalledWith(error.stack);
     expect(mockProcess.exit).toHaveBeenCalledWith(1);
   });
   
@@ -191,10 +149,10 @@ describe('Program Setup', () => {
     mockCommand.parseAsync.mockRejectedValueOnce('String error');
     
     // Act
-    await runProgram(mockCommand, mockProcess, mockLogger);
+    await runProgram(mockCommand as any, mockProcess as any, mockLogger as any);
     
     // Assert
-    expect(mockLogger.error).toHaveBeenCalledWith('Command execution failed: String error');
+    expect(mockLogger.error).toHaveBeenCalledWith('An unknown error occurred during command execution.');
     expect(mockProcess.exit).toHaveBeenCalledWith(1);
   });
   
@@ -203,7 +161,7 @@ describe('Program Setup', () => {
     mockCommand.parseAsync.mockRejectedValueOnce(undefined);
     
     // Act
-    await runProgram(mockCommand, mockProcess, mockLogger);
+    await runProgram(mockCommand as any, mockProcess as any, mockLogger as any);
     
     // Assert
     expect(mockLogger.error).toHaveBeenCalledWith('An unknown error occurred during command execution.');

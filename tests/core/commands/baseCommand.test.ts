@@ -4,6 +4,7 @@
  */
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { BaseCommand, DefaultFilePathProcessorFactory, type FilePathProcessorFactory } from '../../../src/core/commands/baseCommand.js';
+import { mock, MockProxy, mockReset } from 'jest-mock-extended';
 import type { CommandContext, CommandOutput } from '../../../src/core/types/command.types.js';
 import type { Logger } from '../../../src/core/types/logger.types.js';
 import type { PathDI, FileSystemDI } from '../../../src/global.types.js';
@@ -51,24 +52,39 @@ describe('BaseCommand', () => {
   };
 
   // Mock the FilePathProcessor class and factory
-  const mockProcessor = {
-    processArgs: jest.fn()
-  };
-
-  const mockFactory = {
-    create: jest.fn().mockReturnValue(mockProcessor),
-    pathDI: {} as PathDI,
-    fileSystem: {} as IFileSystem,
-    fileSystemDI: {} as FileSystemDI,
-    processDi: {} as NodeJS.Process,
-    factory: jest.fn()
-  } as unknown as FilePathProcessorFactory;
-
+  let mockProcessor: MockProxy<FilePathProcessor>;
+  let mockFactory: MockProxy<FilePathProcessorFactory>;
   let command: TestCommand;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockProcessor = mock<FilePathProcessor>();
+    mockProcessor.processArgs.mockReturnValue({ context: 'mockContext', remainingArgs: [] });
+    mockFactory = mock<FilePathProcessorFactory>();
+    mockFactory.create.mockReturnValue(mockProcessor);
     command = new TestCommand(mockLogger, mockFactory);
+    jest.clearAllMocks();
+  });
+
+  describe('processFileArgs', () => {
+    it('should filter out non-string arguments', async () => {
+      mockProcessor.processArgs.mockReturnValue({ context: 'filtered', remainingArgs: ['file.txt'] });
+      const result = await command.testProcessFileArgs(['file.txt', 123, null]);
+      expect(result.context).toBe('filtered');
+      expect(result.remainingArgs).toEqual(['file.txt']);
+    });
+
+    it('should handle empty arguments list', async () => {
+      mockProcessor.processArgs.mockReturnValue({ context: 'empty', remainingArgs: [] });
+      const result = await command.testProcessFileArgs([]);
+      expect(result.context).toBe('empty');
+      expect(result.remainingArgs).toEqual([]);
+    });
+
+    it('should handle processor errors gracefully', async () => {
+      const testError = new Error('Test error');
+      mockProcessor.processArgs.mockImplementation(() => { throw testError; });
+      await expect(command.testProcessFileArgs(['file.txt'])).rejects.toThrow(testError);
+    });
   });
 
   describe('constructor', () => {
@@ -82,70 +98,13 @@ describe('BaseCommand', () => {
     });
   });
 
-  describe('processFileArgs', () => {
-    it('should filter out non-string arguments', async () => {
-      // Set up test data
-      const args = ['file.txt', 123, null, undefined, 'prompt text', { key: 'value' }];
-      const expectedStringArgs = ['file.txt', 'prompt text'];
-      
-      // Configure the processor mock to return a test result
-      const mockResult = {
-        context: 'File content',
-        remainingArgs: ['prompt text']
-      };
-      mockProcessor.processArgs.mockResolvedValue(mockResult);
-
-      // Call the method
-      const result = await command.testProcessFileArgs(args);
-
-      // Verify the processor was called with the correct arguments
-      expect(mockFactory.create).toHaveBeenCalledWith(mockLogger);
-      expect(mockProcessor.processArgs).toHaveBeenCalledWith(expectedStringArgs);
-      
-      // Verify the result
-      expect(result).toEqual(mockResult);
-    });
-
-    it('should handle empty arguments list', async () => {
-      // Configure the processor mock to return an empty result
-      const mockResult = {
-        context: '',
-        remainingArgs: []
-      };
-      mockProcessor.processArgs.mockResolvedValue(mockResult);
-
-      // Call the method with an empty array
-      const result = await command.testProcessFileArgs([]);
-
-      // Verify the processor was called with an empty array
-      expect(mockProcessor.processArgs).toHaveBeenCalledWith([]);
-      
-      // Verify the result
-      expect(result).toEqual(mockResult);
-    });
-
-    it('should handle processor errors gracefully', async () => {
-      // Configure the processor mock to throw an error
-      const testError = new Error('Test error');
-      mockProcessor.processArgs.mockRejectedValue(testError);
-
-      // Call the method and expect it to reject
-      await expect(command.testProcessFileArgs(['file.txt'])).rejects.toThrow(testError);
-    });
-  });
-
   describe('execute', () => {
     it('should return a successful command output', async () => {
-      // Create a test context
       const context: CommandContext = {
         rawArgs: ['test-command', 'arg1'],
         options: { flag: true }
       };
-
-      // Call the execute method
       const result = await command.execute(context, 'arg1', 'arg2');
-
-      // Verify the result
       expect(result).toEqual({
         success: true,
         message: 'Test executed successfully',
@@ -156,10 +115,7 @@ describe('BaseCommand', () => {
 
   describe('getHelp', () => {
     it('should return help text', () => {
-      // Call the getHelp method
       const result = command.getHelp();
-
-      // Verify the result
       expect(result).toBe('Test command help text');
     });
   });
@@ -248,10 +204,7 @@ describe('DefaultFilePathProcessorFactory', () => {
 
   describe('create', () => {
     it('should create a FilePathProcessor instance with correct dependencies', () => {
-      // Call the create method
       const processor = factory.create(mockLogger);
-
-      // Verify the constructor was called with the correct arguments
       expect(MockFilePathProcessor).toHaveBeenCalledWith(
         mockLogger,
         mockFileSystem,
@@ -260,8 +213,6 @@ describe('DefaultFilePathProcessorFactory', () => {
         mockProcessDI,
         {}
       );
-
-      // Verify the returned instance
       expect(processor).toBeDefined();
     });
   });

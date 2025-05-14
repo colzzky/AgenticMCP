@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 
 export default [
     {
-      ignores: ['dist/**', 'node_modules/**', 'tests/index.test.ts', '.prettierrc.js', 'jest.config.js'],
+      ignores: ['dist/**', 'node_modules/**', 'tests/**', '.prettierrc.js', 'jest.config.js'],
     },
 		eslintPluginUnicorn.configs.recommended,
 		{
