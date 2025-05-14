@@ -7,7 +7,7 @@ export class FileKeytarImpl implements FileKeytar {
   private cryptoService: CryptoService;
   private storageService: StorageService;
   private keyManagementService: KeyManagementService;
-  private cache: CredentialStore | null = null;
+  private cache: CredentialStore | undefined = undefined;
 
   /**
    * Creates a new FileKeytar implementation
@@ -32,24 +32,17 @@ export class FileKeytarImpl implements FileKeytar {
   private async loadCredentials(): Promise<CredentialStore> {
     // Return cached data if available
     // Return a deep clone of the cache to avoid accidental mutation by consumers
-    if (this.cache !== null) {
-      if (typeof structuredClone === 'function') {
-        return structuredClone(this.cache) as CredentialStore;
-      } else {
-        // Fallback for environments without structuredClone
-        return JSON.parse(JSON.stringify(this.cache)) as CredentialStore;
-      }
-    }
+    if (this.cache !== undefined) return structuredClone(this.cache) as CredentialStore;
     
     // Read encrypted data from storage
     const encryptedData = await this.storageService.read();
     
     // If no data exists yet, return an empty store
     if (!encryptedData) {
-      return { 
-        credentials: [], 
-        version: '1.0', 
-        lastModified: new Date().toISOString() 
+      return {
+        credentials: [],
+        version: '1.0',
+        lastModified: new Date().toISOString()
       };
     }
     
@@ -60,11 +53,7 @@ export class FileKeytarImpl implements FileKeytar {
       
       // Parse and cache the data
       this.cache = JSON.parse(decryptedData);
-      if (typeof structuredClone === 'function') {
-        return structuredClone(this.cache) as CredentialStore;
-      } else {
-        return JSON.parse(JSON.stringify(this.cache)) as CredentialStore;
-      }
+      return structuredClone(this.cache) as CredentialStore;
     } catch (error) {
       throw new Error(`Failed to load credentials: ${(error as Error).message}`);
     }
@@ -101,17 +90,17 @@ export class FileKeytarImpl implements FileKeytar {
    * @param account - The account name
    * @returns A Promise that resolves to the password, or null if not found
    */
-  async getPassword(service: string, account: string): Promise<string | null> {
+  async getPassword(service: string, account: string): Promise<string | undefined> {
     try {
       const store = await this.loadCredentials();
       const credential = store.credentials.find(
         c => c.service === service && c.account === account
       );
-      return credential ? credential.password : null;
+      return credential ? credential.password : undefined;
     } catch (error) {
       // Log error but return null to match keytar behavior
       console.error(`Error in getPassword: ${(error as Error).message}`);
-      return null;
+      return undefined;
     }
   }
 
@@ -132,11 +121,9 @@ export class FileKeytarImpl implements FileKeytar {
       );
       
       // Update or add the credential
-      if (index >= 0) {
-        store.credentials[index].password = password;
-      } else {
-        store.credentials.push({ service, account, password });
-      }
+      index !== -1
+        ? (store.credentials[index].password = password)
+        : store.credentials.push({ service, account, password });
       
       // Save the updated store
       await this.saveCredentials(store);
@@ -160,15 +147,14 @@ export class FileKeytarImpl implements FileKeytar {
         c => c.service === service && c.account === account
       );
       
-      // If found, remove it and save
-      if (index >= 0) {
-        store.credentials.splice(index, 1);
-        await this.saveCredentials(store);
-        return true;
+      // If not found, return false
+      if (index === -1) {
+        return false;
       }
-      
-      // Not found
-      return false;
+      // If found, remove it and save
+      store.credentials.splice(index, 1);
+      await this.saveCredentials(store);
+      return true;
     } catch (error) {
       // Log error but return false to match keytar behavior
       console.error(`Error in deletePassword: ${(error as Error).message}`);
@@ -201,14 +187,14 @@ export class FileKeytarImpl implements FileKeytar {
    * @param service - The service name
    * @returns A Promise that resolves to the first password found, or null
    */
-  async findPassword(service: string): Promise<string | null> {
+  async findPassword(service: string): Promise<string | undefined> {
     try {
       const credentials = await this.findCredentials(service);
-      return credentials.length > 0 ? credentials[0].password : null;
+      return credentials.length > 0 ? credentials[0].password : undefined;
     } catch (error) {
       // Log error but return null to match keytar behavior
       console.error(`Error in findPassword: ${(error as Error).message}`);
-      return null;
+      return undefined;
     }
   }
 }

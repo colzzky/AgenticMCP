@@ -15,7 +15,7 @@ export class DefaultShellCommandWrapper implements ShellCommandWrapper {
   }
 
   getAllowedCommands(): string[] {
-    return Array.from(this.allowedCommands);
+    return [...this.allowedCommands];
   }
 
   async execute(command: string, args: string[] = []): Promise<ShellCommandResult> {

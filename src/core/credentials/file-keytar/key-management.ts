@@ -7,7 +7,7 @@ import { CryptoService, KeyManagementService } from './interfaces';
  */
 export class FileKeyManagementService implements KeyManagementService {
   private keyPath: string;
-  private masterKey: Buffer | null = null;
+  private masterKey: Buffer | undefined = undefined;
   private cryptoService: CryptoService;
   
   /**

@@ -2,11 +2,11 @@
  * Main public interface - matches keytar's API
  */
 export interface FileKeytar {
-  getPassword(service: string, account: string): Promise<string | null>;
+  getPassword(service: string, account: string): Promise<string | undefined>;
   setPassword(service: string, account: string, password: string): Promise<void>;
   deletePassword(service: string, account: string): Promise<boolean>;
   findCredentials(service: string): Promise<Array<{ account: string, password: string }>>;
-  findPassword?(service: string): Promise<string | null>; // Optional in original keytar
+  findPassword?(service: string): Promise<string | undefined>; // Optional in original keytar
 }
 
 /**
@@ -44,7 +44,7 @@ export interface CryptoService {
  * Storage service interface
  */
 export interface StorageService {
-  read(): Promise<string | null>;
+  read(): Promise<string | undefined>;
   write(data: string): Promise<void>;
   ensureStorageDirectory(): Promise<void>;
 }

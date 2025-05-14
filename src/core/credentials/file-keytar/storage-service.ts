@@ -32,9 +32,9 @@ export class FileStorageService implements StorageService {
 
   /**
    * Reads encrypted data from the storage file
-   * @returns A Promise that resolves to the file contents, or null if the file doesn't exist
+   * @returns A Promise that resolves to the file contents, or undefined if the file doesn't exist
    */
-  async read(): Promise<string | null> {
+  async read(): Promise<string | undefined> {
     try {
       await this.ensureStorageDirectory();
       const data = await fs.readFile(this.filePath, 'utf8');
@@ -42,7 +42,7 @@ export class FileStorageService implements StorageService {
     } catch (error) {
       // If file doesn't exist yet, that's not an error
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return null;
+        return undefined;
       }
       // Other errors should be reported
       throw new Error(`Error reading storage file: ${(error as Error).message}`);
