@@ -1,6 +1,10 @@
 import crypto from 'node:crypto';
 import { CryptoService } from './interfaces';
 
+// Extend Cipher and Decipher for GCM mode
+type CipherGCM = crypto.Cipher & { getAuthTag(): Buffer };
+type DecipherGCM = crypto.Decipher & { setAuthTag(tag: Buffer): void };
+
 /**
  * Implementation of CryptoService using Node.js crypto module
  * Uses AES-256-GCM for authenticated encryption with authentication tag
@@ -43,7 +47,7 @@ export class NodeCryptoService implements CryptoService {
     encrypted += cipher.final('base64');
     
     // Get the authentication tag (for GCM mode)
-    const authTag = cipher.getAuthTag();
+    const authTag = (cipher as CipherGCM).getAuthTag();
     
     // Combine IV, auth tag, and encrypted data into a single buffer
     // Format: [IV (16 bytes)][Auth Tag (16 bytes)][Encrypted Data]
@@ -76,7 +80,7 @@ export class NodeCryptoService implements CryptoService {
       
       // Create decipher
       const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
-      decipher.setAuthTag(authTag);
+      (decipher as DecipherGCM).setAuthTag(authTag);
       
       // Decrypt the data
       let decrypted = decipher.update(encryptedContent, 'base64', 'utf8');

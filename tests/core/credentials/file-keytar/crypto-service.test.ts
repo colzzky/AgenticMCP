@@ -1,4 +1,5 @@
 import { NodeCryptoService } from '../../../../src/core/credentials/file-keytar/crypto-service';
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
 describe('NodeCryptoService', () => {
   let cryptoService: NodeCryptoService;

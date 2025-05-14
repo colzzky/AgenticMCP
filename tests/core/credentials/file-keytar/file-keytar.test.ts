@@ -1,20 +1,21 @@
 import { FileKeytarImpl } from '../../../../src/core/credentials/file-keytar/file-keytar';
 import { CryptoService, KeyManagementService, StorageService } from '../../../../src/core/credentials/file-keytar/interfaces';
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
 // Mock implementations
-const mockCryptoService: jest.Mocked<CryptoService> = {
+const mockCryptoService = {
   encrypt: jest.fn(),
   decrypt: jest.fn(),
   generateKey: jest.fn()
 };
 
-const mockStorageService: jest.Mocked<StorageService> = {
+const mockStorageService = {
   read: jest.fn(),
   write: jest.fn(),
   ensureStorageDirectory: jest.fn()
 };
 
-const mockKeyManagementService: jest.Mocked<KeyManagementService> = {
+const mockKeyManagementService = {
   getMasterKey: jest.fn()
 };
 
@@ -26,9 +27,9 @@ describe('FileKeytarImpl', () => {
     jest.clearAllMocks();
     
     fileKeytar = new FileKeytarImpl(
-      mockCryptoService,
-      mockStorageService,
-      mockKeyManagementService
+      mockCryptoService as unknown as CryptoService,
+      mockStorageService as unknown as StorageService,
+      mockKeyManagementService as unknown as KeyManagementService
     );
     
     // Mock key for encryption/decryption
