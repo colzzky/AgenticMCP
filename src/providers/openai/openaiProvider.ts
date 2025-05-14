@@ -1,6 +1,6 @@
 // Forcing re-evaluation for TS diagnostics
 import OpenAI from 'openai';
-import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import {
   LLMProvider,
   ProviderRequest,
@@ -14,7 +14,7 @@ import {
 } from '../../core/types/provider.types';
 import type { ConfigManager } from '../../core/config/configManager';
 import type { Logger } from '../../core/types/logger.types';
-import type { ProviderSpecificConfig, OpenAIProviderSpecificConfig } from '../../core/types/config.types';
+import type { OpenAIProviderSpecificConfig } from '../../core/types/config.types';
 import { mapMessageToOpenAIParam, mapToolsToOpenAIChatTools } from './openaiProviderMappers';
 
 /**
@@ -70,6 +70,10 @@ export class OpenAIProvider implements LLMProvider {
     return 'openai';
   }
 
+  get defaultModel(): string {
+    return 'gpt-4o-mini';
+  }
+
   public async configure(config: OpenAIProviderSpecificConfig): Promise<void> {
     this.providerConfig = config;
 
@@ -119,7 +123,7 @@ export class OpenAIProvider implements LLMProvider {
       return this._handleProviderError(new Error('OpenAIProvider not configured. Call configure() first.'), 'OpenAIProvider.chat');
     }
 
-    const model = request.model || this.providerConfig.model || 'gpt-3.5-turbo';
+    const model = request.model || this.providerConfig.model || this.defaultModel;
     const temperature = request.temperature ?? this.providerConfig.temperature ?? 0.7;
 
     const messages: ChatCompletionMessageParam[] = request.messages
@@ -352,8 +356,10 @@ export class OpenAIProvider implements LLMProvider {
     }
   }
 
-  public async generateText(request: ProviderRequest): Promise<ProviderResponse> {
-    return this.chat(request);
+  public async generateText(prompt: string): Promise<ProviderResponse> {
+    return this.chat({
+      messages: [{ role: "user", content: prompt }]
+    });
   }
 
   // Private helper methods

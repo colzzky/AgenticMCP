@@ -56,6 +56,10 @@ export class GoogleProvider implements LLMProvider {
     return 'google';
   }
 
+  get defaultModel(): string {
+    return 'grok-3-mini';
+  }
+
   /**
    * Configure the Google/Gemini provider with specific settings
    * @param config Provider-specific configuration
@@ -155,15 +159,6 @@ export class GoogleProvider implements LLMProvider {
    * @returns Provider response with content and metadata
    */
   async chat(request: ProviderRequest): Promise<ProviderResponse> {
-    return this.generateText(request);
-  }
-
-  /**
-   * Generates text with optional tools
-   * @param request - The request object containing messages and other parameters
-   * @returns Promise resolving to the provider's response
-   */
-  async generateText(request: ProviderRequest): Promise<ProviderResponse> {
     if (!this.providerConfig) {
       throw new Error('GoogleProvider not configured. Call configure() first.');
     }
@@ -316,6 +311,17 @@ export class GoogleProvider implements LLMProvider {
   }
 
   /**
+   * Generates text with optional tools
+   * @param prompt - The request object containing messages and other parameters
+   * @returns Promise resolving to the provider's response
+   */
+  async generateText(prompt: string): Promise<ProviderResponse> {
+    return this.chat({
+      messages: [{ role: "user", content: prompt }]
+    });
+  }
+
+  /**
    * Generate text completion using the Google Gemini API
    * This is an alias for chat() for compatibility with the LLMProvider interface
    */
@@ -348,7 +354,7 @@ export class GoogleProvider implements LLMProvider {
     }
     
     // Continue the conversation with the updated messages
-    return this.generateText({ ...request, messages });
+    return this.chat({ ...request, messages });
   }
   
   /**

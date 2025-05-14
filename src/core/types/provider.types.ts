@@ -149,6 +149,7 @@ export interface ToolResultsRequest extends ProviderRequest {
 export interface LLMProvider {
   // Getter for the provider's name
   get name(): string;
+  get defaultModel(): string;
 
   /**
    * Configures the provider with the given settings.
@@ -195,7 +196,7 @@ export interface LLMProvider {
    * @param request - The request object containing messages and other parameters.
    * @returns A promise that resolves to the provider's response.
    */
-  generateText(request: ProviderRequest): Promise<ProviderResponse>;
+  generateText(prompt: string): Promise<ProviderResponse>;
 
   /**
    * Continues a conversation with tool results.

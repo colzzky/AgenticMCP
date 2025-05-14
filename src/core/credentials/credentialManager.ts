@@ -91,15 +91,8 @@ export class CredentialManager {
    */
   async findCredentialsByProvider(providerType: string): Promise<KeytarCredential[]> {
     const serviceName = this.getFullServiceName(providerType);
-    if (typeof (this.keytarDi as any).findCredentials !== 'function') {
-      this.loggerDi.warn(
-        `keytar.findCredentials is not available in this environment. ` +
-        `Listing all credentials is not supported in Node.js keytar. Returning an empty list.`
-      );
-      return [];
-    }
     try {
-      const credentials = await (this.keytarDi as any).findCredentials(serviceName);
+      const credentials = await this.keytarDi.findCredentials(serviceName);
       return credentials.map((cred: any) => ({ account: cred.account, password: cred.password }));
     } catch (error) {
       this.loggerDi.error(`Error finding credentials under ${serviceName}:`, error);

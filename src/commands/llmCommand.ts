@@ -66,7 +66,7 @@ export class LLMCommand extends BaseCommand {
 
       // Get provider from context or use default
       const providerName = (context.options?.provider as string) || 'openai';
-      const modelName = context.options?.model as string;
+      const modelName = context.options?.model as string || undefined;
 
       // Get provider from global provider factory
       if (!this.providerFactoryInstance) {
@@ -77,14 +77,14 @@ export class LLMCommand extends BaseCommand {
       }
 
       const provider = this.providerFactoryInstance.getProvider(providerName as any);
-
+      this.logger.info(`Using provider: ${providerName}`);
       // Configure the provider if model is specified
-      if (modelName && provider.configure) {
+      if (provider.configure) {
         await provider.configure({
-          model: modelName,
+          model: modelName ?? provider.defaultModel,
           // Include other required config properties
           providerType: providerName as any,
-          instanceName: 'command-instance'
+          instanceName: 'apiKey'
         });
       }
 
@@ -115,7 +115,7 @@ export class LLMCommand extends BaseCommand {
   private async generateText(provider: LLMProvider, prompt: string): Promise<string> {
     try {
       // Call provider with prompt
-      const response = await provider.generateText({ prompt });
+      const response = await provider.generateText(prompt);
 
       // Extract content from response
       let content = '';

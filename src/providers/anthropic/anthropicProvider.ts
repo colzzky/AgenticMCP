@@ -107,6 +107,10 @@ export class AnthropicProvider implements LLMProvider {
     return 'anthropic';
   }
 
+  get defaultModel(): string {
+    return 'claude-3-5-haiku-20241022';
+  }
+
   /**
    * Executes a tool call and returns the result
    */
@@ -173,7 +177,7 @@ export class AnthropicProvider implements LLMProvider {
     }
     
     try {
-      const model = request.model || this.providerConfig.model || 'claude-3-5-sonnet-latest';
+      const model = request.model || this.providerConfig.model || this.defaultModel;
       const max_tokens = request.maxTokens || this.providerConfig.maxTokens || 1024;
 
       // Process complex messages with tool calls
@@ -365,8 +369,10 @@ export class AnthropicProvider implements LLMProvider {
    * @param request - The request object containing messages and other parameters
    * @returns Promise resolving to the provider's response
    */
-  public async generateText(request: ProviderRequest): Promise<ProviderResponse> {
-    return this.chat(request);
+  public async generateText(prompt: string): Promise<ProviderResponse> {
+    return this.chat({
+      messages: [{ role: "user", content: prompt }]
+    });
   }
 
   /**
@@ -394,7 +400,7 @@ export class AnthropicProvider implements LLMProvider {
     }
     
     // Continue the conversation with the updated messages
-    return this.generateText({ ...request, messages });
+    return this.chat({ ...request, messages });
   }
 
   /**

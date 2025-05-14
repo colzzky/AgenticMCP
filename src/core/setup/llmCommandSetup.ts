@@ -18,18 +18,21 @@ export function registerLlmCommand(
     loggerTool, filePathProcessorFactory, providerFactoryInstance
   );
   program
-    .command(llmCommandInstance.name)
+    .command(`${llmCommandInstance.name} [prompt] [filePaths...]`)
     .description(llmCommandInstance.description)
     .option('-p, --provider <provider>', 'LLM provider to use (default: openai)')
     .option('-m, --model <model>', 'Model to use with the provider')
-    .allowUnknownOption(true) // Allow file paths to be passed as args
-    .action(async (options, command) => {
+    .allowUnknownOption(true)
+    .action(async (prompt, filePaths, options, command) => {
       try {
-        const args = command.args;
+        // Normalize filePaths (Commander may pass undefined if not provided)
+        const fileArgs = Array.isArray(filePaths) ? filePaths : (filePaths ? [filePaths] : []);
+        // Combine prompt and file paths into argument list for execute()
+        const args = [prompt, ...fileArgs].filter(Boolean);
         const result = await llmCommandInstance.execute({ options }, ...args);
 
         if (result.success) {
-          loggerTool.info(result.message || "");
+          console.log(result.message || "");
         } else {
           loggerTool.error(result.message || "");
         }
