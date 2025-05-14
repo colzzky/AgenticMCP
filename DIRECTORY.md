@@ -2,7 +2,6 @@
 .
 ├── CLAUDE.md
 ├── DIRECTORY.md
-├── FIXED_TESTS.md
 ├── KNOWLEDGE.md
 ├── LICENSE
 ├── PROGRESS.jsonl
@@ -13,12 +12,15 @@
 │   ├── file-path-processor.js
 │   └── file-path-processor.js.bak
 ├── commands/
-│   └── turnover.txt
+│   └── turnover.txt +47
 ├── context/
+│   ├── anthropic-docs.md
 │   ├── anthropic-tool-use.md
+│   ├── gemini-docs.md
 │   ├── gemini-tool-calling.md
 │   ├── jest-mock.md
 │   ├── mcp-typescript-sdk.md
+│   ├── openai-docs.md
 │   ├── openai-tool-calling.md
 │   └── xm-based-prompting.md
 ├── docs/
@@ -43,32 +45,22 @@
 │   ├── commands/
 │   │   ├── configCommands.ts
 │   │   ├── credentialCommands.ts
-│   │   ├── di-llm-command.ts
-│   │   ├── examples/
-│   │   │   ├── basicCommand.ts
-│   │   │   └── index.ts
-│   │   ├── index.ts
 │   │   ├── llmCommand.ts
 │   │   ├── mcpCommands.ts
-│   │   ├── toolCommands.ts
-│   │   └── writerCommand.ts
+│   │   └── toolCommands.ts
+│   ├── config/
+│   │   └── appConfig.ts
 │   ├── context/
 │   │   ├── contextManager.ts
-│   │   ├── di-file-path-processor.ts
 │   │   ├── filePathProcessor.ts
 │   │   └── index.ts
-│   ├── conversation/
-│   │   └── conversationManager.ts
 │   ├── core/
 │   │   ├── adapters/
-│   │   │   └── node-file-system.adapter.ts
+│   │   │   └── nodeFileSystemAdapter.ts
 │   │   ├── commands/
 │   │   │   ├── baseCommand.ts
 │   │   │   ├── decorators.ts
-│   │   │   ├── di-base-command.ts
-│   │   │   ├── index.ts
-│   │   │   ├── initializer.ts
-│   │   │   └── registry.ts
+│   │   │   └── type.ts
 │   │   ├── config/
 │   │   │   ├── configManager.ts
 │   │   │   └── index.ts
@@ -79,13 +71,21 @@
 │   │   │   ├── container.ts
 │   │   │   ├── registry.ts
 │   │   │   └── tokens.ts
-│   │   ├── index.ts
 │   │   ├── interfaces/
 │   │   │   ├── diff-service.interface.ts
 │   │   │   └── file-system.interface.ts
 │   │   ├── services/
 │   │   │   ├── diff.service.ts
 │   │   │   └── file-system.service.ts
+│   │   ├── setup/
+│   │   │   ├── cliCommandsSetup.ts
+│   │   │   ├── dependencySetup.ts
+│   │   │   ├── index.ts
+│   │   │   ├── llmCommandSetup.ts
+│   │   │   ├── programSetup.ts
+│   │   │   ├── providerSystemSetup.ts
+│   │   │   ├── toolCommandsSetup.ts
+│   │   │   └── toolSystemSetup.ts
 │   │   ├── types/
 │   │   │   ├── cli.types.ts
 │   │   │   ├── command.types.ts
@@ -99,24 +99,21 @@
 │   │       ├── index.ts
 │   │       ├── logger.ts
 │   │       └── validation.ts
-│   ├── di-setup.ts
-│   ├── global.d.ts
 │   ├── global.types.ts
 │   ├── index.ts
+│   ├── mainDI.ts
 │   ├── mcp/
 │   │   ├── index.ts
 │   │   ├── mcpServer.ts
 │   │   ├── tools/
-│   │   │   ├── index.ts
+│   │   │   ├── registrarFactory.ts
 │   │   │   ├── roleBasedTools.ts
 │   │   │   ├── roleHandlers.ts
 │   │   │   ├── roleSchemas.ts
+│   │   │   ├── types.ts
 │   │   │   ├── xmlPromptUtils.ts
 │   │   │   └── xmlPromptUtilsHelpers.ts
-│   │   └── transports/
-│   │       ├── httpTransport.ts
-│   │       ├── index.ts
-│   │       └── stdioTransport.ts
+│   │   └── types.ts
 │   ├── providers/
 │   │   ├── anthropic/
 │   │   │   ├── anthropicProvider.ts
@@ -133,34 +130,29 @@
 │   │   ├── index.ts
 │   │   ├── openai/
 │   │   │   ├── index.ts
-│   │   │   └── openaiProvider.ts
+│   │   │   ├── openaiProvider.ts
+│   │   │   └── openaiProviderMappers.ts
 │   │   ├── providerFactory.ts
-│   │   └── providerInitializer.ts
+│   │   ├── providerInitializer.ts
+│   │   ├── providerModuleFactory.ts
+│   │   └── types.ts
 │   ├── tools/
 │   │   ├── factory/
-│   │   │   └── di-local-cli-tool-factory.ts
+│   │   │   └── localCliToolFactory.ts
 │   │   ├── localCliTool.ts
 │   │   ├── localCliToolDefinitions.ts
 │   │   ├── services/
-│   │   │   └── diff-service.ts
-│   │   ├── toolDefinitions.md
-│   │   ├── toolEvents.ts
-│   │   ├── toolExecutionFlow.md
-│   │   ├── toolExecutionManager.ts
+│   │   │   └── diffService.ts
 │   │   ├── toolExecutor.ts
 │   │   ├── toolRegistry.ts
-│   │   ├── toolResultFormatter.ts
-│   │   └── utils/
-│   │       └── diffUtils.ts
+│   │   └── toolResultFormatter.ts
 │   └── tsconfig.json
 ├── tests/
-│   ├── CORE_SERVICES_TESTING.md
-│   ├── ES_MODULE_TESTING.md
-│   ├── SUMMARY.md
-│   ├── TESTING_STRATEGY.md
-│   ├── TEST_TEMPLATE.md
-│   ├── conversation/
-│   │   └── conversationManager.test.ts
+│   ├── ENTRY_POINT_TESTS.md
+│   ├── EXPANDED_COVERAGE.md
+│   ├── commands/
+│   ├── context/
+│   │   ├── contextManager.test.ts
 │   ├── core/
 │   │   ├── config/
 │   │   │   └── configManager.test.ts
@@ -168,45 +160,40 @@
 │   │   │   └── credentialManager.test.ts
 │   │   ├── di/
 │   │   │   ├── container.test.ts
-│   │   │   └── registry.test.ts
+│   │   │   └── registry.test.disabled.ts
 │   │   ├── services/
-│   │   │   └── node-file-system.adapter.test.ts
-│   │   └── utils/
-│   │       ├── logger.test.ts
-│   │       └── validation.test.ts
-│   ├── examples/
-│   │   ├── credentials-mock-example.test.ts
-│   │   └── fs-mock-example.test.ts
+│   │   └── setup/
+│   │       ├── dependencySetup.test.ts
+│   │       └── programSetup.test.ts
+│   ├── entry-point.test.ts
 │   ├── index.test.ts
+│   ├── jest-setup-esm.js
 │   ├── jest.setup.js
+│   ├── mainDI.test.ts
+│   ├── mcp/
+│   │   └── tools/
+│   │       ├── processFileOperations.test.ts
+│   │       ├── roleHandlers.test.ts
+│   │       └── xmlPromptUtils.test.ts
 │   ├── providers/
 │   │   ├── anthropic/
 │   │   │   ├── anthropicProvider.test.ts
-│   │   │   ├── anthropicProviderToolCalling.test.ts
-│   │   │   ├── anthropicProviderToolCalling2a.test.ts
-│   │   │   └── anthropicProviderToolCalling2b.test.ts
+│   │   │   ├── anthropicProvider.toolCalling.test.ts
+│   │   │   └── anthropicProviderParallelToolCalling.test.ts
 │   │   ├── google/
-│   │   │   ├── googleProvider.sharedTestUtils.ts
 │   │   │   ├── googleProvider.test.ts
 │   │   │   ├── googleProvider.toolCalling.test.ts
-│   │   │   ├── googleProviderBasicToolCalling.test.ts
-│   │   │   ├── googleProviderCompositionalCalling.test.ts
-│   │   │   ├── googleProviderParallelToolCalling.test.ts
-│   │   │   ├── googleProviderToolCalling.test.ts
-│   │   │   └── importConfigManager.test.ts
-│   │   ├── grok/
-│   │   │   └── grokProvider.test.ts
-│   │   └── openai/
-│   │       ├── openaiProvider.basic.test.ts
-│   │       ├── openaiProvider.shared.test.ts
-│   │       ├── openaiProvider.toolCalling.test.ts
-│   │       └── openaiProviderTestUtils.ts
+│   │   │   └── googleProviderParallelToolCalling.test.ts
+│   │   ├── openai/
+│   │   │   ├── openaiProvider.basic.test.ts
+│   │   │   ├── openaiProvider.functionCalling.test.ts
+│   │   │   └── openaiProvider.toolCalling.test.ts
+│   │   ├── providerFactory.test.ts
+│   │   └── providerInitializer.test.ts
 │   ├── tools/
-│   │   ├── full-local-cli-tool.test.ts
-│   │   ├── localCliTool.test.ts
-│   │   └── minimal-local-cli-tool.test.ts
+│   │   ├── toolExecutor.test.ts
+│   │   ├── toolRegistry.test.ts
 │   └── tsconfig.json
 ├── tree.sh
 ├── tsconfig.json
-└── turn-over-details.md
-```
+└── t

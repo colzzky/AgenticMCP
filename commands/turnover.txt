@@ -1,65 +1,67 @@
-### 🔄 Prompt: High-Fidelity Turnover Summary for LLM Continuity
+### ✅ Prompt: High-Fidelity Turnover Summary for Cross-Session Continuity
 
-I want to offload your working memory and save it to `./turn-over-details.md` so the next LLM agent can seamlessly continue where you left off. This summary must provide **a complete representation of the historical conversation context**, including key decisions, technical paths, and active problem-solving progress.
+```plaintext
+You are a senior-level assistant continuing a session that ran out of context. Your job is to generate a full turnover summary so the next agent—human or AI—can seamlessly continue the work without needing the original chat.
 
-Please generate a **structured, concise, and self-contained turnover summary** based on our entire conversation history. This will serve as a high-fidelity handoff to preserve decisions, rationale, and current state across sessions.
+Your output must provide a **structured, concise, and self-contained summary** of the entire session history, including key decisions, technical paths, strategies explored, and implementation status.
+
+Please return your output in the following format:
+
+<output>
+This session is being continued from a previous conversation that ran out of context. The conversation is summarized below:
+
+<analysis>
+Perform a detailed, chronological analysis of the entire session. Include:
+- What was attempted and in what order
+- Implementation and debugging decisions
+- Documentation, config, or spec references
+- Fixes, refactors, and test work
+- Key takeaways, including reasoning or tradeoffs discussed
+</analysis>
+
+<summary>
+### ✅ Part 1: Action Evaluation
+
+**What Worked:**
+- List of successful implementations, patterns, or decisions that advanced the goal.
+
+**What Didn’t Work:**
+- Strategies or assumptions that failed, were revised, or debugged.
 
 ---
 
-### 📌 Deliverables
+### 🧠 Part 2: Advice to the Next Agent
 
-#### ✅ Part 1: Action Evaluation
+- Important constraints or pitfalls to avoid
+- Tech stack, APIs, assumptions, or external dependencies that affect work
+- Reusable tips, conventions, or insights carried over from this session
 
-* **What Worked:**
-  List the key actions, code implementations, design decisions, or strategies that were successful or led to meaningful progress.
+---
 
-* **What Didn’t Work:**
-  Identify actions, assumptions, or approaches that were ineffective, caused errors, or were later revised—include debugging dead-ends, misaligned assumptions, or false starts.
+### 📝 Part 3: Structured Historical Conversation Summary
 
-#### 🧠 Part 2: Advice to the Next Agent
+**1. Main Topics Covered**
+- Brief outline of the key themes or problem spaces discussed.
 
-Provide guidance that a future LLM agent should know to continue effectively:
+**2. Critical Technical Details**
+- Code snippets, configuration paths, architecture choices, libraries used
+- Error messages encountered and their resolutions
 
-* Critical watch-outs or known pitfalls
-* Architectural or business assumptions that underpin the current approach
-* Any known constraints (tech stack, APIs, team workflow, external dependencies)
-* Helpful tips, shortcuts, or reusable decisions from this session
+**3. Chronological Flow of the Conversation**
+- How the session progressed: first question → iterations → decisions → result
 
-#### 📝 Part 3: Structured Historical Conversation Summary
+**4. Summarized Explanations of Complex Topics**
+- Clear, simplified breakdowns of the deep reasoning or decisions made
 
-A comprehensive, well-organized summary of the full exchange. Must include:
+**5. Pending Items & TODOs**
+- Any follow-ups, unresolved items, in-progress implementations, or open questions
 
-1. **Main Topics Covered**
-   Briefly list the high-level themes or problems discussed (e.g., TypeScript DI best practices, Jest mocks, CLI tool architecture, etc.)
+</summary>
+</output>
 
-2. **Critical Technical Details**
-   Include:
-
-   * Code snippets or patterns implemented
-   * Key file paths, dependencies, configurations, commands
-   * Libraries, frameworks, architecture patterns
-   * Error messages encountered and resolutions (if applicable)
-
-3. **Chronological Flow of the Conversation**
-   Present how the discussion progressed:
-
-   * Initial questions
-   * Iterations and decision points
-   * Shifts in direction
-   * Resolutions or breakthroughs
-
-4. **Summarized Explanations of Complex Topics**
-   Simplify deep technical or architectural reasoning into clear, digestible insights (especially around decisions, patterns, or trade-offs).
-
-5. **Pending Items & TODOs**
-   Highlight any:
-
-   * Unresolved questions
-   * Follow-up actions needed
-   * Implementation tasks still in-progress or blocked
-
-6. **Format Instructions**
-
-   * Use **clear headings**, bullet points, and subheadings for each part
-   * Use code blocks for code or config references
-   * Make the entire output readable without referring to the original chat
+🔧 Format Guidelines:
+- Use bullet points and subheadings for clarity
+- Use code blocks for any code, config, or logs
+- Output must be **readable without access to the original conversation**
+- Do not ask the user follow-up questions
+- If instructed to resume, continue execution after the summary
