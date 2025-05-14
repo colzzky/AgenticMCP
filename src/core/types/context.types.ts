@@ -1,5 +1,5 @@
 // src/core/types/context.types.ts
-import type { PathDI, FileSystemDI } from '../../global.types';
+import type { PathDI, FileSystemDI } from '../../types/global.types';
 
 /**
  * Represents a single item of context, such as a file or a web page.

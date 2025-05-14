@@ -7,7 +7,7 @@ import { IFileSystem } from '../../core/interfaces/file-system.interface';
 import { IDiffService } from '../../core/interfaces/diff-service.interface';
 import { Logger } from '../../core/types/logger.types';
 import { DILocalCliTool, LocalCliToolConfig } from '../localCliTool';
-import type { PathDI } from '../../global.types';
+import type { PathDI } from '../../types/global.types';
 
 /**
  * Creates a new DILocalCliTool instance with dependencies from the DI container

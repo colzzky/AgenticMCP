@@ -2,7 +2,7 @@
  * @file Node.js implementation of IFileSystem interface
  */
 
-import type { PathDI, FileSystemDI } from '../../global.types';
+import type { PathDI, FileSystemDI } from '../../types/global.types';
 import { IFileSystem } from '../interfaces/file-system.interface';
 import { logger } from '../utils';
 

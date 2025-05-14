@@ -1,5 +1,5 @@
 // src/core/types/command.types.ts
-import type { PathDI, FileSystemDI } from '../../global.types';
+import type { PathDI, FileSystemDI } from '../../types/global.types';
 
 /**
  * Represents the execution context for a command.

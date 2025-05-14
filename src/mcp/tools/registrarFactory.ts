@@ -1,6 +1,6 @@
 import type { RoleBasedToolsRegistrar } from './types';
 import type { Logger } from '../../core/types/logger.types.js';
-import type { PathDI } from '../../global.types';
+import type { PathDI } from '../../types/global.types';
 import { registerRoleBasedTools } from './roleBasedTools';
 
 /**

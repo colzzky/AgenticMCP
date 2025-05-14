@@ -1,4 +1,4 @@
-import type { PathDI } from '../../global.types';
+import type { PathDI } from '../../types/global.types';
 import { createDILocalCliTool } from '../../tools/factory/localCliToolFactory.js';
 import type { Logger } from '../../core/types/logger.types.js';
 import type { LLMProvider } from '../../core/types/provider.types.js';

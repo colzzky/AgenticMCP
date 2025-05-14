@@ -92,7 +92,13 @@
  
 2. Consult Context7 tool to get the latest documentation of the library or third-party package before creating/mocking tests
 
-Yes — based on your directive to use a **single opinionated paradigm**, here's the **updated Jest mocking guide**, now **fully incorporating `jest-mock-extended`** as the only mocking standard. This version is production-ready and meant to be handed off to junior developers without ambiguity.
+3. Tests should verify correct behavior rather than specific implementation details. For example:
+  - Instead of checking the exact parameter order in function calls, test that the functions produce the expected
+  results
+  - Instead of verifying that specific subcomponents were initialized with exact parameters, test that the system as
+  a whole behaves correctly
+  - For dependency injection tests, focus on verifying that components are properly registered and accessible, not
+  the exact initialization order
 
 ---
 

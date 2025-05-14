@@ -28,4 +28,5 @@ export enum DI_TOKENS {
   FILE_SYSTEM_DI = 'fileSystem:fileSystemDI',
 
   PROCESS_DI = 'process:processDi',
+  LOCAL_SHELL_CLI_TOOL = 'tools:localShellCliTool',
 };

@@ -5,7 +5,7 @@ import { ProviderSpecificConfig } from './config.types';
 /**
  * Defines the valid LLM provider types supported by the CLI.
  */
-export type ProviderType = 'openai' | 'anthropic' | 'google'; // Add more as supported
+export type ProviderType = 'openai' | 'anthropic' | 'google' | 'grok'; // Add more as supported
 
 /**
  * Represents a tool parameter schema

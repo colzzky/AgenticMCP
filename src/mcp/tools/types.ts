@@ -1,4 +1,4 @@
-import type { PathDI } from '../../global.types';
+import type { PathDI } from '../../types/global.types';
 import type { Logger } from '../../core/types/logger.types';
 
 export interface RoleBasedToolsRegistrar {

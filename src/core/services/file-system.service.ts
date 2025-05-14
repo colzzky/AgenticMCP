@@ -1,7 +1,7 @@
 /**
  * @file Concrete implementation of IFileSystem using Node.js fs module
  */
-import type { PathDI, FileSystemDI } from '../../global.types';
+import type { PathDI, FileSystemDI } from '../../types/global.types';
 import { IFileSystem, DirectoryEntry, FileSearchResult } from '../interfaces/file-system.interface';
 
 // Basic implementation using Node's fs/promises

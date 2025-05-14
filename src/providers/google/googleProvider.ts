@@ -218,8 +218,14 @@ export class GoogleProvider implements LLMProvider {
       }
 
       // Add tool choice configuration if provided
-      if (request.toolChoice) {
-        config.toolConfig = convertToolChoiceToGoogleFormat(request.toolChoice);
+      if (request.toolChoice && 
+         (request.toolChoice === 'auto' || 
+          request.toolChoice === 'required' || 
+          request.toolChoice === 'none' || 
+          (typeof request.toolChoice === 'object' && 
+           'type' in request.toolChoice && 
+           request.toolChoice.type === 'function'))) {
+        config.toolConfig = convertToolChoiceToGoogleFormat(request.toolChoice as 'auto' | 'required' | 'none' | { type: 'function'; name: string });
       }
       
       // Use modelInstance.generateContent for chat-like interactions with structured Content[]

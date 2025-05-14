@@ -1,14 +1,18 @@
 import { DILocalCliTool } from '../../tools/localCliTool';
+import { DILocalShellCliTool } from '../../tools/localShellCliTool';
+import { getLocalShellCliToolDefinitions } from '../../tools/localShellCliToolDefinitions';
 import { ToolRegistry } from '../../tools/toolRegistry';
 import { ToolExecutor } from '../../tools/toolExecutor';
 import { ToolResultFormatter } from '../../tools/toolResultFormatter';
 import type { Logger } from '../types/logger.types';
+import type { Tool } from '../../core/types/provider.types';
 
 /**
  * Sets up the tool system with registry, executor, and formatter
  */
 export function setupToolSystem(
   localCliToolInstance: DILocalCliTool,
+  localShellCliToolInstance: DILocalShellCliTool,
   toolRegistry: typeof ToolRegistry,
   toolExecutor: typeof ToolExecutor,
   toolResultFormatter: typeof ToolResultFormatter,
@@ -23,12 +27,16 @@ export function setupToolSystem(
   const registeredToolCount = toolRegistryInstance.registerLocalCliTools(localCliToolInstance);
   loggerTool.info(`Registered ${registeredToolCount} local CLI tools`);
 
-  // Get command map and create tool implementations map
+  // Register local shell CLI tool definitions
+  const shellToolDefs = localShellCliToolInstance.getToolDefinitions();
+  // Cast to Tool[] since we know the structure is compatible
+  const shellRegisteredCount = toolRegistryInstance.registerTools(shellToolDefs as Tool[]);
+  loggerTool.info(`Registered ${shellRegisteredCount} shell CLI tools`);
+
+  // Get command maps and create tool implementations map
   const commandMap = localCliToolInstance.getCommandMap();
-  const toolImplementations: Record<string, Function> = {};
-  for (const commandName in commandMap) {
-    toolImplementations[commandName] = commandMap[commandName as keyof typeof commandMap];
-  }
+  const shellCommandMap = localShellCliToolInstance.getCommandMap();
+  const toolImplementations: Record<string, Function> = { ...commandMap, ...shellCommandMap };
 
   // Create ToolExecutor and ToolResultFormatter
   const toolExecutorInstance = new toolExecutor(

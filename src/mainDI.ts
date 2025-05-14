@@ -6,7 +6,7 @@
 import { Command } from 'commander';
 import type { Logger } from './core/types/logger.types';
 import type { AppConfig } from './config/appConfig';
-import type { PathDI, FileSystemDI } from './global.types';
+import type { PathDI, FileSystemDI, SpawnDi } from './types/global.types';
 
 // Import more specific types for proper type checking
 import type { DIContainer as DIContainerType } from './core/di/container';
@@ -21,6 +21,8 @@ import type { ToolCommands as ToolCommandsType } from './commands/toolCommands';
 import type { ConfigManager as ConfigManagerType } from './core/config/configManager';
 import type { ProviderInitializer as ProviderInitializerType } from './providers/providerInitializer';
 import type { ProviderFactory as ProviderFactoryType } from './providers/providerFactory';
+import { DILocalShellCliTool } from './tools/localShellCliTool';
+import { DILocalCliTool } from './tools/localCliTool';
 
 // Define properly typed setup function signatures
 export type SetupDependencyInjectionFn = (
@@ -31,11 +33,14 @@ export type SetupDependencyInjectionFn = (
   path: PathDI, 
   fs: FileSystemDI, 
   process: NodeJS.Process, 
-  localCliTool: any
-) => { localCliToolInstance: any };
+  spawn: SpawnDi,
+  localCliTool: typeof DILocalCliTool,
+  localShellCliTool: typeof DILocalShellCliTool
+) => { localCliToolInstance: InstanceType<typeof DILocalCliTool>, localShellCliToolInstance: InstanceType<typeof DILocalShellCliTool> };
 
 export type SetupToolSystemFn = (
-  localCliToolInstance: any, 
+  localCliToolInstance: InstanceType<typeof DILocalCliTool>, 
+  localShellCliToolInstance: InstanceType<typeof DILocalShellCliTool>,
   toolRegistry: typeof ToolRegistryType, 
   toolExecutor: typeof ToolExecutorType, 
   toolResultFormatter: typeof ToolResultFormatterType, 
@@ -89,6 +94,7 @@ export interface MainDependencies {
   process: NodeJS.Process;
   path: PathDI;
   fs: FileSystemDI;
+  spawn: SpawnDi;
   
   // Setup functions with proper type signatures
   setupDependencyInjection: SetupDependencyInjectionFn;
@@ -120,6 +126,11 @@ export interface MainDependencies {
   StdioServerTransport: any; // Can be improved
   CredentialManager: any; // Can be improved
   RoleBasedToolsRegistrarFactory: { createDefault: () => any }; // Can be improved
+
+  // Shell Tool
+  DILocalShellCliTool: any;
+  DefaultShellCommandWrapper: any;
+  SHELL_COMMANDS: readonly string[];
   
   // Configuration
   defaultAppConfig: AppConfig;
@@ -148,12 +159,15 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       deps.path,
       deps.fs,
       deps.process,
-      deps.DILocalCliTool
+      deps.spawn,
+      deps.DILocalCliTool,
+      deps.DILocalShellCliTool
     );
 
     // Set up the tools system
     const tools = deps.setupToolSystem(
       diResult.localCliToolInstance,
+      diResult.localShellCliToolInstance,
       deps.ToolRegistry,
       deps.ToolExecutor,
       deps.ToolResultFormatter,

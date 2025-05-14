@@ -25,7 +25,7 @@ import type {
   AnalystSchema,
   CustomSchema
 } from './roleSchemas.js';
-import type { PathDI } from '../../global.types.js';
+import type { PathDI } from '../../types/global.types.js';
 
 /**
  * Register role-based tools with the MCP server

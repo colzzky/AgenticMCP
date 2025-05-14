@@ -84,6 +84,7 @@ export class ToolResultFormatter {
       openai: new OpenAIFormatter(),
       anthropic: new AnthropicFormatter(),
       google: new GoogleFormatter(),
+      grok: new OpenAIFormatter(),
     };
     
     this.logger.debug('ToolResultFormatter initialized');

@@ -30,7 +30,7 @@ import type {
   LocalCliCommandMap
 } from '../core/types/cli.types';
 
-import type { PathDI } from '../global.types';
+import type { PathDI } from '../types/global.types';
 
 export interface FunctionDefinition {
   name: string;

@@ -1,7 +1,7 @@
 /**
  * @file Manages application configuration, including loading, saving, and providing defaults.
  */
-import type { PathDI, FileSystemDI } from '../../global.types';
+import type { PathDI, FileSystemDI } from '../../types/global.types';
 import envPaths from 'env-paths';
 import { AppConfig, ProviderSpecificConfig, OpenAIProviderSpecificConfig, McpServerConfig } from '../types/config.types'; 
 import { CredentialManager } from '../credentials/credentialManager'; 

@@ -9,7 +9,7 @@ import { NodeFileSystem } from '../adapters/nodeFileSystemAdapter';
 import { IFileSystem } from '../interfaces/file-system.interface';
 import type { Logger } from '../types/logger.types';
 import { DIFilePathProcessor } from '../../context/filePathProcessor';
-import { PathDI, FileSystemDI } from '@/global.types';
+import { PathDI, FileSystemDI } from '../../types/global.types';
 import { DiffService } from '../../tools/services/diffService';
 
 /**

@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import pkg from '../package.json' assert { type: 'json' };
+
 import { logger } from './core/utils/logger';
 import { ConfigManager } from './core/config/configManager';
 import { DIContainer } from './core/di/container';
 import { DILocalCliTool } from './tools/localCliTool';
+import { DILocalShellCliTool } from './tools/localShellCliTool';
+import { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';
+import { SHELL_COMMANDS } from './tools/localShellCliToolDefinitions';
+import { spawn } from 'node:child_process';
 import { ToolRegistry } from './tools/toolRegistry';
 import { FileSystemService } from './core/services/file-system.service';
 import { DiffService } from './core/services/diff.service';
@@ -39,6 +43,9 @@ import { mainDI, MainDependencies } from './mainDI';
 
 // Main application entry point
 export async function main(): Promise<void> {
+  // Dynamically import package.json
+  const pkgModule = await import('../package.json', { assert: { type: 'json' } });
+  const pkg = pkgModule.default;
   // Create dependencies object with all required dependencies
   const dependencies: MainDependencies = {
     // Core dependencies
@@ -47,6 +54,7 @@ export async function main(): Promise<void> {
     process,
     path,
     fs,
+    spawn,
     
     // Setup functions
     setupDependencyInjection,
@@ -61,6 +69,9 @@ export async function main(): Promise<void> {
     FileSystemService,
     DiffService,
     DILocalCliTool,
+    DILocalShellCliTool,
+    DefaultShellCommandWrapper,
+    SHELL_COMMANDS,
     ToolRegistry,
     ToolExecutor,
     ToolResultFormatter,

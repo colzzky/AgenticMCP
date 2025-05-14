@@ -1,4 +1,4 @@
-import type { PathDI, FileSystemDI } from '../global.types';
+import type { PathDI, FileSystemDI } from '../types/global.types';
 import { Minimatch } from 'minimatch';
 import {
   ContextManager,

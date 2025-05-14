@@ -4,7 +4,7 @@ import { ProviderFactory } from '../../providers/providerFactory';
 import { ToolRegistry } from '../../tools/toolRegistry';
 import { AppConfig } from '../../config/appConfig';
 import type { Logger } from '../types/logger.types';
-import type { PathDI, FileSystemDI } from '../../global.types';
+import type { PathDI, FileSystemDI } from '../../types/global.types';
 import type { ProviderFactoryInterface } from '../../providers/types';
 
 /**

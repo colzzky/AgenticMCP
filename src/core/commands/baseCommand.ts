@@ -5,7 +5,7 @@
 import type { Command, CommandContext, CommandOutput } from '../types/command.types';
 import type { Logger } from '../types/logger.types';
 import { DIFilePathProcessor as FilePathProcessor } from '../../context/filePathProcessor';
-import type { PathDI, FileSystemDI } from '../../global.types';
+import type { PathDI, FileSystemDI } from '../../types/global.types';
 import { IFileSystem } from '../interfaces/file-system.interface';
 
 /**

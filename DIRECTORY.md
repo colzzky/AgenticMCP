@@ -1,18 +1,16 @@
 ```markdown
 .
+├── AUDIT.md
 ├── CLAUDE.md
-├── DIRECTORY.md
+├── DIRECTORY.md +6
 ├── KNOWLEDGE.md
 ├── LICENSE
-├── PROGRESS.jsonl
+├── PROGRESS.jsonl +1
 ├── README.md
 ├── TASKS.jsonl
 ├── TESTING.md
-├── backup_mocks/
-│   ├── file-path-processor.js
-│   └── file-path-processor.js.bak
 ├── commands/
-│   └── turnover.txt +47
+│   └── turnover.txt
 ├── context/
 │   ├── anthropic-docs.md
 │   ├── anthropic-tool-use.md
@@ -70,7 +68,7 @@
 │   │   ├── di/
 │   │   │   ├── container.ts
 │   │   │   ├── registry.ts
-│   │   │   └── tokens.ts
+│   │   │   └── tokens.ts +1
 │   │   ├── interfaces/
 │   │   │   ├── diff-service.interface.ts
 │   │   │   └── file-system.interface.ts
@@ -79,13 +77,13 @@
 │   │   │   └── file-system.service.ts
 │   │   ├── setup/
 │   │   │   ├── cliCommandsSetup.ts
-│   │   │   ├── dependencySetup.ts
+│   │   │   ├── dependencySetup.ts +18
 │   │   │   ├── index.ts
 │   │   │   ├── llmCommandSetup.ts
 │   │   │   ├── programSetup.ts
 │   │   │   ├── providerSystemSetup.ts
 │   │   │   ├── toolCommandsSetup.ts
-│   │   │   └── toolSystemSetup.ts
+│   │   │   └── toolSystemSetup.ts +11
 │   │   ├── types/
 │   │   │   ├── cli.types.ts
 │   │   │   ├── command.types.ts
@@ -99,9 +97,9 @@
 │   │       ├── index.ts
 │   │       ├── logger.ts
 │   │       └── validation.ts
-│   ├── global.types.ts
-│   ├── index.ts
-│   ├── mainDI.ts
+│   ├── global.types.ts +2
+│   ├── index.ts +8
+│   ├── mainDI.ts +19
 │   ├── mcp/
 │   │   ├── index.ts
 │   │   ├── mcpServer.ts
@@ -151,39 +149,64 @@
 │   ├── ENTRY_POINT_TESTS.md
 │   ├── EXPANDED_COVERAGE.md
 │   ├── commands/
+│   │   ├── configCommandsSimple.test.ts
+│   │   ├── credentialCommandsSimple.test.ts
+│   │   ├── llmCommandSimple.test.ts
+│   │   ├── mcpCommandsSimple.test.ts
+│   │   └── toolCommandsSimple.test.ts
 │   ├── context/
 │   │   ├── contextManager.test.ts
+│   │   └── filePathProcessor.test.ts
 │   ├── core/
+│   │   ├── commands/
+│   │   │   ├── baseCommand.test.ts
+│   │   │   └── decorators.test.ts
 │   │   ├── config/
 │   │   │   └── configManager.test.ts
 │   │   ├── credentials/
 │   │   │   └── credentialManager.test.ts
 │   │   ├── di/
 │   │   │   ├── container.test.ts
-│   │   │   └── registry.test.disabled.ts
+│   │   │   ├── registry.test.disabled.ts
+│   │   │   └── registry.test.ts
 │   │   ├── services/
-│   │   └── setup/
-│   │       ├── dependencySetup.test.ts
-│   │       └── programSetup.test.ts
+│   │   │   ├── diff.service.test.ts
+│   │   │   └── file-system.service.test.ts
+│   │   ├── setup/
+│   │   │   ├── dependencySetup.test.ts
+│   │   │   ├── llmCommandSetup.test.ts
+│   │   │   ├── programSetup.test.ts
+│   │   │   ├── providerSystemSetup.test.ts
+│   │   │   └── toolSystemSetup.test.ts
+│   │   └── utils/
+│   │       └── validation.test.ts
 │   ├── entry-point.test.ts
 │   ├── index.test.ts
 │   ├── jest-setup-esm.js
 │   ├── jest.setup.js
 │   ├── mainDI.test.ts
 │   ├── mcp/
+│   │   ├── mcpServer.test.ts
 │   │   └── tools/
 │   │       ├── processFileOperations.test.ts
+│   │       ├── registrarFactory.test.ts
 │   │       ├── roleHandlers.test.ts
-│   │       └── xmlPromptUtils.test.ts
+│   │       ├── roleSchemas.test.ts
+│   │       ├── xmlPromptUtils.test.ts
+│   │       └── xmlPromptUtilsHelpers.test.ts
 │   ├── providers/
 │   │   ├── anthropic/
 │   │   │   ├── anthropicProvider.test.ts
 │   │   │   ├── anthropicProvider.toolCalling.test.ts
 │   │   │   └── anthropicProviderParallelToolCalling.test.ts
 │   │   ├── google/
+│   │   │   ├── googleMessageConversion.test.ts
 │   │   │   ├── googleProvider.test.ts
 │   │   │   ├── googleProvider.toolCalling.test.ts
-│   │   │   └── googleProviderParallelToolCalling.test.ts
+│   │   │   ├── googleProviderParallelToolCalling.test.ts
+│   │   │   └── googleToolExtraction.test.ts
+│   │   ├── grok/
+│   │   │   └── grokProvider.test.ts
 │   │   ├── openai/
 │   │   │   ├── openaiProvider.basic.test.ts
 │   │   │   ├── openaiProvider.functionCalling.test.ts
@@ -191,9 +214,18 @@
 │   │   ├── providerFactory.test.ts
 │   │   └── providerInitializer.test.ts
 │   ├── tools/
+│   │   ├── factory/
+│   │   │   ├── di-local-cli-tool-factory.test.ts
+│   │   │   ├── factoryMocks.ts
+│   │   ├── localCliTool.test.ts
+│   │   ├── localCliToolDefinitions.test.ts
+│   │   ├── localShellCliTool.test.ts
 │   │   ├── toolExecutor.test.ts
 │   │   ├── toolRegistry.test.ts
+│   │   └── toolResultFormatter.test.ts
 │   └── tsconfig.json
 ├── tree.sh
 ├── tsconfig.json
-└── t
+├── turn-over-details.md +50
+└── types/
+```

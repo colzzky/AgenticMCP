@@ -3,8 +3,11 @@ import { DI_TOKENS } from '../di/tokens';
 import { FileSystemService } from '../services/file-system.service';
 import { DiffService } from '../services/diff.service';
 import { DILocalCliTool, LocalCliToolConfig } from '../../tools/localCliTool';
-import type { PathDI } from '../../global.types';
+import type { PathDI, FileSystemDI, SpawnDi } from '../../types/global.types';
 import type { Logger } from '../types/logger.types';
+import type { DILocalShellCliTool } from '../../tools/localShellCliTool';
+import { DefaultShellCommandWrapper } from '../../tools/shellCommandWrapper';
+import { SHELL_COMMANDS } from '../../tools/localShellCliToolDefinitions';
 
 /**
  * Sets up the dependency injection container with core services and utilities
@@ -15,10 +18,12 @@ export function setupDependencyInjection(
   fileSystem: typeof FileSystemService,
   diffServiceInstance: typeof DiffService,
   pathDi: PathDI,
-  fsDi: any,
+  fsDi: FileSystemDI,
   processDi: NodeJS.Process,
-  localCliTool: typeof DILocalCliTool
-): { localCliToolInstance: DILocalCliTool } {
+  spawnDi: SpawnDi,
+  localCliTool: typeof DILocalCliTool,
+  DILocalShellCliTool: typeof import('../../tools/localShellCliTool').DILocalShellCliTool
+): { localCliToolInstance: InstanceType<typeof DILocalCliTool>, localShellCliToolInstance: InstanceType<typeof DILocalShellCliTool> } {
   // 1. Register Logger
   container.register<Logger>(DI_TOKENS.LOGGER, loggerTool);
 
@@ -53,5 +58,12 @@ export function setupDependencyInjection(
   );
   container.register<DILocalCliTool>(DI_TOKENS.LOCAL_CLI_TOOL, localCliToolInstance);
 
-  return { localCliToolInstance };
+  // 7. Instantiate and register DILocalShellCliTool
+  // Instantiate dependencies needed for shell tool instantiation
+  const shellWrapper = new DefaultShellCommandWrapper(spawnDi, [...SHELL_COMMANDS], loggerTool);
+  const shellCliToolConfig = { allowedCommands: [...SHELL_COMMANDS] };
+  const localShellCliToolInstance = new DILocalShellCliTool(shellCliToolConfig, shellWrapper, loggerTool);
+  container.register<DILocalShellCliTool>(DI_TOKENS.LOCAL_SHELL_CLI_TOOL, localShellCliToolInstance);
+
+  return { localCliToolInstance, localShellCliToolInstance };
 }

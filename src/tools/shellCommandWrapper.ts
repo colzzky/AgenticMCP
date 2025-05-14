@@ -1,7 +1,7 @@
 // src/tools/shellCommandWrapper.ts
-import { ShellCommandWrapper, ShellCommandResult } from '../../types/shell.types';
+import { ShellCommandWrapper, ShellCommandResult } from '../types/shell.types';
 import { Logger } from '../core/types/logger.types';
-import { SpawnDi } from '../global.types';
+import { SpawnDi } from '../types/global.types';
 
 export class DefaultShellCommandWrapper implements ShellCommandWrapper {
   spawnDi: SpawnDi;

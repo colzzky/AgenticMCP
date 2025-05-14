@@ -1,4 +1,4 @@
-import type { PathDI, FileSystemDI } from '../../global.types';
+import type { PathDI, FileSystemDI } from '../../types/global.types';
 
 /**
  * @file Interface for file system operations to enable dependency injection and testability

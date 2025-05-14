@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import type { PathDI } from '../global.types';
+import type { PathDI } from '../types/global.types';
 import { CommandHandler } from '../core/commands/decorators.js';
 import type { Logger } from '../core/types/logger.types.js';
 import { ConfigManager } from '../core/config/configManager.js';

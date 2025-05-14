@@ -86,3 +86,10 @@ export interface ProviderInitializerInterface {
    */
   getProvider(type: ProviderType, instanceName?: string): LLMProvider;
 }
+
+export enum ProviderName {
+  OPENAI = 'openai',
+  ANTHROPIC = 'anthropic',
+  GOOGLE = 'google',
+  GROK = 'grok'
+}

@@ -16,7 +16,7 @@ import { CredentialManager } from '../credentials/credentialManager';
 import { registerLlmCommand } from './llmCommandSetup';
 import { registerToolCommands } from './toolCommandsSetup';
 import type { RoleBasedToolsRegistrar } from '../../mcp/tools/types';
-import type { PathDI } from '../../global.types';
+import type { PathDI } from '../../types/global.types';
 import type { Logger } from '../types/logger.types';
 import type { ProviderFactoryInstance } from '../../providers/types';
 

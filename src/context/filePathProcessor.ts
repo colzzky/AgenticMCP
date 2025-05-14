@@ -2,7 +2,7 @@
  * @file Utility for processing file path arguments into context - DI enabled version
  */
 
-import type { PathDI, FileSystemDI } from '../global.types';
+import type { PathDI, FileSystemDI } from '../types/global.types';
 import { FileContextManager } from './contextManager';
 import type { Logger } from '../core/types/logger.types';
 import { IFileSystem } from '../core/interfaces/file-system.interface';
