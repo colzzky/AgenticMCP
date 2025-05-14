@@ -72,7 +72,7 @@ export interface ProviderRequest {
   stopSequences?: string[]; // Sequences to stop generation at
   stream?: boolean; // Whether to stream the response
   tools?: Tool[]; // Tools (functions) the model can call
-  toolChoice?: 'auto' | 'required' | 'none' | { type: 'function'; name: string }; // Control when tools are called
+  tool_choice?: 'auto' | 'required' | 'none' | { type: 'function'; function: { name: string } }; // Control when tools are called
   parallelToolCalls?: boolean; // Whether multiple tools can be called in parallel
   [key: string]: unknown; // Allow other provider-specific parameters
 }

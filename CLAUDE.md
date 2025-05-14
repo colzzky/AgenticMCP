@@ -11,6 +11,7 @@ AgenticMCP (Agentic Model Communication Protocol) is a TypeScript-based CLI tool
 - "globalThis" pattern is prohibited
 - **Dependency Injection Policy/Standards for TypeScript (Without Third-Party Libraries)**
 - filenames are camel case and all folder names are kebab-case
+- always do hygiene file clean-up for any temporary files created that does not contribute directly to the logic of the codebase
 
 ## Development Workflow and Best Practices
 
@@ -56,9 +57,7 @@ AgenticMCP (Agentic Model Communication Protocol) is a TypeScript-based CLI tool
 
 12. After creating or editing a file, always run "npm run lint --fix" to see any type/linting errors, and proceed to fix if errors are found - then run "npm run lint" to ensure that there are no errors - repeat process until there are no errors
 
-13. When working on test files - Always run "npm run type-check:tests" to ensure that there are no type errors in the tests - repeat process until there are no errors
- - 13.1 When working on src files - Always run "npm run type-check:src" to ensure that there are no type errors in the src files - repeat process until there are no errors
- - 13.2 Finally run "npm run type-check" to ensure that there are no type errors in the entire project - repeat process until there are no errors
+13. When working on test files - Always run "npm run type-check" to ensure that there are no type errors in the tests - repeat process until there are no errors
 
 14. when creating/editing a javascript or typescript file, check the line count of the file and make sure it does not exceed the ideal line count per file. you can use tools such as "wc -l filename" to check the line count of the file of an existing file or count lines of a string using the tool "wc -l <(echo "string")" before creating a new file to make sure it does not exceed the ideal line count per file
 

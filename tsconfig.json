@@ -30,8 +30,7 @@
   },
   "rootDir": ".",
   "include": [
-    "src/**/*.ts",
-    "**/**/*.test.ts",
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
@@ -39,5 +38,6 @@
     "**/*.spec.ts",
     "*.json",
     "*.js",
+    "tests"
   ]
 }

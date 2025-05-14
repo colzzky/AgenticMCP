@@ -64,12 +64,21 @@ export function mapMessageToOpenAIParam(message: Message): ChatCompletionMessage
  * Maps an array of internal Tool objects to an array of OpenAI ChatCompletionTool objects.
  */
 export function mapToolsToOpenAIChatTools(tools: Tool[]): ChatCompletionTool[] {
-  return tools.map((tool) => ({
-    type: 'function',
-    function: {
-      name: tool.name,
-      description: tool.description,
-      parameters: tool.parameters as OpenAI.FunctionParameters, // Assuming tool.parameters is compatible
-    },
-  }));
+  return tools.map((tool) => {
+    const chatTool: ChatCompletionTool = {
+      type: 'function',
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters as OpenAI.FunctionParameters
+      }
+    };
+    
+    // Add strict mode if specified
+    if (tool.strict !== undefined) {
+      chatTool.function.strict = tool.strict;
+    }
+    
+    return chatTool;
+  });
 }

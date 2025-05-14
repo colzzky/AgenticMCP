@@ -126,6 +126,7 @@ export class OpenAIProvider implements LLMProvider {
         model,
         messages,
         temperature,
+        tool_choice: 'auto', // Set default to 'auto' as per OpenAI docs
       };
 
       // Add tools support if enabled
@@ -148,6 +149,11 @@ export class OpenAIProvider implements LLMProvider {
         } else {
            requestOptions.tool_choice = 'auto'; 
         }
+      }
+      
+      // Add parallel_tool_calls if specified
+      if (request.parallel_tool_calls !== undefined) {
+        requestOptions.parallel_tool_calls = request.parallel_tool_calls;
       }
 
       // Handle multi-reply
@@ -408,6 +414,14 @@ export class OpenAIProvider implements LLMProvider {
           toolCall.arguments += toolCallDelta.function.arguments;
         }
       }
+      
+      // Log for debugging streaming issues
+      this.logger.debug(`Processed tool call delta: id=${toolCallDelta.id}, name=${toolCallDelta.function?.name}, args=${toolCallDelta.function?.arguments}`, toolCallDelta);
+    }
+    
+    // Log the full tool calls state for debugging
+    if (existingToolCalls.length > 0) {
+      this.logger.debug(`Current tool calls state: ${JSON.stringify(existingToolCalls)}`);
     }
   }
 

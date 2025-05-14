@@ -35,95 +35,56 @@ import {
   runProgram
 } from './core/setup';
 
+import { mainDI, MainDependencies } from './mainDI';
+
 // Main application entry point
-async function main(): Promise<void> {
-  try {
-    const program = new Command();
-    program.version(pkg.version).description(pkg.description);
-
-    // Create the role-based tools registrar
-    const roleRegistrar = RoleBasedToolsRegistrarFactory.createDefault();
-
-    // Set up the dependency injection container
-    const container = DIContainer.getInstance();
-    const diResult = setupDependencyInjection(
-      container,
-      logger,
-      FileSystemService,
-      DiffService,
-      path,
-      fs,
-      process,
-      DILocalCliTool
-    );
-
-    // Set up the tools system
-    const tools = setupToolSystem(
-      diResult.localCliToolInstance,
-      ToolRegistry,
-      ToolExecutor,
-      ToolResultFormatter,
-      logger
-    );
-
-    // Set up provider system with app config
-    const providers = setupProviderSystem(
-      ConfigManager,
-      ProviderInitializer,
-      tools.toolRegistry,
-      logger,
-      path,
-      fs,
-      defaultAppConfig,
-      ProviderFactory
-    );
-
-    const nfsInstance = new NodeFileSystem(path, fs);
-
-    // Create file path processor factory
-    const filePathProcessorFactory = new DefaultFilePathProcessorFactory(
-      path,
-      nfsInstance,
-      fs,
-      process,
-      DIFilePathProcessor
-    );
-
-    const providerFactoryInstance = new ProviderFactory(
-      providers.configManager,
-      logger
-    );
-
-    // Configure and register CLI commands
-    setupCliCommands(
-      program,
-      path,
-      fs,
-      McpCommands,
-      LLMCommand,
-      ToolCommands,
-      providers.configManager,
-      logger,
-      tools.toolRegistry,
-      tools.toolExecutor,
-      process,
-      filePathProcessorFactory,
-      providerFactoryInstance,
-      McpServer,
-      BaseMcpServer,
-      StdioServerTransport,
-      ProviderFactory,
-      CredentialManager,
-      roleRegistrar
-    );
-
-    // Run the program
-    await runProgram(program, process, logger);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(`Unhandled error in main function: ${errorMessage}`);
-    process.exit(1);
-  }
+export async function main(): Promise<void> {
+  // Create dependencies object with all required dependencies
+  const dependencies: MainDependencies = {
+    // Core dependencies
+    pkg,
+    logger,
+    process,
+    path,
+    fs,
+    
+    // Setup functions
+    setupDependencyInjection,
+    setupToolSystem,
+    setupProviderSystem,
+    setupCliCommands,
+    runProgram,
+    
+    // Classes and factories
+    Command,
+    DIContainer,
+    FileSystemService,
+    DiffService,
+    DILocalCliTool,
+    ToolRegistry,
+    ToolExecutor,
+    ToolResultFormatter,
+    ConfigManager,
+    ProviderInitializer,
+    ProviderFactory,
+    NodeFileSystem,
+    DefaultFilePathProcessorFactory,
+    DIFilePathProcessor,
+    McpCommands,
+    LLMCommand,
+    ToolCommands,
+    McpServer,
+    BaseMcpServer,
+    StdioServerTransport,
+    CredentialManager,
+    RoleBasedToolsRegistrarFactory,
+    
+    // Configuration
+    defaultAppConfig
+  };
+  
+  // Call the dependency-injectable version of main
+  await mainDI(dependencies);
 }
 
 // Execute the application

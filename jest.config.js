@@ -14,18 +14,14 @@ export default {
       },
     ],
   },
-  // Add the setup file for global mocks
-  setupFilesAfterEnv: ['./tests/jest.setup.js'],
+  // Add the setup files for global mocks and ESM support
+  setupFilesAfterEnv: ['./tests/jest.setup.js', './tests/jest-setup-esm.js'],
 
   // Exclude examples and mock files from test runs
   testMatch: ['**/tests/**/*.test.ts', '**/tests/**/*.spec.ts'],
   testPathIgnorePatterns: [
     '/node_modules/',
     '/tests/examples/',
-    '/tests/utils/*example*',
-    '/tests/utils/mock-example.test.ts',
-    '/tests/utils/fs-keytar-mock-example.test.ts',
-    '/tests/providers/google/importConfigManager.test.ts',
   ],
 
   moduleFileExtensions: ['ts', 'tsx', 'js', 'mjs', 'jsx', 'json', 'node'],
