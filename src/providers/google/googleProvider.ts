@@ -114,7 +114,7 @@ export class GoogleProvider implements LLMProvider {
       vertexai: true
     });
     
-    this.logger.info(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Vertex AI`);
+    this.logger.debug(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Vertex AI`);
   }
   
   /**
@@ -150,7 +150,7 @@ export class GoogleProvider implements LLMProvider {
       throw new Error('Failed to initialize Google Gemini API client.');
     }
     
-    this.logger.info(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Gemini API`);
+    this.logger.debug(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Gemini API`);
   }
 
   /**
@@ -281,7 +281,7 @@ export class GoogleProvider implements LLMProvider {
       // Extract tool calls from the response
       const toolCalls = extractToolCallsFromGenAIResponse(resultResponse);
       
-      this.logger.info(`Google Gemini chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${modelName}`);
+      this.logger.debug(`Google Gemini chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${modelName}`);
       
       return {
         success: true,

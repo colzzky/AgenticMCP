@@ -77,7 +77,7 @@ export class LLMCommand extends BaseCommand {
       }
 
       const provider = this.providerFactoryInstance.getProvider(providerName as any);
-      this.logger.info(`Using provider: ${providerName}`);
+      this.logger.debug(`Using provider: ${providerName}`);
       // Configure the provider if model is specified
       if (provider.configure) {
         await provider.configure({

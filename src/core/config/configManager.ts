@@ -208,7 +208,7 @@ export class ConfigManager {
     try {
       const secret = await this.credentialManager.getSecret(credentialIdentifier);
       if (secret) {
-        this.logger.info(`API key for ${actualProviderType} (account: ${accountNameForCredentials}) resolved from secure storage.`);
+        this.logger.debug(`API key for ${actualProviderType} (account: ${accountNameForCredentials}) resolved from secure storage.`);
         return secret;
       }
     } catch (error) {

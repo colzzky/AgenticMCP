@@ -165,7 +165,7 @@ export class AnthropicProvider implements LLMProvider {
     }
     
     this.client = new this.AnthropicClass({ apiKey });
-    this.logger.info(`AnthropicProvider configured for instance ${config.instanceName || 'default'}`);
+    this.logger.debug(`AnthropicProvider configured for instance ${config.instanceName || 'default'}`);
   }
 
   /**
@@ -288,7 +288,7 @@ export class AnthropicProvider implements LLMProvider {
       }
 
       const completion = await this.client.messages.create(params);
-      this.logger.info(`Anthropic chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${model}`);
+      this.logger.debug(`Anthropic chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${model}`);
 
       // Extract text content from the response
       const content = this.extractTextFromContentBlocks(completion.content);
