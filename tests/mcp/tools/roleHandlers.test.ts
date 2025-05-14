@@ -99,28 +99,45 @@ jest.mock('../../../src/mcp/tools/roleHandlers.js', () => ({
           logger.debug(`Executing file operation: ${command} on path: ${filePath}`);
           
           let result;
-          if (command === 'read_file') {
+          switch (command) {
+          case 'read_file': {
             result = await localCliTool.execute('read_file', { path: filePath });
-          } else if (command === 'write_file') {
+          
+          break;
+          }
+          case 'write_file': {
             result = await localCliTool.execute('write_file', {
               path: filePath,
               content: content || '',
               allowOverwrite
             });
-          } else if (command === 'list_directory') {
+          
+          break;
+          }
+          case 'list_directory': {
             result = await localCliTool.execute('list_directory', { path: filePath });
-          } else if (command === 'search_codebase') {
+          
+          break;
+          }
+          case 'search_codebase': {
             result = await localCliTool.execute('search_codebase', { 
               query: content || filePath, 
               recursive: true 
             });
-          } else if (command === 'find_files') {
+          
+          break;
+          }
+          case 'find_files': {
             result = await localCliTool.execute('find_files', { 
               pattern: filePath, 
               recursive: true 
             });
-          } else {
+          
+          break;
+          }
+          default: {
             throw new Error(`Unknown file operation command: ${command}`);
+          }
           }
           
           const resultText = `<file_operation_result command="${command}" path="${filePath}">\n${JSON.stringify(result, undefined, 2)}\n</file_operation_result>`;

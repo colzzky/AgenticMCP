@@ -163,7 +163,7 @@ describe('mainDI - Dependency Injected Main Function', () => {
     deps = createMockDependencies();
     
     // Set global process for each test
-    global.process = deps.process;
+    globalThis.process = deps.process;
   });
   
   it('should initialize all components in the correct order', async () => {

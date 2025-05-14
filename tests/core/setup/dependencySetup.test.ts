@@ -26,16 +26,22 @@ describe('Dependency Injection Setup', () => {
     get: jest.fn().mockImplementation((token) => {
       // Return different things based on the token
       switch(token) {
-        case 'LOGGER': return mockLogger;
-        case 'FILE_SYSTEM': return mockFileSystemService;
-        case 'DIFF_SERVICE': return mockDiffService;
-        case 'PATH_DI': return mockPath;
-        case 'LOCAL_CLI_TOOL': return { 
+        case 'LOGGER': { return mockLogger;
+        }
+        case 'FILE_SYSTEM': { return mockFileSystemService;
+        }
+        case 'DIFF_SERVICE': { return mockDiffService;
+        }
+        case 'PATH_DI': { return mockPath;
+        }
+        case 'LOCAL_CLI_TOOL': { return { 
           baseDir: '/test/dir', 
           allowedCommands: [], 
           allowFileOverwrite: false 
         };
-        default: return undefined;
+        }
+        default: { return undefined;
+        }
       }
     })
   };

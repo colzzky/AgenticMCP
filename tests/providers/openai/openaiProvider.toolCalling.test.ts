@@ -476,11 +476,7 @@ describe('OpenAIProvider - Tool Calling', () => {
           let index = 0;
           return {
             next: async () => {
-              if (index < streamMock.length) {
-                return { done: false, value: streamMock[index++] };
-              } else {
-                return { done: true };
-              }
+              return index < streamMock.length ? { done: false, value: streamMock[index++] } : { done: true };
             }
           };
         }

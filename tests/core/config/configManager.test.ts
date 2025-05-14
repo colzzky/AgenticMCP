@@ -20,7 +20,7 @@ describe('ConfigManager', () => {
   // Create mock implementations
   const mockPathDI: PathDI = {
     join: jest.fn().mockImplementation((path1, path2) => `${path1}/${path2}`),
-    dirname: jest.fn().mockImplementation((path) => path.substring(0, path.lastIndexOf('/'))),
+    dirname: jest.fn().mockImplementation((path) => path.slice(0, Math.max(0, path.lastIndexOf('/')))),
   } as unknown as PathDI;
 
   const mockFileSystemDI: FileSystemDI = {

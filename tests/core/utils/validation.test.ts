@@ -53,9 +53,9 @@ describe('Validation Utilities', () => {
     it('should support future provider types when added to valid providers array', () => {
       // This test just verifies the implementation logic works as expected
       // It doesn't actually modify the source code
-      const validProviders = ['openai', 'anthropic', 'google', 'newprovider'];
+      const validProviders = new Set(['openai', 'anthropic', 'google', 'newprovider']);
       const mockIsValidProviderType = (type: string): boolean => 
-        validProviders.includes(type);
+        validProviders.has(type);
       
       expect(mockIsValidProviderType('newprovider')).toBe(true);
       expect(mockIsValidProviderType('notadded')).toBe(false);

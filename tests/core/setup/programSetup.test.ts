@@ -96,10 +96,10 @@ describe('Program Setup', () => {
         if (processDi.env.DEBUG === 'true') {
           console.error(error.stack);
         }
-      } else if (error !== undefined) {
-        loggerTool.error(`Command execution failed: ${String(error)}`);
-      } else {
+      } else if (error === undefined) {
         loggerTool.error('An unknown error occurred during command execution.');
+      } else {
+        loggerTool.error(`Command execution failed: ${String(error)}`);
       }
       processDi.exit(1);
     }

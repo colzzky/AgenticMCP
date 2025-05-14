@@ -520,11 +520,7 @@ describe('OpenAIProvider - Function Calling', () => {
           let index = 0;
           return {
             next: async () => {
-              if (index < mockStream.length) {
-                return { done: false, value: mockStream[index++] };
-              } else {
-                return { done: true };
-              }
+              return index < mockStream.length ? { done: false, value: mockStream[index++] } : { done: true };
             }
           };
         }
@@ -549,7 +545,7 @@ describe('OpenAIProvider - Function Calling', () => {
       expect(onStreamMock).toHaveBeenCalled();
       
       // Expect certain behavior in the final onStream call
-      const lastCall = onStreamMock.mock.calls[onStreamMock.mock.calls.length - 1][0];
+      const lastCall = onStreamMock.mock.calls.at(-1)[0];
       expect(lastCall.isComplete).toBe(true);
       
       // Instead of verifying exact arguments, which are harder to control in streaming tests,
