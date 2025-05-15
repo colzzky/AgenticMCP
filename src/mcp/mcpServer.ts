@@ -136,7 +136,7 @@ export class McpServer {
       );
 
       this.registeredTools.add(name);
-      this.logger.info(`Tool ${name} successfully registered`);
+      this.logger.debug(`Tool ${name} successfully registered`);
     } catch (error) {
       this.logger.error(`Failed to register tool ${name}:`, error);
       throw error;

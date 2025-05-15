@@ -127,17 +127,17 @@ export class McpCommands {
       const llmProvider = this.providerFactoryInstance.getProvider(providerName as any);
 
       // Register role-based tools
-      this.roleBasedToolsRegistrar.register(mcpServer, this.logger, llmProvider, this.pathDI);
+      const mcpServerWithTools = this.roleBasedToolsRegistrar.register(mcpServer, this.logger, llmProvider, this.pathDI);
 
       this.logger.info(`Starting HTTP MCP server`);
-      await mcpServer.connect(this.transport);
+      await mcpServerWithTools.connect(this.transport);
       this.logger.info(`MCP server running`);
 
       // Keep the process running
       this.process.on('SIGINT', async () => {
         this.logger.info('Received SIGINT, shutting down MCP server...');
-        await mcpServer.disconnect();
-        throw new Error('Process exited with code: ' + 0);
+        await mcpServerWithTools.disconnect();
+        this.logger.debug('MCP server successfully marked as disconnected');
       });
     } catch (error) {
       this.logger.error('Failed to start MCP server:', error);

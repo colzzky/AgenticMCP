@@ -125,7 +125,7 @@ export async function handleRoleBasedTool({
   const systemPrompt = constructXmlPrompt(role, prompt, context, fileContents, args);
   const messages = [
     { role: 'system' as const, content: systemPrompt },
-    { role: 'user' as const, content: `Please address the ${role === roleEnums.CUSTOM ? args.role : role} task.` }
+    { role: 'user' as const, content: prompt }
   ];
   try {
     logger.info(`Executing ${role} role-based tool with prompt: ${prompt.slice(0, 100)}...`);

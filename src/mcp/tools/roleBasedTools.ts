@@ -36,7 +36,7 @@ export function registerRoleBasedTools(
   logger: Logger,
   llmProvider: LLMProvider,
   pathDI: PathDI
-): void {
+): McpServer {
   logger.info('Registering role-based MCP tools');
   server.registerTool(
     'coder',
@@ -146,6 +146,6 @@ export function registerRoleBasedTools(
       pathDI
     })
   );
-
   logger.info('Role-based MCP tools registered successfully');
+  return server;
 }
