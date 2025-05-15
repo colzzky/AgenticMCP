@@ -278,13 +278,13 @@ describe('OpenAIProvider - Basic Functionality', () => {
         content: 'Test content'
       });
       
-      const request: ProviderRequest = {
-        messages: [{ role: 'user', content: 'Generate some text' }]
-      };
+      const prompt = 'Generate some text';
       
-      const response = await provider.generateText(request);
+      const response = await provider.generateText(prompt);
       
-      expect(chatSpy).toHaveBeenCalledWith(request);
+      expect(chatSpy).toHaveBeenCalledWith({
+        messages: [{ role: 'user', content: prompt }]
+      });
       expect(response.success).toBe(true);
       expect(response.content).toBe('Test content');
     });

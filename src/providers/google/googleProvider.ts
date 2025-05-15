@@ -76,7 +76,14 @@ export class GoogleProvider implements LLMProvider {
     
     // Fall back to credential store if environment variable is not set
     if (!apiKey) {
-      apiKey = await this.configManager.getResolvedApiKey(config);
+      try {
+        const storedApiKey = await this.configManager.getResolvedApiKey(config);
+        if (storedApiKey) {
+          apiKey = storedApiKey;
+        }
+      } catch (error) {
+        this.logger.debug(`Error retrieving API key from credential store: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
     
     if (!apiKey && !config.vertexAI) {
@@ -114,7 +121,7 @@ export class GoogleProvider implements LLMProvider {
       vertexai: true
     });
     
-    this.logger.debug(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Vertex AI`);
+    this.logger.info(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Vertex AI`);
   }
   
   /**
@@ -150,7 +157,7 @@ export class GoogleProvider implements LLMProvider {
       throw new Error('Failed to initialize Google Gemini API client.');
     }
     
-    this.logger.debug(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Gemini API`);
+    this.logger.info(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Gemini API`);
   }
 
   /**

@@ -68,6 +68,9 @@ describe('Provider Environment Variable Support', () => {
     });
 
     it('should fall back to storage if environment variable not set', async () => {
+      // Mock the getResolvedApiKey to ensure it returns a value
+      mockConfigManager.getResolvedApiKey.mockResolvedValueOnce('stored-api-key');
+      
       const provider = new OpenAIProvider(mockConfigManager, mockLogger, MockOpenAIClass);
       await provider.configure({ providerType: 'openai', model: 'gpt-4' });
       
@@ -98,6 +101,9 @@ describe('Provider Environment Variable Support', () => {
     });
 
     it('should fall back to storage if environment variable not set', async () => {
+      // Mock the getResolvedApiKey to ensure it returns a value
+      mockConfigManager.getResolvedApiKey.mockResolvedValueOnce('stored-api-key');
+      
       const provider = new AnthropicProvider(mockConfigManager, mockLogger, MockAnthropicClass);
       await provider.configure({ providerType: 'anthropic', model: 'claude-3-sonnet-20240229' });
       
@@ -128,6 +134,9 @@ describe('Provider Environment Variable Support', () => {
     });
 
     it('should fall back to storage if environment variable not set', async () => {
+      // Mock the getResolvedApiKey to ensure it returns a value
+      mockConfigManager.getResolvedApiKey.mockResolvedValueOnce('stored-api-key');
+      
       const provider = new GoogleProvider(mockConfigManager, mockLogger, MockGoogleClass);
       await provider.configure({ providerType: 'google', model: 'gemini-1.5-flash-latest' });
       
@@ -175,6 +184,9 @@ describe('Provider Environment Variable Support', () => {
     });
 
     it('should fall back to storage if no environment variables set', async () => {
+      // Mock the getResolvedApiKey to ensure it returns a value
+      mockConfigManager.getResolvedApiKey.mockResolvedValueOnce('stored-api-key');
+      
       const provider = new GrokProvider(mockConfigManager, mockLogger);
       // Replace the OpenAIClass with our mock for testing
       (provider as any).OpenAIClass = MockOpenAIClass;

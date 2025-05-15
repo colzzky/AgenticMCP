@@ -30,6 +30,13 @@ export class GrokProvider extends OpenAIProvider {
   async configure(config: OpenAIProviderSpecificConfig): Promise<void> {
     // Default to Grok endpoint if not provided
     config.baseURL = config.baseURL || 'https://api.x.ai/v1';
+    
+    // Special handling for Grok API keys
+    // Check for GROK_API_KEY environment variable first
+    if (process.env.GROK_API_KEY) {
+      process.env.OPENAI_API_KEY = process.env.GROK_API_KEY;
+    }
+    
     await super.configure(config);
   }
 }

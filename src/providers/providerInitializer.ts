@@ -43,7 +43,7 @@ export class ProviderInitializer implements ProviderInitializerInterface {
       this.factory.registerProvider(type, providerClass);
     }
     
-    this.logger.debug(`Registered providers: ${this.factory.getRegisteredProviderTypes().join(', ')}`);
+    this.logger.info(`Registered providers: ${this.factory.getRegisteredProviderTypes().join(', ')}`);
   }
   
   /**

@@ -88,7 +88,14 @@ export class OpenAIProvider implements LLMProvider {
     
     // Fall back to credential store if environment variable is not set
     if (!apiKey) {
-      apiKey = await this.configManager.getResolvedApiKey(this.providerConfig);
+      try {
+        const storedApiKey = await this.configManager.getResolvedApiKey(this.providerConfig);
+        if (storedApiKey) {
+          apiKey = storedApiKey;
+        }
+      } catch (error) {
+        this.logger.debug(`Error retrieving API key from credential store: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
 
     if (!apiKey) {

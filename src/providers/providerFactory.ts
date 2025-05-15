@@ -34,7 +34,7 @@ export class ProviderFactory implements ProviderFactoryInterface {
    */
   registerProvider(type: ProviderType, providerClass: new (...args: any[]) => LLMProvider): void {
     this.providerMap.set(type, providerClass);
-    this.logger.debug(`Registered provider: ${type}`);
+    this.logger.info(`Registered provider: ${type}`);
   }
 
   /**
@@ -71,7 +71,7 @@ export class ProviderFactory implements ProviderFactoryInterface {
       
       // Cache the instance
       this.instanceMap.set(cacheKey, instance);
-      this.logger.debug(`Created provider instance: ${type} (${instanceName})`);
+      this.logger.info(`Created provider instance: ${type} (${instanceName})`);
       
       return instance;
     } catch (error_) {
