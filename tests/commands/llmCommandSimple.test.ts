@@ -117,7 +117,7 @@ describe('LLMCommand Functionality', () => {
         remainingArgs: args
       });
 
-      (mockLLMProvider.generateText as jest.Mock).mockResolvedValue('JavaScript is an interpreted language...');
+      (mockLLMProvider.generateText as jest.Mock).mockResolvedValue({ content: 'JavaScript is an interpreted language...' });
 
       // Execute
       const result = await llmCommand.execute(context, ...args);
@@ -126,7 +126,7 @@ describe('LLMCommand Functionality', () => {
       expect(mockFilePathProcessorFactory.create).toHaveBeenCalled();
       expect(mockProcessFileArgs).toHaveBeenCalledWith(args);
       expect(mockProviderFactory.getProvider).toHaveBeenCalledWith('openai');
-      expect(mockLLMProvider.generateText).toHaveBeenCalledWith({ prompt: promptText });
+      expect(mockLLMProvider.generateText).toHaveBeenCalledWith({ messages: [{ role: 'user', content: promptText }] });
       expect(result.success).toBe(true);
       expect(result.message).toBe('JavaScript is an interpreted language...');
       expect(result.data).toEqual({ fileContextAdded: false });
@@ -138,7 +138,7 @@ describe('LLMCommand Functionality', () => {
       const args = ['Explain this code', 'file1.js', 'file2.js'];
       const fileContext = '--- file1.js ---\nconst a = 1;\n\n--- file2.js ---\nconst b = 2;';
       const promptText = 'Explain this code';
-      const fullPrompt = `${promptText}\n\nContext from files:\n${fileContext}`;
+      const fullPrompt = `${promptText}\n\n<Context_from_files>\n${fileContext}\n</Context_from_files>\n\n${promptText}`;
 
       mockProcessFileArgs.mockResolvedValue({
         context: fileContext,
@@ -154,8 +154,8 @@ describe('LLMCommand Functionality', () => {
       expect(mockFilePathProcessorFactory.create).toHaveBeenCalled();
       expect(mockProcessFileArgs).toHaveBeenCalledWith(args);
       expect(mockProviderFactory.getProvider).toHaveBeenCalledWith('openai');
-      expect(mockLLMProvider.generateText).toHaveBeenCalledWith({ prompt: fullPrompt });
-      expect(mockLogger.info).toHaveBeenCalledWith('Added context from files to prompt');
+      expect(mockLLMProvider.generateText).toHaveBeenCalledWith({ messages: [{ role: 'user', content: fullPrompt }] });
+      expect(mockLogger.debug).toHaveBeenCalledWith('Added context from files to prompt');
       expect(result.success).toBe(true);
       expect(result.message).toBe('This code defines two constants...');
       expect(result.data).toEqual({ fileContextAdded: true });
@@ -187,9 +187,9 @@ describe('LLMCommand Functionality', () => {
       expect(mockLLMProvider.configure).toHaveBeenCalledWith({
         model: 'claude-3-opus',
         providerType: 'anthropic',
-        instanceName: 'command-instance'
+        instanceName: 'apiKey'
       });
-      expect(mockLLMProvider.generateText).toHaveBeenCalledWith({ prompt: promptText });
+      expect(mockLLMProvider.generateText).toHaveBeenCalledWith({ messages: [{ role: 'user', content: promptText }] });
       expect(result.success).toBe(true);
       expect(result.message).toBe('Quantum computing uses quantum bits...');
     });
@@ -249,10 +249,10 @@ describe('LLMCommand Functionality', () => {
 
       // Execute
       // Access the private method using any type
-      const result = await (llmCommand as any).generateText(mockLLMProvider, 'Test prompt');
+      const result = await (llmCommand as any).generateText(mockLLMProvider, { messages: [{ role: 'user', content: 'Test prompt' }] });
 
       // Verify
-      expect(mockLLMProvider.generateText).toHaveBeenCalledWith({ prompt: 'Test prompt' });
+      expect(mockLLMProvider.generateText).toHaveBeenCalledWith({ messages: [{ role: 'user', content: 'Test prompt' }] });
       expect(result).toBe('This is a plain string response');
     });
 
@@ -263,7 +263,7 @@ describe('LLMCommand Functionality', () => {
       });
 
       // Execute
-      const result = await (llmCommand as any).generateText(mockLLMProvider, 'Test prompt');
+      const result = await (llmCommand as any).generateText(mockLLMProvider, { messages: [{ role: 'user', content: 'Test prompt' }] });
 
       // Verify
       expect(result).toBe('Response in content property');
@@ -276,7 +276,7 @@ describe('LLMCommand Functionality', () => {
       });
 
       // Execute
-      const result = await (llmCommand as any).generateText(mockLLMProvider, 'Test prompt');
+      const result = await (llmCommand as any).generateText(mockLLMProvider, { messages: [{ role: 'user', content: 'Test prompt' }] });
 
       // Verify
       expect(result).toBe('Response in text property');
@@ -293,7 +293,7 @@ describe('LLMCommand Functionality', () => {
       });
 
       // Execute
-      const result = await (llmCommand as any).generateText(mockLLMProvider, 'Test prompt');
+      const result = await (llmCommand as any).generateText(mockLLMProvider, { messages: [{ role: 'user', content: 'Test prompt' }] });
 
       // Verify
       expect(result).toBe('OpenAI style response');

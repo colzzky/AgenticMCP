@@ -59,18 +59,24 @@ describe('McpCommands Functionality', () => {
     providerType: 'openai'
   };
 
-  const mockProviderFactory = jest.fn().mockImplementation(() => ({
+  const mockProviderFactory = {
     getProvider: jest.fn().mockReturnValue(mockLLMProvider)
-  }));
+  };
 
   const mockRoleBasedToolsRegistrar = {
     register: jest.fn()
   };
 
   let mcpCommands: McpCommands;
+  let mockServerInstance: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockServerInstance = {
+      connect: jest.fn().mockResolvedValue(undefined),
+      disconnect: jest.fn().mockResolvedValue(undefined)
+    };
+    mockRoleBasedToolsRegistrar.register.mockReturnValue(mockServerInstance);
     mcpCommands = new McpCommands(
       mockConfigManager,
       mockLogger,
@@ -116,12 +122,12 @@ describe('McpCommands Functionality', () => {
       );
       
       // Verify provider factory and role-based tools registrar
-      expect(mockProviderFactory).toHaveBeenCalledWith(mockConfigManager, mockLogger);
+      expect(mockProviderFactory.getProvider).toHaveBeenCalledWith('openai');
       expect(mockRoleBasedToolsRegistrar.register).toHaveBeenCalled();
       
-      // Verify server connection
+      // Verify server connection logs and connection
       expect(mockLogger.info).toHaveBeenCalledWith('Starting HTTP MCP server');
-      expect(mockMcpServer.mock.results[0].value.connect).toHaveBeenCalledWith(mockTransport);
+      expect(mockServerInstance.connect).toHaveBeenCalledWith(mockTransport);
       expect(mockLogger.info).toHaveBeenCalledWith('MCP server running');
       
       // Verify SIGINT handler
@@ -164,8 +170,7 @@ describe('McpCommands Functionality', () => {
       );
       
       // Verify provider factory uses the custom provider
-      expect(mockProviderFactory).toHaveBeenCalledWith(mockConfigManager, mockLogger);
-      expect(mockProviderFactory.mock.results[0].value.getProvider).toHaveBeenCalledWith('anthropic');
+      expect(mockProviderFactory.getProvider).toHaveBeenCalledWith('anthropic');
     });
 
     it('should throw error for unsupported provider', async () => {
@@ -186,11 +191,11 @@ describe('McpCommands Functionality', () => {
     it('should handle server connection errors', async () => {
       // Setup
       const options: ServeMcpOptions = {};
-      const mockServerInstance = {
+      const failingServerInstance = {
         connect: jest.fn().mockRejectedValue(new Error('Connection failure')),
         disconnect: jest.fn()
       };
-      mockMcpServer.mockReturnValueOnce(mockServerInstance);
+      mockRoleBasedToolsRegistrar.register.mockReturnValueOnce(failingServerInstance);
       
       // Access the private method using any type
       const handleServeMcp = (mcpCommands as any).handleServeMcp.bind(mcpCommands);

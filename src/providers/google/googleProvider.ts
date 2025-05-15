@@ -319,13 +319,11 @@ export class GoogleProvider implements LLMProvider {
 
   /**
    * Generates text with optional tools
-   * @param prompt - The request object containing messages and other parameters
+   * @param request - The request object containing messages and other parameters
    * @returns Promise resolving to the provider's response
    */
-  async generateText(prompt: string): Promise<ProviderResponse> {
-    return this.chat({
-      messages: [{ role: "user", content: prompt }]
-    });
+  async generateText(request: ProviderRequest): Promise<ProviderResponse> {
+    return this.chat(request);
   }
 
   /**

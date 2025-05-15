@@ -376,10 +376,8 @@ export class AnthropicProvider implements LLMProvider {
    * @param request - The request object containing messages and other parameters
    * @returns Promise resolving to the provider's response
    */
-  public async generateText(prompt: string): Promise<ProviderResponse> {
-    return this.chat({
-      messages: [{ role: "user", content: prompt }]
-    });
+  public async generateText(request: ProviderRequest): Promise<ProviderResponse> {
+    return this.chat(request);
   }
 
   /**

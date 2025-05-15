@@ -7,6 +7,7 @@ import type { LLMProvider } from '../core/types/provider.types';
 import { BaseCommand, type FilePathProcessorFactory } from '../core/commands/baseCommand';
 import type { Logger } from '../core/types/logger.types';
 import type { ProviderFactoryInterface } from '../providers/types';
+import type { ProviderRequest } from '../core/types/provider.types';
 
 /**
  * LLMCommand - Interact with LLMs using file paths as context
@@ -89,7 +90,7 @@ export class LLMCommand extends BaseCommand {
       }
 
       // Generate text using the provider
-      const response = await this.generateText(provider, fullPrompt);
+      const response = await this.generateText(provider, { messages: [{ role: "user", content: fullPrompt }] });
 
       return {
         success: true,
@@ -109,13 +110,13 @@ export class LLMCommand extends BaseCommand {
   /**
    * Generate text using the provided LLM
    * @param provider - LLM provider
-   * @param prompt - Prompt text
+   * @param request - ProviderRequest
    * @returns Generated text
    */
-  private async generateText(provider: LLMProvider, prompt: string): Promise<string> {
+  private async generateText(provider: LLMProvider, request: ProviderRequest): Promise<string> {
     try {
-      // Call provider with prompt
-      const response = await provider.generateText(prompt);
+      // Call provider with ProviderRequest
+      const response = await provider.generateText(request);
 
       // Extract content from response
       let content = '';

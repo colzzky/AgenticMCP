@@ -2,6 +2,7 @@
  * Unit tests for OpenAIProvider basic functionality
  * Tests the provider implementation for OpenAI
  */
+// @ts-ignore
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { OpenAIProvider } from '../../../src/providers/openai/openaiProvider.js';
 import type { ConfigManager } from '../../../src/core/config/configManager.js';
@@ -279,12 +280,10 @@ describe('OpenAIProvider - Basic Functionality', () => {
       });
       
       const prompt = 'Generate some text';
+      const request: ProviderRequest = { messages: [{ role: 'user', content: prompt }] };
+      const response = await provider.generateText(request);
       
-      const response = await provider.generateText(prompt);
-      
-      expect(chatSpy).toHaveBeenCalledWith({
-        messages: [{ role: 'user', content: prompt }]
-      });
+      expect(chatSpy).toHaveBeenCalledWith(request);
       expect(response.success).toBe(true);
       expect(response.content).toBe('Test content');
     });

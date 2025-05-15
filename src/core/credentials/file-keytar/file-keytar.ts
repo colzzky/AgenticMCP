@@ -121,9 +121,11 @@ export class FileKeytarImpl implements FileKeytar {
       );
       
       // Update or add the credential
-      index !== -1
-        ? (store.credentials[index].password = password)
-        : store.credentials.push({ service, account, password });
+      if (index === -1) {
+        store.credentials.push({ service, account, password });
+      } else {
+        store.credentials[index].password = password;
+      }
       
       // Save the updated store
       await this.saveCredentials(store);

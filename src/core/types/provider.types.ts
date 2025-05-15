@@ -196,7 +196,7 @@ export interface LLMProvider {
    * @param request - The request object containing messages and other parameters.
    * @returns A promise that resolves to the provider's response.
    */
-  generateText(prompt: string): Promise<ProviderResponse>;
+  generateText(request: ProviderRequest): Promise<ProviderResponse>;
 
   /**
    * Continues a conversation with tool results.

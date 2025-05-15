@@ -15,7 +15,8 @@ import {
 import type { ConfigManager } from '../../core/config/configManager';
 import type { Logger } from '../../core/types/logger.types';
 import type { OpenAIProviderSpecificConfig } from '../../core/types/config.types';
-import { mapMessageToOpenAIParam, mapToolsToOpenAIChatTools } from './openaiProviderMappers';
+import * as mappers from './openaiProviderMappers';
+import { handleProviderError, buildProviderResponseFromCompletion } from './openaiProviderUtils';
 
 /**
  * OpenAIProvider implements the LLMProvider interface for OpenAI API.
@@ -127,14 +128,14 @@ export class OpenAIProvider implements LLMProvider {
    */
   public async chat(request: ProviderRequest): Promise<ProviderResponse> {
     if (!this.client || !this.providerConfig) {
-      return this._handleProviderError(new Error('OpenAIProvider not configured. Call configure() first.'), 'OpenAIProvider.chat');
+      return handleProviderError(this.logger, new Error('OpenAIProvider not configured. Call configure() first.'), 'OpenAIProvider.chat');
     }
 
     const model = request.model || this.providerConfig.model || this.defaultModel;
     const temperature = request.temperature ?? this.providerConfig.temperature ?? 0.7;
 
     const messages: ChatCompletionMessageParam[] = request.messages
-      ? request.messages.map(msg => mapMessageToOpenAIParam(msg))
+      ? request.messages.map(msg => mappers.mapMessageToOpenAIParam(msg))
       : [];
 
     try {
@@ -150,7 +151,7 @@ export class OpenAIProvider implements LLMProvider {
       // Add tools support if enabled
       if (request.tools && request.tools.length > 0) {
         this.logger.debug(`Adding ${request.tools.length} tools to request`);
-        requestOptions.tools = mapToolsToOpenAIChatTools(request.tools);
+        requestOptions.tools = mappers.mapToolsToOpenAIChatTools(request.tools);
       }
 
       // Add tool_choice if specified
@@ -189,23 +190,23 @@ export class OpenAIProvider implements LLMProvider {
 
       // Standard non-streaming request
       const completion = await this.client.chat.completions.create(requestOptions);
-      return this._buildProviderResponseFromCompletion(completion);
+      return buildProviderResponseFromCompletion(this.logger, completion);
     } catch (error: unknown) {
-      return this._handleProviderError(error, 'OpenAIProvider.chat');
+      return handleProviderError(this.logger, error, 'OpenAIProvider.chat');
     }
   }
 
   public async generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse> {
     if (!this.client || !this.providerConfig) {
-      return this._handleProviderError(new Error('OpenAIProvider not configured. Call configure() first.'), 'OpenAIProvider.generateTextWithToolResults');
+      return handleProviderError(this.logger, new Error('OpenAIProvider not configured. Call configure() first.'), 'OpenAIProvider.generateTextWithToolResults');
     }
 
     if (!request.messages || request.messages.length === 0) {
-      return this._handleProviderError(new Error('Request must contain messages for generateTextWithToolResults.'), 'OpenAIProvider.generateTextWithToolResults');
+      return handleProviderError(this.logger, new Error('Request must contain messages for generateTextWithToolResults.'), 'OpenAIProvider.generateTextWithToolResults');
     }
 
     if (!request.tool_outputs || request.tool_outputs.length === 0) {
-      return this._handleProviderError(new Error('Request must contain tool_outputs for generateTextWithToolResults.'), 'OpenAIProvider.generateTextWithToolResults');
+      return handleProviderError(this.logger, new Error('Request must contain tool_outputs for generateTextWithToolResults.'), 'OpenAIProvider.generateTextWithToolResults');
     }
 
     try {
@@ -218,7 +219,7 @@ export class OpenAIProvider implements LLMProvider {
       }
 
       const messages: ChatCompletionMessageParam[] = request.messages.map(msg => 
-        mapMessageToOpenAIParam(msg)
+        mappers.mapMessageToOpenAIParam(msg)
       );
 
       const toolResultMessages: ChatCompletionMessageParam[] = request.tool_outputs.map((result) => ({
@@ -272,7 +273,7 @@ export class OpenAIProvider implements LLMProvider {
           : undefined,
       };
     } catch (error: unknown) {
-      return this._handleProviderError(error, 'OpenAI generateTextWithToolResults');
+      return handleProviderError(this.logger, error, 'OpenAI generateTextWithToolResults');
     }
   }
 
@@ -363,10 +364,8 @@ export class OpenAIProvider implements LLMProvider {
     }
   }
 
-  public async generateText(prompt: string): Promise<ProviderResponse> {
-    return this.chat({
-      messages: [{ role: "user", content: prompt }]
-    });
+  public async generateText(request: ProviderRequest): Promise<ProviderResponse> {
+    return this.chat(request);
   }
 
   // Private helper methods
@@ -448,46 +447,5 @@ export class OpenAIProvider implements LLMProvider {
     }
   }
 
-  private _handleProviderError(error: unknown, context: string): ProviderResponse {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    this.logger.error(`Error in ${context}: ${errorMessage}`);
-    return { success: false, error: { message: errorMessage } };
-  }
 
-  private _buildProviderResponseFromCompletion(
-    completion: OpenAI.Chat.Completions.ChatCompletion
-  ): ProviderResponse {
-    this.logger.debug(`Received response from OpenAI API`);
-
-    const responseChoice = completion.choices[0];
-    if (!responseChoice) {
-      this.logger.error('No completion choices returned from OpenAI API');
-      throw new Error('No completion choices returned from OpenAI API');
-    }
-
-    const content = responseChoice.message.content || '';
-
-    const responseToolCalls: ToolCall[] = (responseChoice.message.tool_calls || [])
-      .filter(tc => tc.type === 'function')
-      .map(tc => ({
-        id: tc.id,
-        type: 'function_call' as const,
-        name: tc.function.name,
-        arguments: tc.function.arguments,
-      }));
-
-    return {
-      success: true,
-      content,
-      toolCalls: responseToolCalls.length > 0 ? responseToolCalls : undefined,
-      usage: completion.usage ? {
-        promptTokens: completion.usage.prompt_tokens,
-        completionTokens: completion.usage.completion_tokens,
-        totalTokens: completion.usage.total_tokens,
-      } : undefined,
-      id: completion.id,
-      model: completion.model,
-      finishReason: responseChoice.finish_reason as ProviderResponse['finishReason'], 
-    };
-  }
 }
