@@ -34,7 +34,7 @@ agenticmcp analyst report1.pdf data.csv
 agenticmcp summarizer ./docs/
 
 # Start as an MCP server for tool-based AI workflows
-agenticmcp serve-mcp --provider openai
+agenticmcp serve:mcp --provider openai
 ```
 
 See [REQUIREMENTS.md](REQUIREMENTS.md) for detailed CLI examples and advanced usage.
