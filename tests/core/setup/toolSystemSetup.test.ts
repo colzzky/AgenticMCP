@@ -5,7 +5,7 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { setupToolSystem } from '../../../src/core/setup/toolSystemSetup.js';
 import type { Logger } from '../../../src/core/types/logger.types.js';
-import type { DILocalCliTool } from '../../../src/tools/localCliTool.js';
+import type { FileSystemTool } from '../../../src/tools/localCliTool.js';
 import type { DILocalShellCliTool } from '../../../src/tools/localShellCliTool.js';
 
 // Mock getLocalShellCliToolDefinitions module
@@ -32,7 +32,7 @@ describe('toolSystemSetup', () => {
       write_file: jest.fn(),
       list_directory: jest.fn()
     })
-  } as unknown as DILocalCliTool;
+  } as unknown as FileSystemTool;
   
   // Mock localShellCliTool
   const mockLocalShellCliTool = {

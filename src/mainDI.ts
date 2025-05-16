@@ -22,7 +22,6 @@ import type { ConfigManager as ConfigManagerType } from './core/config/configMan
 import type { ProviderInitializer as ProviderInitializerType } from './providers/providerInitializer';
 import type { ProviderFactory as ProviderFactoryType } from './providers/providerFactory';
 import type { CredentialManager } from './core/credentials';
-import { NodeFileSystem } from './core/adapters/nodeFileSystemAdapter';
 import type { DefaultFilePathProcessorFactory } from './core/commands/baseCommand';
 import type { DIFilePathProcessor } from './context/filePathProcessor';
 import type { McpServer } from './mcp/mcpServer';
@@ -32,7 +31,8 @@ import type { RoleBasedToolsRegistrar } from './mcp/tools/types';
 import type { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';
 import { FileKeytar } from './core/credentials/file-keytar';
 import { DILocalShellCliTool } from './tools/localShellCliTool';
-import { DILocalCliTool } from './tools/localCliTool';
+import { FileSystemTool } from './tools/fileSystemTool';
+import { FileSystemService } from './core/services/file-system.service';
 
 import type {
   SetupCliCommandsFn,
@@ -65,14 +65,13 @@ export interface MainDependencies {
   DIContainer: { getInstance: () => DIContainerType };
   FileSystemService: typeof FileSystemServiceType; 
   DiffService: typeof DiffServiceType;
-  DILocalCliTool: typeof DILocalCliTool;
+  FileSystemTool: typeof FileSystemTool;
   ToolRegistry: typeof ToolRegistryType;
   ToolExecutor: typeof ToolExecutorType;
   ToolResultFormatter: typeof ToolResultFormatterType;
   ConfigManager: typeof ConfigManagerType;
   ProviderInitializer: typeof ProviderInitializerType;
   ProviderFactory: typeof ProviderFactoryType;
-  NodeFileSystem: typeof NodeFileSystem;
   DefaultFilePathProcessorFactory: typeof DefaultFilePathProcessorFactory;
   DIFilePathProcessor: typeof DIFilePathProcessor;
   McpCommands: typeof McpCommandsType;
@@ -117,7 +116,7 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       deps.fs,
       deps.process,
       deps.spawn,
-      deps.DILocalCliTool,
+      deps.FileSystemTool,
       deps.DILocalShellCliTool
     );
 
@@ -149,8 +148,8 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       credentialManagerInstance
     );
 
-    // Create NodeFileSystem instance
-    const nfsInstance = new deps.NodeFileSystem(deps.path, deps.fs); // NodeFileSystem is used here
+    // Create FileSystemService instance
+    const nfsInstance = new deps.FileSystemService(deps.path, deps.fs); // FileSystemService is used here
 
     // Create file path processor factory
     const filePathProcessorFactory = new deps.DefaultFilePathProcessorFactory(

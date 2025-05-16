@@ -162,7 +162,7 @@ jest.mock('../../../src/mcp/tools/roleHandlers.js', () => ({
 
 // Mock the factory directly
 jest.mock('../../../src/tools/factory/localCliToolFactory.js', () => ({
-  createDILocalCliTool: jest.fn().mockReturnValue(mockLocalCliTool)
+  createFileSystemTool: jest.fn().mockReturnValue(mockLocalCliTool)
 }));
 
 // Mock the xmlPromptUtils

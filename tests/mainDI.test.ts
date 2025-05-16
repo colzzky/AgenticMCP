@@ -42,9 +42,9 @@ function createMockDependencies(): MainDependencies & {
   const mockCredentialManagerInstance = {};
   const mockCredentialManager = jest.fn().mockImplementation(() => mockCredentialManagerInstance);
 
-  // Mock NodeFileSystem and DefaultFilePathProcessorFactory
-  const mockNodeFileSystemInstance = {};
-  const mockNodeFileSystem = jest.fn().mockImplementation(() => mockNodeFileSystemInstance);
+  // Mock FileSystemService and DefaultFilePathProcessorFactory
+  const mockFileSystemServiceInstance = {};
+  const mockFileSystemService = jest.fn().mockImplementation(() => mockFileSystemServiceInstance);
   const mockFilePathProcessorFactoryInstance = {};
   const mockDefaultFilePathProcessorFactory = jest.fn().mockImplementation(() => mockFilePathProcessorFactoryInstance);
 
@@ -148,7 +148,7 @@ function createMockDependencies(): MainDependencies & {
     DIContainer: mockDIContainer,
     FileSystemService: jest.fn(),
     DiffService: jest.fn(),
-    DILocalCliTool: jest.fn(),
+    FileSystemTool: jest.fn(),
     ToolRegistry: jest.fn(),
     ToolExecutor: jest.fn(),
     ToolResultFormatter: jest.fn(),
@@ -157,7 +157,7 @@ function createMockDependencies(): MainDependencies & {
     ProviderFactory: jest.fn().mockImplementation(() => ({
       setToolRegistry: jest.fn(),
     })),
-    NodeFileSystem: mockNodeFileSystem,
+    FileSystemService: mockFileSystemService,
     DefaultFilePathProcessorFactory: mockDefaultFilePathProcessorFactory,
     DIFilePathProcessor: jest.fn(),
     McpCommands: jest.fn(),
@@ -286,7 +286,7 @@ describe('mainDI - Dependency Injected Main Function', () => {
       deps.fs,
       deps.defaultAppConfig,
       deps.ProviderFactory,
-      expect.anything()
+      expect.any(Object) // CredentialManager instance
     );
     // The mock ProviderFactory should have been instantiated by setupProviderSystem
     expect(deps.ProviderFactory).toHaveBeenCalledWith(deps.ConfigManager, deps.logger);
@@ -358,7 +358,7 @@ describe('mainDI - Dependency Injected Main Function', () => {
         deps.StdioServerTransport
       ])
     );
-    expect(deps.NodeFileSystem).toHaveBeenCalledWith(deps.path, deps.fs);
+    expect(deps.FileSystemService).toHaveBeenCalledWith(deps.path, deps.fs);
     expect(deps.DefaultFilePathProcessorFactory).toHaveBeenCalled();
   });
 });

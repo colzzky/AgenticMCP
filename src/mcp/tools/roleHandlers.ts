@@ -1,5 +1,5 @@
 import type { PathDI } from '../../types/global.types';
-import { createDILocalCliTool } from '../../tools/factory/localCliToolFactory.js';
+import { createFileSystemTool } from '../../tools/factory/localCliToolFactory.js';
 import type { Logger } from '../../core/types/logger.types.js';
 import type { LLMProvider } from '../../core/types/provider.types.js';
 import { constructXmlPrompt, selectModelForRole } from './xmlPromptUtils';
@@ -18,7 +18,7 @@ interface FileOperationMatch {
  */
 export async function processFileOperations(
   response: string,
-  localCliTool: ReturnType<typeof createDILocalCliTool>,
+  localCliTool: ReturnType<typeof createFileSystemTool>,
   logger: Logger
 ): Promise<string> {
   const fileOpRegex = /<file_operation>([^]*?)<\/file_operation>/g;
@@ -105,9 +105,9 @@ export async function handleRoleBasedTool({
   pathDI
 }: HandleRoleBasedToolArgs): Promise<any> {
   const { prompt, base_path, context, related_files, allow_file_overwrite } = args;
-  // Create a dedicated DILocalCliTool instance with the specified base path
+  // Create a dedicated FileSystemTool instance with the specified base path
   // Set allowFileOverwrite to false by default for safety
-  const dedicatedLocalCliTool = createDILocalCliTool({
+  const dedicatedLocalCliTool = createFileSystemTool({
     baseDir: pathDI.resolve(base_path),
     allowFileOverwrite: allow_file_overwrite || false // Default to safe mode - require explicit allowOverwrite for existing files
   });

@@ -5,12 +5,12 @@
 
 import { DIContainer } from './container';
 import { DI_TOKENS } from './tokens';
-import { NodeFileSystem } from '../adapters/nodeFileSystemAdapter';
 import { IFileSystem } from '../interfaces/file-system.interface';
 import type { Logger } from '../types/logger.types';
 import { DIFilePathProcessor } from '../../context/filePathProcessor';
 import { PathDI, FileSystemDI } from '../../types/global.types';
 import { DiffService } from '../../tools/services/diffService';
+import { FileSystemService } from '../services/file-system.service';
 
 /**
  * Register core dependencies
@@ -29,7 +29,7 @@ export function registerCoreDependencies(
   container.registerSingleton(DI_TOKENS.FILE_SYSTEM, () => {
     const _pathDI = container.get(DI_TOKENS.PATH_DI) as PathDI;
     const _fileSystemDI = container.get(DI_TOKENS.FILE_SYSTEM_DI) as FileSystemDI;
-    return new NodeFileSystem(_pathDI, _fileSystemDI);
+    return new FileSystemService(_pathDI, _fileSystemDI);
   });
 }
 

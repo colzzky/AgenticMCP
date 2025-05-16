@@ -14,19 +14,19 @@ describe('localCliToolFactory', () => {
     expect(module).toBeDefined();
   });
   
-  it('should export createDILocalCliTool function', async () => {
+  it('should export createFileSystemTool function', async () => {
     const module = await import('../../../src/tools/factory/localCliToolFactory.js');
-    expect(typeof module.createDILocalCliTool).toBe('function');
+    expect(typeof module.createFileSystemTool).toBe('function');
   });
   
   it('should have proper parameter requirements', async () => {
     const module = await import('../../../src/tools/factory/localCliToolFactory.js');
     
     // Verify function signature to ensure it requires config
-    const functionString = module.createDILocalCliTool.toString();
+    const functionString = module.createFileSystemTool.toString();
     
     // The function should have config as first parameter
-    expect(functionString).toMatch(/function createDILocalCliTool\(\s*config/);
+    expect(functionString).toMatch(/function createFileSystemTool\(\s*config/);
     
     // It should accept an optional container parameter
     expect(functionString).toMatch(/config.*,?\s*container\s*=\s*DIContainer\.getInstance\(\)/);

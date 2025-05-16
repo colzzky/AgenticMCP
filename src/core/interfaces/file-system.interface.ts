@@ -44,6 +44,11 @@ export interface IFileSystem {
   stat(path: string): Promise<{
     isDirectory: () => boolean;
     size: number;
+    birthtime: Date;
+    mtime: Date;
+    atime: Date;
+    isFile: () => boolean;
+    mode: number;
   }>;
   
   /**
@@ -64,7 +69,7 @@ export interface IFileSystem {
    * @param path - Path to file
    * @param data - Content to write
    */
-  writeFile(path: string, data: string): Promise<void>;
+  writeFile(path: string, data: string, encoding?: BufferEncoding): Promise<void>;
   
   /**
    * Delete a file
@@ -85,4 +90,14 @@ export interface IFileSystem {
    * @param options - Directory removal options
    */
   rmdir(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void>;
+
+
+  /**
+   * Resolve the real path of a given path
+   * @param path - Path to resolve
+   */
+  realpath(path: string): Promise<string>;
+
+  rename(source: string, destination: string): Promise<void>;
+
 }

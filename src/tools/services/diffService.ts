@@ -1,4 +1,4 @@
-import { diffLines } from 'diff';
+import { diffLines, createTwoFilesPatch } from 'diff';
 import { IDiffService } from '../../core/interfaces/diff-service.interface';
 
 /**
@@ -15,7 +15,7 @@ export class DiffService implements IDiffService {
     const changes = diffLines(oldContent, newContent);
     let oldLine = 1, newLine = 1;
     let result = `--- old\n+++ new\n`;
-    
+
     // Create chunks with context
     const chunks: Array<{
       oldStart: number,
@@ -24,7 +24,7 @@ export class DiffService implements IDiffService {
       newLines: number,
       content: string
     }> = [];
-    
+
     let currentChunk = {
       oldStart: 1,
       oldLines: 0,
@@ -32,19 +32,19 @@ export class DiffService implements IDiffService {
       newLines: 0,
       content: ''
     };
-    
+
     for (const change of changes) {
       const lines = change.value.split('\n');
       // Remove trailing empty line if present
       if (lines.at(-1) === '') lines.pop();
-      
+
       if (change.added) {
         // For new chunk or continuing a chunk with additions
         if (currentChunk.content === '') {
           currentChunk.oldStart = oldLine;
           currentChunk.newStart = newLine;
         }
-        
+
         currentChunk.newLines += lines.length;
         for (const line of lines) {
           currentChunk.content += `+${line}\n`;
@@ -56,7 +56,7 @@ export class DiffService implements IDiffService {
           currentChunk.oldStart = oldLine;
           currentChunk.newStart = newLine;
         }
-        
+
         currentChunk.oldLines += lines.length;
         for (const line of lines) {
           currentChunk.content += `-${line}\n`;
@@ -74,12 +74,12 @@ export class DiffService implements IDiffService {
               currentChunk.newLines++;
             }
           }
-          
-          chunks.push({...currentChunk});
-          
+
+          chunks.push({ ...currentChunk });
+
           // Start a new chunk, but first add trailing context from this unchanged section
           const trailingContextStart = Math.max(0, lines.length - 3);
-          
+
           currentChunk = {
             oldStart: oldLine + trailingContextStart,
             oldLines: 0,
@@ -87,7 +87,7 @@ export class DiffService implements IDiffService {
             newLines: 0,
             content: ''
           };
-          
+
           // Add trailing context to the new chunk
           for (let i = trailingContextStart; i < lines.length; i++) {
             currentChunk.content += ` ${lines[i]}\n`;
@@ -100,7 +100,7 @@ export class DiffService implements IDiffService {
             currentChunk.oldStart = oldLine;
             currentChunk.newStart = newLine;
           }
-          
+
           // Only include context lines if they're at the beginning or end (3 lines max)
           const contextLines = Math.min(3, lines.length);
           for (let i = 0; i < contextLines; i++) {
@@ -110,11 +110,11 @@ export class DiffService implements IDiffService {
               currentChunk.newLines++;
             }
           }
-          
+
           // If there are more unchanged lines than our context limit, add ellipsis
           if (lines.length > 2 * contextLines) {
             currentChunk.content += ` ...\n`;
-            
+
             // Add trailing context
             for (let i = lines.length - contextLines; i < lines.length; i++) {
               if (i >= 0) {
@@ -132,23 +132,43 @@ export class DiffService implements IDiffService {
             }
           }
         }
-        
+
         oldLine += lines.length;
         newLine += lines.length;
       }
     }
-    
+
     // Add the last chunk if it has content
     if (currentChunk.content && (currentChunk.oldLines > 0 || currentChunk.newLines > 0)) {
       chunks.push(currentChunk);
     }
-    
+
     // Format output with chunk headers
     for (const chunk of chunks) {
       result += `@@ -${chunk.oldStart},${chunk.oldLines} +${chunk.newStart},${chunk.newLines} @@\n`;
       result += chunk.content;
     }
-    
+
     return result;
   }
+
+  normalizeLineEndings(text: string): string {
+    return text.replace(/\r\n/g, '\n');
+  }
+
+  createUnifiedDiff(originalContent: string, newContent: string, filepath: string = 'file'): string {
+    // Ensure consistent line endings for diff
+    const normalizedOriginal = this.normalizeLineEndings(originalContent);
+    const normalizedNew = this.normalizeLineEndings(newContent);
+
+    return createTwoFilesPatch(
+      filepath,
+      filepath,
+      normalizedOriginal,
+      normalizedNew,
+      'original',
+      'modified'
+    );
+  }
+
 }

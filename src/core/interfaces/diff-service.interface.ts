@@ -9,4 +9,10 @@ export interface IDiffService {
    * @returns Formatted diff string in GitHub-style
    */
   generateDiff(oldContent: string, newContent: string): string;
+
+  normalizeLineEndings(text: string): string;
+
+  createUnifiedDiff(originalContent: string, newContent: string, filepath: string): string;
+
+
 }

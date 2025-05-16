@@ -1,4 +1,4 @@
-import { DILocalCliTool } from '../../tools/localCliTool';
+import { FileSystemTool } from '../../tools/fileSystemTool';
 import { DILocalShellCliTool } from '../../tools/localShellCliTool';
 import { getLocalShellCliToolDefinitions } from '../../tools/localShellCliToolDefinitions';
 import { ToolRegistry } from '../../tools/toolRegistry';
@@ -9,7 +9,7 @@ import type { Tool } from '../../core/types/provider.types';
 
 
 export type SetupToolSystemFn = (
-  localCliToolInstance: DILocalCliTool,
+  localCliToolInstance: FileSystemTool,
   localShellCliToolInstance: DILocalShellCliTool,
   toolRegistry: typeof ToolRegistry,
   toolExecutor: typeof ToolExecutor,
@@ -25,7 +25,7 @@ export type SetupToolSystemFn = (
  * Sets up the tool system with registry, executor, and formatter
  */
 export const setupToolSystem: SetupToolSystemFn = (
-  localCliToolInstance: DILocalCliTool,
+  localCliToolInstance: FileSystemTool,
   localShellCliToolInstance: DILocalShellCliTool,
   toolRegistry: typeof ToolRegistry,
   toolExecutor: typeof ToolExecutor,

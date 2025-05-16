@@ -139,7 +139,7 @@
 │   │   ├── factory/
 │   │   │   └── localCliToolFactory.ts
 │   │   ├── localCliTool.ts
-│   │   ├── localCliToolDefinitions.ts
+│   │   ├── fileSystemToolDefinitions.ts
 │   │   ├── localShellCliTool.ts
 │   │   ├── localShellCliToolDefinitions.ts
 │   │   ├── services/
@@ -230,7 +230,7 @@
 │   │   │   ├── factoryMocks.ts
 │   │   │   └── localCliToolFactory.test.ts
 │   │   ├── localCliTool.test.ts
-│   │   ├── localCliToolDefinitions.test.ts
+│   │   ├── fileSystemToolDefinitions.test.ts
 │   │   ├── localShellCliTool.test.ts
 │   │   ├── localShellCliToolDefinitions.test.ts
 │   │   ├── services/

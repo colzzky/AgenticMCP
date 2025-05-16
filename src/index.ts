@@ -4,7 +4,7 @@ import { Command } from 'commander';
 import { logger } from './core/utils/logger';
 import { ConfigManager } from './core/config/configManager';
 import { DIContainer } from './core/di/container';
-import { DILocalCliTool } from './tools/localCliTool';
+import { FileSystemTool } from './tools/fileSystemTool';
 import { DILocalShellCliTool } from './tools/localShellCliTool';
 import { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';
 import { SHELL_COMMANDS } from './tools/localShellCliToolDefinitions';
@@ -30,7 +30,6 @@ import { CredentialManager } from './core/credentials/credentialManager';
 import { ProviderFactory } from './providers/providerFactory';
 import { RoleBasedToolsRegistrarFactory } from './mcp/tools/registrarFactory';
 import { defaultAppConfig } from './config/appConfig';
-import { NodeFileSystem } from './core/adapters/nodeFileSystemAdapter';
 import {
   setupDependencyInjection,
   setupToolSystem,
@@ -68,7 +67,7 @@ export async function main(): Promise<void> {
     DIContainer,
     FileSystemService,
     DiffService,
-    DILocalCliTool,
+    FileSystemTool,
     DILocalShellCliTool,
     DefaultShellCommandWrapper,
     SHELL_COMMANDS,
@@ -78,7 +77,6 @@ export async function main(): Promise<void> {
     ConfigManager,
     ProviderInitializer,
     ProviderFactory,
-    NodeFileSystem,
     DefaultFilePathProcessorFactory,
     DIFilePathProcessor,
     McpCommands,

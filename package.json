@@ -65,6 +65,7 @@
     "eslint-plugin-unicorn": "^59.0.1",
     "keytar": "^7.9.0",
     "openai": "^4.98.0",
+    "os": "^0.1.2",
     "reflect-metadata": "^0.2.2"
   }
 }

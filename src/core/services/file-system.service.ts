@@ -21,11 +21,16 @@ export class FileSystemService implements IFileSystem {
     await this.fileSystemDI.access(checkPath);
   }
 
-  async stat(checkPath: string): Promise<{ isDirectory: () => boolean; size: number; }> {
+  async stat(checkPath: string): Promise<{ isDirectory: () => boolean; size: number; birthtime: Date; mtime: Date; atime: Date; isFile: () => boolean; mode: number; }> {
       const stats = await this.fileSystemDI.stat(checkPath);
       return {
           isDirectory: () => stats.isDirectory(),
           size: stats.size,
+          birthtime: stats.birthtime,
+          mtime: stats.mtime,
+          atime: stats.atime,
+          isFile: () => stats.isFile(),
+          mode: stats.mode
       };
   }
 
@@ -42,10 +47,10 @@ export class FileSystemService implements IFileSystem {
      // If DirectoryEntry[] is needed, the interface should specify that return type for readdir.
   }
 
-  async writeFile(filePath: string, content: string): Promise<void> {
+  async writeFile(filePath: string, content: string, encoding: BufferEncoding = 'utf-8'): Promise<void> {
     // Ensure parent directory exists before writing
     await this.mkdir(this.pathDI.dirname(filePath));
-    await this.fileSystemDI.writeFile(filePath, content, 'utf-8');
+    await this.fileSystemDI.writeFile(filePath, content, encoding);
   }
 
   async unlink(filePath: string): Promise<void> {
@@ -59,6 +64,10 @@ export class FileSystemService implements IFileSystem {
   async rmdir(dirPath: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {
     // Pass options directly, let this.fileSystemDI.rm handle defaults if options is undefined
     await this.fileSystemDI.rm(dirPath, options);
+  }
+
+  async realpath(path: string): Promise<string> {
+    return this.fileSystemDI.realpath(path);
   }
 
 
@@ -119,4 +128,9 @@ export class FileSystemService implements IFileSystem {
      // TODO: Implement recursive file search (e.g., using glob or manual recursion)
      return [];
   }
+
+  async rename(source: string, destination: string): Promise<void> {
+    await this.fileSystemDI.rename(source, destination);
+  }
+
 }

@@ -2,7 +2,7 @@ import { DIContainer } from '../di/container';
 import { DI_TOKENS } from '../di/tokens';
 import { FileSystemService } from '../services/file-system.service';
 import { DiffService } from '../services/diff.service';
-import { DILocalCliTool, LocalCliToolConfig } from '../../tools/localCliTool';
+import { FileSystemTool, LocalCliToolConfig } from '../../tools/fileSystemTool';
 import type { PathDI, FileSystemDI, SpawnDi } from '../../types/global.types';
 import type { Logger } from '../types/logger.types';
 import { DILocalShellCliTool } from '../../tools/localShellCliTool';
@@ -19,10 +19,10 @@ export type SetupDependencyInjectionFn = (
   fsDi: FileSystemDI,
   processDi: NodeJS.Process,
   spawnDi: SpawnDi,
-  localCliTool: typeof DILocalCliTool,
+  localCliTool: typeof FileSystemTool,
   dILocalShellCliTool: typeof DILocalShellCliTool
 ) => {
-  localCliToolInstance: InstanceType<typeof DILocalCliTool>,
+  localCliToolInstance: InstanceType<typeof FileSystemTool>,
   localShellCliToolInstance: InstanceType<typeof DILocalShellCliTool>
 };
 
@@ -38,7 +38,7 @@ export const setupDependencyInjection: SetupDependencyInjectionFn = (
   fsDi: FileSystemDI,
   processDi: NodeJS.Process,
   spawnDi: SpawnDi,
-  localCliTool: typeof DILocalCliTool,
+  localCliTool: typeof FileSystemTool,
   dILocalShellCliTool: typeof DILocalShellCliTool
 ) => {
   // 1. Register Logger
@@ -65,7 +65,7 @@ export const setupDependencyInjection: SetupDependencyInjectionFn = (
   container.register<LocalCliToolConfig>(DI_TOKENS.LOCAL_CLI_TOOL, localCliToolConfig);
   loggerTool.debug(`Base directory for tool operations: ${baseDir}`);
 
-  // 6. Instantiate and register DILocalCliTool
+  // 6. Instantiate and register FileSystemTool
   const localCliToolInstance = new localCliTool(
     container.get(DI_TOKENS.LOCAL_CLI_TOOL),
     container.get(DI_TOKENS.LOGGER),
@@ -73,7 +73,7 @@ export const setupDependencyInjection: SetupDependencyInjectionFn = (
     container.get(DI_TOKENS.DIFF_SERVICE),
     container.get(DI_TOKENS.PATH_DI)
   );
-  container.register<DILocalCliTool>(DI_TOKENS.LOCAL_CLI_TOOL, localCliToolInstance);
+  container.register<FileSystemTool>(DI_TOKENS.LOCAL_CLI_TOOL, localCliToolInstance);
 
   // 7. Instantiate and register DILocalShellCliTool
   // Instantiate dependencies needed for shell tool instantiation

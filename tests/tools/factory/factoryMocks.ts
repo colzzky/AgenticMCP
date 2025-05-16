@@ -59,8 +59,8 @@ export function setupContainerDefaultMocks() {
   });
 }
 
-// Mock DILocalCliTool constructor
-export const mockDILocalCliTool = jest.fn().mockImplementation(() => ({
+// Mock FileSystemTool constructor
+export const mockFileSystemTool = jest.fn().mockImplementation(() => ({
   getCommandMap: jest.fn().mockReturnValue({}),
   getToolDefinitions: jest.fn().mockReturnValue([]),
   execute: jest.fn().mockResolvedValue({})

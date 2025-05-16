@@ -52,7 +52,7 @@ jest.mock('../../../src/core/di/container.js', () => {
   };
 });
 jest.mock('../../../src/tools/factory/localCliToolFactory.js', () => ({
-  createDILocalCliTool: jest.fn().mockImplementation(() => ({
+  createFileSystemTool: jest.fn().mockImplementation(() => ({
     execute: jest.fn().mockResolvedValue({ success: true, content: 'mocked file content' }),
     getToolDefinitions: jest.fn().mockReturnValue([]),
     getCommandMap: jest.fn().mockReturnValue({})

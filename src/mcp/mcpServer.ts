@@ -10,7 +10,7 @@ import type {
 
 /**
  * MCP Server class that wraps the MCP SDK server and provides integration
- * with AgenticMCP's existing DILocalCliTool implementation.
+ * with AgenticMCP's existing FileSystemTool implementation.
  */
 export class McpServer {
   private server: BaseMcpServerInstance;

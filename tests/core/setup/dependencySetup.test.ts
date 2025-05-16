@@ -82,12 +82,12 @@ describe('Dependency Injection Setup', () => {
   
   // Mock local CLI tool instance
   const mockLocalCliToolInstance = {
-    // DILocalCliTool methods
+    // FileSystemTool methods
     getCommandMap: jest.fn().mockReturnValue({})
   };
   
-  // Mock DILocalCliTool class constructor
-  const MockDILocalCliTool = jest.fn().mockImplementation((
+  // Mock FileSystemTool class constructor
+  const MockFileSystemTool = jest.fn().mockImplementation((
     config, logger, fileSystem, diffService, pathDi
   ) => {
     return mockLocalCliToolInstance;
@@ -147,7 +147,7 @@ describe('Dependency Injection Setup', () => {
       mockFs as any,
       mockProcess as any,
       mockSpawn as any,
-      MockDILocalCliTool as any,
+      MockFileSystemTool as any,
       MockDILocalShellCliTool as any
     );
 
@@ -187,10 +187,10 @@ describe('Dependency Injection Setup', () => {
       expect.stringContaining('Base directory for tool operations: /test/dir')
     );
     
-    // Verify DILocalCliTool is used
-    expect(MockDILocalCliTool).toHaveBeenCalled();
+    // Verify FileSystemTool is used
+    expect(MockFileSystemTool).toHaveBeenCalled();
     
-    // In the implementation, DILocalCliTool is instantiated using dependencies from the container,
+    // In the implementation, FileSystemTool is instantiated using dependencies from the container,
     // not directly from the parameters, so we just check that it was called
     
     // Verify LocalCliToolInstance registration

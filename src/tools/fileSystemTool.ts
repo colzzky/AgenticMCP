@@ -4,7 +4,7 @@
 
 import { Minimatch } from 'minimatch';
 import type { Logger } from '../core/types/logger.types';
-import { getLocalCliToolDefinitions } from './localCliToolDefinitions';
+import { getFileSystemToolDefinitions } from './fileSystemToolDefinitions';
 import type { Tool } from '../core/types/provider.types';
 import type { IFileSystem } from '../core/interfaces/file-system.interface';
 import type { IDiffService } from '../core/interfaces/diff-service.interface';
@@ -27,9 +27,20 @@ import type {
   DeleteDirectoryResult,
   SearchCodebaseResult,
   FindFilesResult,
-  LocalCliCommandMap
+  LocalCliCommandMap,
+  EditFileArgs,
+  EditFileResult,
+  MoveFileArgs,
+  MoveFileResult,
+  ReadMultipleFilesArgs,
+  ReadMultipleFilesResult,
+  GetFileInfoArgs,
+  GetFileInfoResult,
+  DirectoryTreeArgs,
+  DirectoryTreeResult,
+  DirectoryTreeEntry,
 } from '../core/types/cli.types';
-
+import os from 'os';
 import type { PathDI } from '../types/global.types';
 
 export interface FunctionDefinition {
@@ -55,10 +66,21 @@ export interface LocalCliToolConfig {
   allowFileOverwrite?: boolean;
 }
 
+export interface FileInfo {
+  size: number;
+  created: Date;
+  modified: Date;
+  accessed: Date;
+  isDirectory: boolean;
+  isFile: boolean;
+  permissions: string;
+  path: string;
+}
+
 /**
  * Main class providing controlled filesystem operations with dependency injection.
  */
-export class DILocalCliTool {
+export class FileSystemTool {
   private baseDir: string;
   private allowedCommands: Set<string>;
   private allowFileOverwrite: boolean;
@@ -88,7 +110,12 @@ export class DILocalCliTool {
 
     this.commandMap = {
       create_directory: this._createDirectory.bind(this),
+      get_directory_tree: this._getDirectoryTree.bind(this),
+      get_file_info: this._getFileInfo.bind(this),
+      read_multiple_files: this._readMultipleFiles.bind(this),
       write_file: this._writeFile.bind(this),
+      edit_file: this._editFile.bind(this),
+      move_file: this._moveFile.bind(this),
       read_file: this._readFile.bind(this),
       delete_file: this._deleteFile.bind(this),
       delete_directory: this._deleteDirectory.bind(this),
@@ -111,13 +138,13 @@ export class DILocalCliTool {
 
   /**
    * Returns JSON-schema-like definitions for each allowed command.
-   * Uses the standardized tool definitions from localCliToolDefinitions.ts
+   * Uses the standardized tool definitions from fileSystemToolDefinitions.ts
    * 
    * @returns An array of tool definitions compatible with LLM providers
    */
   public getToolDefinitions(): ToolDefinition[] {
     // Get the standardized tool definitions
-    const toolDefinitions = getLocalCliToolDefinitions();
+    const toolDefinitions = getFileSystemToolDefinitions();
 
     // Convert to the format expected by this class's interface
     return toolDefinitions.map((tool: Tool) => ({
@@ -134,7 +161,12 @@ export class DILocalCliTool {
    * Dispatches execution to the appropriate handler.
    */
   public async execute(command: 'create_directory', args: CreateDirectoryArgs): Promise<CreateDirectoryResult>;
+  public async execute(command: 'get_directory_tree', args: DirectoryTreeArgs): Promise<DirectoryTreeResult>;
+  public async execute(command: 'get_file_info', args: GetFileInfoArgs): Promise<GetFileInfoResult>;
+  public async execute(command: 'read_multiple_files', args: ReadMultipleFilesArgs): Promise<ReadMultipleFilesResult>;
   public async execute(command: 'write_file', args: WriteFileArgs): Promise<WriteFileResult>;
+  public async execute(command: 'edit_file', args: EditFileArgs): Promise<EditFileResult>;
+  public async execute(command: 'move_file', args: MoveFileArgs): Promise<MoveFileResult>;
   public async execute(command: 'read_file', args: ReadFileArgs): Promise<ReadFileResult>;
   public async execute(command: 'delete_file', args: DeleteFileArgs): Promise<DeleteFileResult>;
   public async execute(command: 'delete_directory', args: DeleteDirectoryArgs): Promise<DeleteDirectoryResult>;
@@ -158,6 +190,18 @@ export class DILocalCliTool {
       switch (command) {
         case 'create_directory': {
           result = await this.commandMap.create_directory(args as CreateDirectoryArgs);
+          break;
+        }
+        case 'get_directory_tree': {
+          result = await this.commandMap.get_directory_tree(args as DirectoryTreeArgs);
+          break;
+        }
+        case 'get_file_info': {
+          result = await this.commandMap.get_file_info(args as GetFileInfoArgs);
+          break;
+        }
+        case 'read_multiple_files': {
+          result = await this.commandMap.read_multiple_files(args as ReadMultipleFilesArgs);
           break;
         }
         case 'write_file': {
@@ -188,6 +232,10 @@ export class DILocalCliTool {
           result = await this.commandMap.find_files(args as FindFilesArgs);
           break;
         }
+        case 'move_file': {
+          result = await this.commandMap.move_file(args as MoveFileArgs);
+          break;
+        }
         default: {
           throw new Error(`Unknown command: ${String(command)}`);
         }
@@ -202,6 +250,129 @@ export class DILocalCliTool {
         throw new TypeError('Invalid operation');
       }
     }
+  }
+
+  // Add these improvements to FileSystemTool
+  private expandHome(filepath: string): string {
+    if (filepath.startsWith('~/') || filepath === '~') {
+      return this.pathDI.join(os.homedir(), filepath.slice(1));
+    }
+    return filepath;
+  }
+
+  private async validatePath(requestedPath: string): Promise<string> {
+    const expandedPath = this.expandHome(requestedPath);
+    const absolute = this.pathDI.isAbsolute(expandedPath)
+      ? this.pathDI.resolve(expandedPath)
+      : this.pathDI.resolve(process.cwd(), expandedPath);
+
+    const normalizedPath = this.pathDI.normalize(absolute);
+
+    // Check if path is within allowed directories
+    if (!normalizedPath.startsWith(this.baseDir)) {
+      throw new Error(`Access denied - path outside allowed directory: ${absolute}`);
+    }
+
+    // Handle symlinks by checking their real path
+    try {
+      const realPath = await this.fileSystem.realpath(absolute);
+      const normalizedReal = this.pathDI.normalize(realPath);
+      if (!normalizedReal.startsWith(this.baseDir)) {
+        throw new Error("Access denied - symlink target outside allowed directory");
+      }
+      return realPath;
+    } catch (error) {
+      // For new files that don't exist yet, verify parent directory
+      const parentDir = this.pathDI.dirname(absolute);
+      try {
+        const realParentPath = await this.fileSystem.realpath(parentDir);
+        const normalizedParent = this.pathDI.normalize(realParentPath);
+        if (!normalizedParent.startsWith(this.baseDir)) {
+          throw new Error("Access denied - parent directory outside allowed directory");
+        }
+        return absolute;
+      } catch {
+        throw new Error(`Parent directory does not exist: ${parentDir}`);
+      }
+    }
+  }
+
+  async applyFileEdits(
+    filePath: string,
+    edits: Array<{ oldText: string, newText: string }>,
+    dryRun = false
+  ): Promise<string> {
+    // Read file content and normalize line endings
+    const content = this.diffService.normalizeLineEndings(await this.fileSystem.readFile(filePath, 'utf-8'));
+
+    // Apply edits sequentially
+    let modifiedContent = content;
+    for (const edit of edits) {
+      const normalizedOld = this.diffService.normalizeLineEndings(edit.oldText);
+      const normalizedNew = this.diffService.normalizeLineEndings(edit.newText);
+
+      // If exact match exists, use it
+      if (modifiedContent.includes(normalizedOld)) {
+        modifiedContent = modifiedContent.replace(normalizedOld, normalizedNew);
+        continue;
+      }
+
+      // Otherwise, try line-by-line matching with flexibility for whitespace
+      const oldLines = normalizedOld.split('\n');
+      const contentLines = modifiedContent.split('\n');
+      let matchFound = false;
+
+      for (let i = 0; i <= contentLines.length - oldLines.length; i++) {
+        const potentialMatch = contentLines.slice(i, i + oldLines.length);
+
+        // Compare lines with normalized whitespace
+        const isMatch = oldLines.every((oldLine, j) => {
+          const contentLine = potentialMatch[j];
+          return oldLine.trim() === contentLine.trim();
+        });
+
+        if (isMatch) {
+          // Preserve original indentation of first line
+          const originalIndent = contentLines[i].match(/^\s*/)?.[0] || '';
+          const newLines = normalizedNew.split('\n').map((line, j) => {
+            if (j === 0) return originalIndent + line.trimStart();
+            // For subsequent lines, try to preserve relative indentation
+            const oldIndent = oldLines[j]?.match(/^\s*/)?.[0] || '';
+            const newIndent = line.match(/^\s*/)?.[0] || '';
+            if (oldIndent && newIndent) {
+              const relativeIndent = newIndent.length - oldIndent.length;
+              return originalIndent + ' '.repeat(Math.max(0, relativeIndent)) + line.trimStart();
+            }
+            return line;
+          });
+
+          contentLines.splice(i, oldLines.length, ...newLines);
+          modifiedContent = contentLines.join('\n');
+          matchFound = true;
+          break;
+        }
+      }
+
+      if (!matchFound) {
+        throw new Error(`Could not find exact match for edit:\n${edit.oldText}`);
+      }
+    }
+
+    // Create unified diff
+    const diff = this.diffService.createUnifiedDiff(content, modifiedContent, filePath);
+
+    // Format diff with appropriate number of backticks
+    let numBackticks = 3;
+    while (diff.includes('`'.repeat(numBackticks))) {
+      numBackticks++;
+    }
+    const formattedDiff = `${'`'.repeat(numBackticks)}diff\n${diff}${'`'.repeat(numBackticks)}\n\n`;
+
+    if (!dryRun) {
+      await this.fileSystem.writeFile(filePath, modifiedContent, 'utf-8');
+    }
+
+    return formattedDiff;
   }
 
   /**
@@ -227,12 +398,25 @@ export class DILocalCliTool {
   }
 
   /**
+   * Write file
+   */
+  private async _writeFile(args: WriteFileArgs): Promise<WriteFileResult> {
+    const target = this.resolveAndValidatePath(args.path);
+    try {
+      await this.fileSystem.writeFile(target, args.content, "utf-8");
+      return { success: true, content: args.content, message: "File written successfully" };
+    } catch {
+      return { success: false, content: "", message: "Failed to write file" };
+    }
+  }
+
+  /**
    * Write text to file (with overwrite protection)
    * If allowOverwrite is false, checks if the file exists first and doesn't overwrite
    * without explicit permission. Returns file content if it exists and needs confirmation.
    * Now includes GitHub-style diff output showing changes made to the file.
    */
-  private async _writeFile(args: WriteFileArgs): Promise<WriteFileResult> {
+  private async _editFile(args: EditFileArgs): Promise<EditFileResult> {
     const target = this.resolveAndValidatePath(args.path);
     const allowOverwrite = args.allowOverwrite ?? this.allowFileOverwrite;
 
@@ -260,10 +444,6 @@ export class DILocalCliTool {
         // File exists - read the content
         fileExists = true;
         existingContent = await this.fileSystem.readFile(target, 'utf8');
-
-        // Generate diff between existing and new content
-        const diff = this.diffService.generateDiff(existingContent, args.content);
-
         // Check if we're allowed to overwrite
         if (!allowOverwrite) {
           this.logger.warn(`File already exists at ${args.path} and allowOverwrite is false`);
@@ -271,7 +451,6 @@ export class DILocalCliTool {
             success: false,
             fileExists: true,
             existingContent,
-            diff,
             message: "File exists and allowOverwrite is false. Set allowOverwrite to true to proceed."
           };
         }
@@ -281,17 +460,13 @@ export class DILocalCliTool {
       }
 
       // Write file
-      await this.fileSystem.writeFile(target, args.content);
-
-      // Generate diff (empty string for old content if it's a new file)
-      const diff = this.diffService.generateDiff(
-        fileExists ? existingContent : '',
-        args.content
-      );
+      const validPath = await this.validatePath(args.path);
+      const result = await this.applyFileEdits(validPath, args.edits, args.dryRun);
 
       return {
         success: true,
-        diff
+        diff: result,
+        message: "File edited successfully"
       };
     } catch (error) {
       this.logger.error(`Error writing file ${args.path}: ${error instanceof Error ? error.message : String(error)}`);
@@ -300,6 +475,7 @@ export class DILocalCliTool {
         message: `Error writing file: ${error instanceof Error ? error.message : String(error)}`
       };
     }
+
   }
 
   /** Read and return file contents */
@@ -430,11 +606,12 @@ export class DILocalCliTool {
     return { results };
   }
 
-  /** Find files or directories matching glob patterns */
+  /** Find files or directories matching glob patterns with exclusions */
   private async _findFiles(args: FindFilesArgs): Promise<FindFilesResult> {
     const results: string[] = [];
-    const recursive = args.recursive ?? false;
+    const recursive = args.recursive ?? true;
     const matcher = new Minimatch(args.pattern);
+    const excludePatterns = args.exclude?.map(pattern => new Minimatch(pattern)) || [];
 
     const walk = async (dir: string) => {
       try {
@@ -442,14 +619,18 @@ export class DILocalCliTool {
 
         for (const itemName of items) {
           const itemPath = this.pathDI.join(dir, itemName);
+          const relativePath = this.pathDI.relative(this.baseDir, itemPath);
+
+          // Check if path matches any exclude pattern
+          const shouldExclude = excludePatterns.some(pattern => pattern.match(relativePath));
+          if (shouldExclude) continue;
+
           const stat = await this.fileSystem.stat(itemPath);
 
-          if (stat.isDirectory()) {
-            if (recursive) await walk(itemPath);
-          } else {
-            if (matcher.match(itemName)) {
-              results.push(this.pathDI.relative(this.baseDir, itemPath));
-            }
+          if (stat.isDirectory() && recursive) {
+            await walk(itemPath);
+          } else if (!stat.isDirectory() && matcher.match(itemName)) {
+            results.push(relativePath);
           }
         }
       } catch {
@@ -460,4 +641,87 @@ export class DILocalCliTool {
     await walk(this.baseDir);
     return { files: results };
   }
+
+  /** 
+   * Get hierarchical directory structure 
+   */
+  private async _getDirectoryTree(args: DirectoryTreeArgs): Promise<DirectoryTreeResult> {
+    const buildTree = async (currentPath: string, currentName: string): Promise<DirectoryTreeEntry> => {
+      const validPath = await this.validatePath(currentPath);
+      const stats = await this.fileSystem.stat(validPath);
+
+      const entry: DirectoryTreeEntry = {
+        name: currentName,
+        type: stats.isDirectory() ? 'directory' : 'file'
+      };
+
+      if (stats.isDirectory()) {
+        const items = await this.fileSystem.readdir(validPath);
+        entry.children = await Promise.all(
+          items
+            .filter(name => !name.startsWith('.'))
+            .map(async (name) => {
+              const itemPath = this.pathDI.join(currentPath, name);
+              return buildTree(itemPath, name);
+            })
+        );
+      }
+
+      return entry;
+    };
+
+    const targetPath = this.resolveAndValidatePath(args.path);
+    const baseName = this.pathDI.basename(targetPath);
+    const treeData = await buildTree(targetPath, baseName);
+
+    return { tree: JSON.stringify(treeData, null, 2) };
+  }
+
+  /** 
+   * Get detailed file information 
+   */
+  private async _getFileInfo(args: GetFileInfoArgs): Promise<GetFileInfoResult> {
+    const validPath = this.resolveAndValidatePath(args.path);
+    const stats = await this.fileSystem.stat(validPath);
+    return {
+      size: stats.size,
+      created: stats.birthtime,
+      modified: stats.mtime,
+      accessed: stats.atime,
+      isDirectory: stats.isDirectory(),
+      isFile: stats.isFile(),
+      permissions: stats.mode?.toString(8).slice(-3) || '644',
+      path: args.path
+    };
+  }
+
+  private async _readMultipleFiles(args: { paths: string[] }): Promise<{ content: string }> {
+    const results = await Promise.all(
+      args.paths.map(async (filePath: string) => {
+        try {
+          const validPath = await this.validatePath(filePath);
+          const content = await this.fileSystem.readFile(validPath, "utf-8");
+          return `<file>\n<file_path>${filePath}<file_path>:\n<file_contents>${content}<file_contents>\n<file>`;
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          return `${filePath}: Error - ${errorMessage}`;
+        }
+      }),
+    );
+    return {
+      content: "Here's the contents of all files read - each file is wrapped in <file> tags, with the file path in <file_path> and the file contents in <file_contents>:\n\n" + results.join("\n\n"),
+    };
+  }
+
+  private async _moveFile(args: MoveFileArgs): Promise<MoveFileResult> {
+    const validSourcePath = await this.validatePath(args.source);
+    const validDestPath = await this.validatePath(args.destination);
+    await this.fileSystem.rename(validSourcePath, validDestPath);
+    return {
+      success: true,
+      message: `Successfully moved ${args.source} to ${args.destination}`,
+    };
+  }
+
+
 }

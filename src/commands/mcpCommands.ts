@@ -28,7 +28,7 @@ export interface ServeMcpOptions {
 }
 
 /**
- * Command for starting an MCP server to expose DILocalCliTool functionality through MCP.
+ * Command for starting an MCP server to expose FileSystemTool functionality through MCP.
  * This allows external LLM applications to access file operations via the standard MCP protocol.
  */
 export class McpCommands {

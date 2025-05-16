@@ -1,28 +1,28 @@
 /**
- * @file Factory for creating DILocalCliTool instances with dependency injection
+ * @file Factory for creating FileSystemTool instances with dependency injection
  */
 import { DIContainer } from '../../core/di/container';
 import { DI_TOKENS } from '../../core/di/tokens';
 import { IFileSystem } from '../../core/interfaces/file-system.interface';
 import { IDiffService } from '../../core/interfaces/diff-service.interface';
 import { Logger } from '../../core/types/logger.types';
-import { DILocalCliTool, LocalCliToolConfig } from '../localCliTool';
+import { FileSystemTool, LocalCliToolConfig } from '../fileSystemTool';
 import type { PathDI } from '../../types/global.types';
 
 /**
- * Creates a new DILocalCliTool instance with dependencies from the DI container
+ * Creates a new FileSystemTool instance with dependencies from the DI container
  * @param config Configuration for the LocalCliTool
  * @param container DI container to get dependencies from
- * @returns A new DILocalCliTool instance
+ * @returns A new FileSystemTool instance
  */
-export function createDILocalCliTool(
+export function createFileSystemTool(
   config: LocalCliToolConfig,
   container: DIContainer = DIContainer.getInstance()
-): DILocalCliTool {
+): FileSystemTool {
   const logger = container.get(DI_TOKENS.LOGGER) as Logger;
   const fileSystem = container.getSingleton(DI_TOKENS.FILE_SYSTEM) as IFileSystem;
   const diffService = container.getSingleton(DI_TOKENS.DIFF_SERVICE) as IDiffService;
   const pathDI = container.getSingleton(DI_TOKENS.PATH_DI) as PathDI;
   
-  return new DILocalCliTool(config, logger, fileSystem, diffService, pathDI);
+  return new FileSystemTool(config, logger, fileSystem, diffService, pathDI);
 }
