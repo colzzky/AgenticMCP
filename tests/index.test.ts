@@ -107,7 +107,7 @@ describe('mainDI Dependency Injection', () => {
     ]);
     // Logger is passed to each setup function
     expect(deps.setupDependencyInjection.mock.calls[0][1]).toBe(deps.logger);
-    expect(deps.setupToolSystem.mock.calls[0][5]).toBe(deps.logger); // Updated index
+    expect(deps.setupToolSystem.mock.calls[0][6]).toBe(deps.logger); // Updated index to 6 for logger after adding unifiedShellCliToolInstance
     expect(deps.setupProviderSystem.mock.calls[0][3]).toBe(deps.logger);
     expect(deps.setupCliCommands.mock.calls[0][7]).toBe(deps.logger);
     expect(deps.runProgram.mock.calls[0][2]).toBe(deps.logger);

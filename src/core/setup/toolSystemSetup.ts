@@ -1,5 +1,6 @@
 import { FileSystemTool } from '../../tools/fileSystemTool';
 import { DILocalShellCliTool } from '../../tools/localShellCliTool';
+import { UnifiedShellCliTool } from '../../tools/unifiedShellCliTool';
 import { getLocalShellCliToolDefinitions } from '../../tools/localShellCliToolDefinitions';
 import { ToolRegistry } from '../../tools/toolRegistry';
 import { ToolExecutor } from '../../tools/toolExecutor';
@@ -11,6 +12,7 @@ import type { Tool } from '../../core/types/provider.types';
 export type SetupToolSystemFn = (
   localCliToolInstance: FileSystemTool,
   localShellCliToolInstance: DILocalShellCliTool,
+  unifiedShellCliToolInstance: UnifiedShellCliTool,
   toolRegistry: typeof ToolRegistry,
   toolExecutor: typeof ToolExecutor,
   toolResultFormatter: typeof ToolResultFormatter,
@@ -27,6 +29,7 @@ export type SetupToolSystemFn = (
 export const setupToolSystem: SetupToolSystemFn = (
   localCliToolInstance: FileSystemTool,
   localShellCliToolInstance: DILocalShellCliTool,
+  unifiedShellCliToolInstance: UnifiedShellCliTool,
   toolRegistry: typeof ToolRegistry,
   toolExecutor: typeof ToolExecutor,
   toolResultFormatter: typeof ToolResultFormatter,
@@ -34,19 +37,29 @@ export const setupToolSystem: SetupToolSystemFn = (
 ) => {
   // Create tool registry and register local CLI tools
   const toolRegistryInstance = new toolRegistry(loggerTool);
-  const registeredToolCount = toolRegistryInstance.registerLocalCliTools(localCliToolInstance);
+  
+  // Register file system tools
+  const fileSystemTools = localCliToolInstance.getToolDefinitions();
+  const registeredToolCount = toolRegistryInstance.registerTools(fileSystemTools);
   loggerTool.debug(`Registered ${registeredToolCount} local CLI tools`);
 
-  // Register local shell CLI tool definitions
-  const shellToolDefs = localShellCliToolInstance.getToolDefinitions();
-  // Cast to Tool[] since we know the structure is compatible
-  const shellRegisteredCount = toolRegistryInstance.registerTools(shellToolDefs as Tool[]);
-  loggerTool.debug(`Registered ${shellRegisteredCount} shell CLI tools`);
+  // Register unified shell CLI tool definition
+  const unifiedShellToolDef = unifiedShellCliToolInstance.getToolDefinition();
+  // Register the single unified shell tool
+  const shellRegisteredCount = toolRegistryInstance.registerTools([unifiedShellToolDef as Tool]);
+  loggerTool.debug(`Registered unified shell CLI tool`);
 
   // Get command maps and create tool implementations map
   const commandMap = localCliToolInstance.getCommandMap();
-  const shellCommandMap = localShellCliToolInstance.getCommandMap();
-  const toolImplementations: Record<string, Function> = { ...commandMap, ...shellCommandMap };
+  
+  // Create tool implementations map including our unified shell tool
+  const toolImplementations: Record<string, Function> = {
+    ...commandMap,
+    // Add the unified shell command handler
+    shell: async (args: { command: string, args?: string[] }) => {
+      return unifiedShellCliToolInstance.execute(args);
+    }
+  };
 
   // Create ToolExecutor and ToolResultFormatter
   const toolExecutorInstance = new toolExecutor(

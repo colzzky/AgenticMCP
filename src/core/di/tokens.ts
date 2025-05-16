@@ -31,4 +31,6 @@ export enum DI_TOKENS {
 
   PROCESS_DI = 'process:processDi',
   LOCAL_SHELL_CLI_TOOL = 'tools:localShellCliTool',
+  UNIFIED_SHELL_CLI_TOOL = 'tools:unifiedShellCliTool',
+  SHELL_COMMAND_WRAPPER = 'tools:shellCommandWrapper',
 };

@@ -6,6 +6,7 @@ import { FileSystemTool, LocalCliToolConfig } from '../../tools/fileSystemTool';
 import type { PathDI, FileSystemDI, SpawnDi } from '../../types/global.types';
 import type { Logger } from '../types/logger.types';
 import { DILocalShellCliTool } from '../../tools/localShellCliTool';
+import { UnifiedShellCliTool } from '../../tools/unifiedShellCliTool';
 import { DefaultShellCommandWrapper } from '../../tools/shellCommandWrapper';
 import { SHELL_COMMANDS } from '../../tools/localShellCliToolDefinitions';
 
@@ -23,7 +24,8 @@ export type SetupDependencyInjectionFn = (
   dILocalShellCliTool: typeof DILocalShellCliTool
 ) => {
   localCliToolInstance: InstanceType<typeof FileSystemTool>,
-  localShellCliToolInstance: InstanceType<typeof DILocalShellCliTool>
+  localShellCliToolInstance: InstanceType<typeof DILocalShellCliTool>,
+  unifiedShellCliToolInstance: InstanceType<typeof UnifiedShellCliTool>
 };
 
 /**
@@ -75,12 +77,19 @@ export const setupDependencyInjection: SetupDependencyInjectionFn = (
   );
   container.register<FileSystemTool>(DI_TOKENS.LOCAL_CLI_TOOL, localCliToolInstance);
 
-  // 7. Instantiate and register DILocalShellCliTool
-  // Instantiate dependencies needed for shell tool instantiation
+  // 7. Instantiate and register shell command wrapper
   const shellWrapper = new DefaultShellCommandWrapper(spawnDi, [...SHELL_COMMANDS], loggerTool);
+  container.register(DI_TOKENS.SHELL_COMMAND_WRAPPER, shellWrapper);
+  
+  // 8. Instantiate and register DILocalShellCliTool for backward compatibility
   const shellCliToolConfig = { allowedCommands: [...SHELL_COMMANDS] };
   const localShellCliToolInstance = new dILocalShellCliTool(shellCliToolConfig, shellWrapper, loggerTool);
   container.register<DILocalShellCliTool>(DI_TOKENS.LOCAL_SHELL_CLI_TOOL, localShellCliToolInstance);
+  
+  // 9. Instantiate and register UnifiedShellCliTool
+  const unifiedShellCliToolConfig = { allowedCommands: [...SHELL_COMMANDS] };
+  const unifiedShellCliToolInstance = new UnifiedShellCliTool(unifiedShellCliToolConfig, shellWrapper, loggerTool);
+  container.register<UnifiedShellCliTool>(DI_TOKENS.UNIFIED_SHELL_CLI_TOOL, unifiedShellCliToolInstance);
 
-  return { localCliToolInstance, localShellCliToolInstance };
+  return { localCliToolInstance, localShellCliToolInstance, unifiedShellCliToolInstance };
 }

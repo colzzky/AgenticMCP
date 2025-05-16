@@ -5,8 +5,9 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { setupToolSystem } from '../../../src/core/setup/toolSystemSetup.js';
 import type { Logger } from '../../../src/core/types/logger.types.js';
-import type { FileSystemTool } from '../../../src/tools/localCliTool.js';
+import type { FileSystemTool } from '../../../src/tools/fileSystemTool.js';
 import type { DILocalShellCliTool } from '../../../src/tools/localShellCliTool.js';
+import type { UnifiedShellCliTool } from '../../../src/tools/unifiedShellCliTool.js';
 
 // Mock getLocalShellCliToolDefinitions module
 jest.mock('../../../src/tools/localShellCliToolDefinitions.js', () => ({
@@ -31,7 +32,11 @@ describe('toolSystemSetup', () => {
       read_file: jest.fn(),
       write_file: jest.fn(),
       list_directory: jest.fn()
-    })
+    }),
+    getToolDefinitions: jest.fn().mockReturnValue([
+      { type: 'function', name: 'read_file', description: 'Read file contents', parameters: { type: 'object', properties: {} } },
+      { type: 'function', name: 'write_file', description: 'Write to file', parameters: { type: 'object', properties: {} } }
+    ])
   } as unknown as FileSystemTool;
   
   // Mock localShellCliTool
@@ -45,6 +50,23 @@ describe('toolSystemSetup', () => {
       echo: jest.fn()
     })
   } as unknown as DILocalShellCliTool;
+  
+  // Mock unifiedShellCliTool
+  const mockUnifiedShellCliTool = {
+    execute: jest.fn(),
+    getToolDefinition: jest.fn().mockReturnValue({
+      type: 'function', 
+      name: 'shell', 
+      description: 'Unified shell command execution', 
+      parameters: { 
+        type: 'object', 
+        properties: { 
+          command: { type: 'string' },
+          args: { type: 'array', items: { type: 'string' } }
+        }
+      }
+    })
+  } as unknown as UnifiedShellCliTool;
   
   // Mock ToolRegistry
   const mockRegistryInstance = {
@@ -80,6 +102,7 @@ describe('toolSystemSetup', () => {
     const result = setupToolSystem(
       mockLocalCliTool,
       mockLocalShellCliTool,
+      mockUnifiedShellCliTool,
       MockToolRegistry as any,
       MockToolExecutor as any,
       MockToolResultFormatter as any,
@@ -89,12 +112,18 @@ describe('toolSystemSetup', () => {
     // Assert
     // Verify tool registry initialization
     expect(MockToolRegistry).toHaveBeenCalledWith(mockLogger);
-    expect(mockRegistryInstance.registerLocalCliTools).toHaveBeenCalledWith(mockLocalCliTool);
-    expect(mockLogger.debug).toHaveBeenCalledWith('Registered 3 local CLI tools');
+    // We now use registerTools instead of registerLocalCliTools
+    expect(mockRegistryInstance.registerTools).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'read_file' }),
+        expect.objectContaining({ name: 'write_file' })
+      ])
+    );
+    expect(mockLogger.debug).toHaveBeenCalledWith('Registered 1 local CLI tools');
     
     // Verify shell tools registration
     expect(mockRegistryInstance.registerTools).toHaveBeenCalled();
-    expect(mockLogger.debug).toHaveBeenCalledWith('Registered 1 shell CLI tools');
+    expect(mockLogger.debug).toHaveBeenCalledWith('Registered unified shell CLI tool');
     
     // Verify command map retrieval
     expect(mockLocalCliTool.getCommandMap).toHaveBeenCalled();
@@ -127,6 +156,7 @@ describe('toolSystemSetup', () => {
     const result = setupToolSystem(
       mockLocalCliTool,
       mockLocalShellCliTool,
+      mockUnifiedShellCliTool,
       MockToolRegistry as any,
       MockToolExecutor as any,
       MockToolResultFormatter as any,
@@ -135,7 +165,7 @@ describe('toolSystemSetup', () => {
     
     // Assert
     expect(mockLogger.debug).toHaveBeenCalledWith('Registered 0 local CLI tools');
-    expect(mockLogger.debug).toHaveBeenCalledWith('Registered 0 shell CLI tools');
+    expect(mockLogger.debug).toHaveBeenCalledWith('Registered unified shell CLI tool');
     
     // Verify tool executor is still initialized
     expect(MockToolExecutor).toHaveBeenCalledWith(

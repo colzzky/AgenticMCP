@@ -6,6 +6,7 @@ import { ConfigManager } from './core/config/configManager';
 import { DIContainer } from './core/di/container';
 import { FileSystemTool } from './tools/fileSystemTool';
 import { DILocalShellCliTool } from './tools/localShellCliTool';
+import { UnifiedShellCliTool } from './tools/unifiedShellCliTool';
 import { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';
 import { SHELL_COMMANDS } from './tools/localShellCliToolDefinitions';
 import { spawn } from 'node:child_process';
@@ -69,6 +70,7 @@ export async function main(): Promise<void> {
     DiffService,
     FileSystemTool,
     DILocalShellCliTool,
+    UnifiedShellCliTool,
     DefaultShellCommandWrapper,
     SHELL_COMMANDS,
     ToolRegistry,

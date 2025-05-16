@@ -31,6 +31,7 @@ import type { RoleBasedToolsRegistrar } from './mcp/tools/types';
 import type { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';
 import { FileKeytar } from './core/credentials/file-keytar';
 import { DILocalShellCliTool } from './tools/localShellCliTool';
+import { UnifiedShellCliTool } from './tools/unifiedShellCliTool';
 import { FileSystemTool } from './tools/fileSystemTool';
 import { FileSystemService } from './core/services/file-system.service';
 
@@ -85,6 +86,7 @@ export interface MainDependencies {
 
   // Shell Tool
   DILocalShellCliTool: typeof DILocalShellCliTool;
+  UnifiedShellCliTool: typeof UnifiedShellCliTool;
   DefaultShellCommandWrapper: typeof DefaultShellCommandWrapper;
   SHELL_COMMANDS: readonly string[];
   
@@ -124,6 +126,7 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
     const tools = deps.setupToolSystem(
       diResult.localCliToolInstance,
       diResult.localShellCliToolInstance,
+      diResult.unifiedShellCliToolInstance,
       deps.ToolRegistry,
       deps.ToolExecutor,
       deps.ToolResultFormatter,
