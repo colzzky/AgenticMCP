@@ -5,6 +5,7 @@ import { ToolLoopOrchestrator } from '@/mcp/tools/orchestration/toolLoopOrchestr
 import { LLMProvider, ProviderResponse, ToolCall } from '@/core/types/provider.types';
 import { ToolExecutor } from '@/tools/toolExecutor';
 import { Logger } from '@/core/types/logger.types';
+import { jest } from '@jest/globals';
 
 describe('ToolLoopOrchestrator', () => {
   // Mock dependencies

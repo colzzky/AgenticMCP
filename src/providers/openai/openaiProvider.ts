@@ -153,6 +153,9 @@ export class OpenAIProvider implements LLMProvider {
       if (request.tools && request.tools.length > 0) {
         this.logger.debug(`Adding ${request.tools.length} tools to request`);
         requestOptions.tools = mappers.mapToolsToOpenAIChatTools(request.tools);
+        
+        // Set parallelToolCalls based on request option (default to true if not specified)
+        requestOptions.parallelToolCalls = request.parallelToolCalls !== false;
       }
 
       // Add tool_choice if specified

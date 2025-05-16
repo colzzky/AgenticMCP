@@ -45,7 +45,16 @@ export class RoleModelConfigManager {
 
     // If a config path was provided, try to load it immediately
     if (this.configPath) {
-      this.loadConfig(this.configPath);
+      // First check synchronously to support tests
+      if (this.fileSystemDI.existsSync(this.configPath)) {
+        // We can't await in the constructor, so we'll start the load process
+        // and log any errors. Tests will need to handle the async nature.
+        this.loadConfig(this.configPath).catch(error => {
+          this.logger.error(`Failed to load config in constructor: ${error}`);
+        });
+      } else {
+        this.logger.error(`Role model configuration file not found: ${this.configPath}`);
+      }
     }
   }
 
@@ -92,16 +101,22 @@ export class RoleModelConfigManager {
   }
 
   /**
-   * Reloads the current configuration file if one is set
-   * @returns True if the configuration was reloaded successfully, false otherwise
+   * Reloads the configuration from the configured path
+   * @returns A promise that resolves to true if the configuration was loaded successfully, false otherwise
    */
-  public async reloadConfig(): Promise<boolean> {
+  async reloadConfig(): Promise<boolean> {
     if (!this.configPath) {
-      this.logger.warn('No configuration file path set, using default configuration');
+      this.logger.warn('No config path set, cannot reload configuration');
       return false;
     }
-    
-    return await this.loadConfig(this.configPath);
+
+    try {
+      await this.loadConfig(this.configPath);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to reload configuration: ${error}`);
+      return false;
+    }
   }
 
   /**
