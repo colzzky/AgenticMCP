@@ -34,7 +34,7 @@ export class ProviderFactory implements ProviderFactoryInterface {
    */
   registerProvider(type: ProviderType, providerClass: new (...args: any[]) => LLMProvider): void {
     this.providerMap.set(type, providerClass);
-    this.logger.info(`Registered provider: ${type}`);
+    this.logger.debug(`Registered provider: ${type}`);
   }
 
   /**

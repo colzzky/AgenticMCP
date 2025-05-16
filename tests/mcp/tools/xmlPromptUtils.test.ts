@@ -9,6 +9,8 @@ import * as helpers from '../../../src/mcp/tools/xmlPromptUtilsHelpers.js';
 import type { Tool } from '../../../src/core/types/provider.types';
 import { getFileSystemToolDefinitions } from '../../../src/tools/fileSystemToolDefinitions';
 import { getUnifiedShellToolDefinition, shellCommandDescriptions } from '../../../src/tools/unifiedShellToolDefinition';
+// Import the module that we'll test
+import * as roleModelConfig from '../../../src/mcp/tools/config/roleModelConfig.js';
 
 // Since mocking ES modules is challenging, let's test the result of constructXmlPrompt
 // without relying on mocking the imported functions
@@ -144,17 +146,27 @@ describe('xmlPromptUtils', () => {
   });
 
   describe('selectModelForRole', () => {
-    it('should return a model name for any role', () => {
+    it('should return the model from the role-model configuration', () => {
+      // Get the default config for verifying against
+      const defaultConfig = roleModelConfig.defaultRoleModelConfig;
+      
+      // Test with a role that exists in the default config
       const model = selectModelForRole(roleEnums.CODER);
-      // The expected model depends on the implementation, but should be a non-empty string
-      expect(typeof model).toBe('string');
-      expect(model.length).toBeGreaterThan(0);
+      
+      // Verify it returns the expected model from the default config
+      expect(model).toBe(defaultConfig.roleMap[roleEnums.CODER].model);
     });
 
-    it('should handle custom roles', () => {
-      const model = selectModelForRole('financial_analyst');
-      expect(typeof model).toBe('string');
-      expect(model.length).toBeGreaterThan(0);
+    it('should handle unknown roles by using default configuration', () => {
+      // Get the default config for verifying against
+      const defaultConfig = roleModelConfig.defaultRoleModelConfig;
+      
+      // Test with a custom role that doesn't exist in the default config
+      const customRole = 'not_in_config_role';
+      const model = selectModelForRole(customRole);
+      
+      // Verify it falls back to the default model
+      expect(model).toBe(defaultConfig.default.model);
     });
   });
 

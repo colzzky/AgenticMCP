@@ -4,6 +4,7 @@ import type { AllRoleSchemas } from './roleSchemas';
 import type { Tool } from '../../core/types/provider.types';
 import { getFileSystemToolDefinitions } from '../../tools/fileSystemToolDefinitions';
 import { getUnifiedShellToolDefinition, shellCommandDescriptions } from '../../tools/unifiedShellToolDefinition';
+import { getModelConfigForRole } from './config/roleModelConfig.js';
 
 /**
  * Formats tool definitions for inclusion in an XML prompt
@@ -84,7 +85,16 @@ export function constructXmlPrompt(
   return xmlPrompt;
 }
 
+/**
+ * Selects the appropriate model for a given role based on configuration
+ * 
+ * @param role The role to select a model for
+ * @returns The model ID to use for the specified role
+ */
 export function selectModelForRole(role: string): string {
-  // Placeholder: actual implementation depends on available models
-  return 'claude-3-sonnet-20240229';
+  // Get the model configuration for this role from our config system
+  const modelConfig = getModelConfigForRole(role);
+  
+  // Return the configured model for the role
+  return modelConfig.model;
 }

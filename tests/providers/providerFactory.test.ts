@@ -109,7 +109,7 @@ describe('ProviderFactory', () => {
       providerFactory.registerProvider(openaiProviderType, MockOpenAIProvider);
       
       // Assert
-      expect(mockLogger.info).toHaveBeenCalledWith(`Registered provider: ${openaiProviderType}`);
+      expect(mockLogger.debug).toHaveBeenCalledWith(`Registered provider: ${openaiProviderType}`);
       expect(providerFactory.hasProviderType(openaiProviderType)).toBe(true);
     });
 
@@ -122,7 +122,7 @@ describe('ProviderFactory', () => {
       providerFactory.registerProvider(openaiProviderType, newMockProvider);
       
       // Assert
-      expect(mockLogger.info).toHaveBeenCalledWith(`Registered provider: ${openaiProviderType}`);
+      expect(mockLogger.debug).toHaveBeenCalledWith(`Registered provider: ${openaiProviderType}`);
       
       // Create an instance to verify the new class is used
       const provider = providerFactory.getProvider(openaiProviderType);
