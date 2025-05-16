@@ -11,6 +11,7 @@ import {
   ToolCall,
   ToolCallOutput,
   ToolResultsRequest,
+  RecursiveToolLoopOptions
 } from '../../core/types/provider.types';
 import type { ConfigManager } from '../../core/config/configManager';
 import type { Logger } from '../../core/types/logger.types';

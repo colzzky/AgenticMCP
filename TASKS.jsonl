@@ -2,3 +2,4 @@
 {"task_number":"TEST-001","title":"Update Tool Definitions and Tests","description":"Ensure tool definitions accurately reflect latest requirements and update corresponding test files.","assigned_to":"Cascade","status":"complete"}
 {"task_number":"TOOL-001","title":"Create Unified Shell Tool","description":"Improve shell tool implementation by consolidating multiple shell commands into a single dynamic shell tool with command as an argument.","assigned_to":"Cascade","status":"complete"}
 {"task_number":"LLM-002","title":"Implement LLM → Tool → LLM Orchestration Loop","description":"Create a robust orchestration system to handle multiple rounds of tool calls until a final response with no more tool calls is received.","assigned_to":"Cascade","status":"complete"}
+{"task_number":"DEV-001","title":"Fix Type-Check Errors","description":"Resolve all TypeScript type-check errors to ensure code quality and prevent runtime issues.","assigned_to":"Cascade","status":"complete"}

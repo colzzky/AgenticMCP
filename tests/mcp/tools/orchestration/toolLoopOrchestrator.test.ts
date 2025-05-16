@@ -1,10 +1,10 @@
 /**
  * @file Tests for ToolLoopOrchestrator
  */
-import { ToolLoopOrchestrator } from '../../../../src/mcp/tools/orchestration/toolLoopOrchestrator';
-import { LLMProvider, ProviderResponse, ToolCall, ToolCallOutput } from '../../../../src/core/types/provider.types';
-import { ToolExecutor } from '../../../../src/mcp/tools/toolExecutor';
-import { Logger } from '../../../../src/core/types/logger.types';
+import { ToolLoopOrchestrator } from '@/mcp/tools/orchestration/toolLoopOrchestrator';
+import { LLMProvider, ProviderResponse, ToolCall } from '@/core/types/provider.types';
+import { ToolExecutor } from '@/tools/toolExecutor';
+import { Logger } from '@/core/types/logger.types';
 
 describe('ToolLoopOrchestrator', () => {
   // Mock dependencies

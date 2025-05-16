@@ -5,7 +5,7 @@ import { Command } from 'commander';
 import path from 'node:path';
 import fs from 'node:fs';
 import { CommandHandler, AgentCommand, CommandParam } from '../core/commands/decorators';
-import { Container } from '../core/di/container';
+import { DIContainer } from '../core/di/container';
 import { DI_TOKENS } from '../core/di/tokens';
 import { createRoleModelConfigManager } from '../mcp/tools/config/roleModelConfigFactory';
 import { Logger } from '../core/types/logger.types';
@@ -16,12 +16,12 @@ import { defaultRoleModelConfig } from '../mcp/tools/config/roleModelConfig';
   description: 'Manage role-to-model configurations for LLM roles'
 })
 export class RoleModelConfigCommand {
-  private container: Container;
+  private container: DIContainer;
   private logger: Logger;
 
-  constructor(container: Container = Container.instance) {
+  constructor(container: DIContainer = DIContainer.getInstance()) {
     this.container = container;
-    this.logger = container.get<Logger>(DI_TOKENS.Logger);
+    this.logger = container.get<Logger>(DI_TOKENS.LOGGER);
   }
 
   /**

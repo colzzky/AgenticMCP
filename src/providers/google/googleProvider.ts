@@ -3,7 +3,7 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
-import type { LLMProvider, ProviderRequest, ProviderResponse, Tool, ToolCall, ChatMessage, ToolResultsRequest, Message, ToolCallOutput } from '../../core/types/provider.types';
+import type { LLMProvider, ProviderRequest, ProviderResponse, Tool, ToolCall, ChatMessage, ToolResultsRequest, Message, ToolCallOutput, RecursiveToolLoopOptions } from '../../core/types/provider.types';
 import type { GoogleProviderSpecificConfig } from '../../core/types/config.types';
 import type { ConfigManager } from '../../core/config/configManager';
 import type { Logger } from '../../core/types/logger.types';

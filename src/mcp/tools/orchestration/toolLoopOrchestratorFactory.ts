@@ -1,8 +1,8 @@
-import { Container } from 'inversify';
+import { DIContainer } from '../../../core/di/container';
 import { DI_TOKENS } from '../../../core/di/tokens';
 import { ToolLoopOrchestrator } from './toolLoopOrchestrator';
 import { Logger } from '../../../core/types/logger.types';
-import { ToolExecutor } from '../toolExecutor';
+import { ToolExecutor } from '../../../tools/toolExecutor';
 
 /**
  * Creates a ToolLoopOrchestrator with dependencies from the DI container
@@ -10,7 +10,7 @@ import { ToolExecutor } from '../toolExecutor';
  * @returns A new ToolLoopOrchestrator instance
  */
 export function createToolLoopOrchestrator(
-  container: Container = Container.instance
+  container: DIContainer = DIContainer.getInstance()
 ): ToolLoopOrchestrator {
   // Resolve dependencies from the container
   const logger = container.get<Logger>(DI_TOKENS.LOGGER);
@@ -26,7 +26,7 @@ export function createToolLoopOrchestrator(
  * @returns A ToolLoopOrchestrator instance
  */
 export function getDefaultToolLoopOrchestrator(
-  container: Container = Container.instance
+  container: DIContainer = DIContainer.getInstance()
 ): ToolLoopOrchestrator {
   return createToolLoopOrchestrator(container);
 }

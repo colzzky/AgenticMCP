@@ -19,6 +19,7 @@ import { ProviderInitializer } from './providers/providerInitializer';
 import { McpCommands } from './commands/mcpCommands';
 import { LLMCommand } from './commands/llmCommand';
 import { ToolCommands } from './commands/toolCommands';
+import { RoleModelConfigCommand } from './commands/roleModelConfigCommand';
 import path from 'node:path';
 import * as fs from 'node:fs/promises';
 import { createFileKeytar } from './core/credentials/file-keytar';
@@ -84,6 +85,7 @@ export async function main(): Promise<void> {
     McpCommands,
     LLMCommand,
     ToolCommands,
+    RoleModelConfigCommand,
     McpServer,
     BaseMcpServer,
     StdioServerTransport,

@@ -1,4 +1,4 @@
-import { injectable, inject } from 'inversify';
+// Remove dependency on decorators since they're not available in this codebase
 import { DI_TOKENS } from '../../../core/di/tokens';
 import { Logger } from '../../../core/types/logger.types';
 import { 
@@ -9,7 +9,7 @@ import {
   ToolCallOutput,
   ToolResultsRequest
 } from '../../../core/types/provider.types';
-import { ToolExecutor } from '../toolExecutor';
+import { ToolExecutor } from '../../../tools/toolExecutor';
 
 /**
  * Extended options for orchestrating the tool loop
@@ -41,12 +41,14 @@ export interface ToolLoopOrchestratorOptions extends RecursiveToolLoopOptions {
 /**
  * Service responsible for orchestrating the LLM -> Tool -> LLM execution loop
  */
-@injectable()
 export class ToolLoopOrchestrator {
-  constructor(
-    @inject(DI_TOKENS.LOGGER) private logger: Logger,
-    @inject(DI_TOKENS.TOOL_EXECUTOR) private toolExecutor: ToolExecutor
-  ) {}
+  private logger: Logger;
+  private toolExecutor: ToolExecutor;
+
+  constructor(logger: Logger, toolExecutor: ToolExecutor) {
+    this.logger = logger;
+    this.toolExecutor = toolExecutor;
+  }
 
   /**
    * Orchestrates the complete flow of:
@@ -86,7 +88,23 @@ export class ToolLoopOrchestrator {
     let currentRequest = { ...request };
     let currentMessages = [...(request.messages || [])];
     let iterations = 0;
-    let traceInfo = includeTraceInfo ? { iterations: 0, toolExecutions: [] } : undefined;
+    // Define the traceInfo interface for type safety
+    interface TraceInfo {
+      iterations: number;
+      toolExecutions: Array<{
+        iteration: number;
+        tool: string;
+        arguments: any;
+        result?: any;
+        error?: string;
+      }>;
+      maxIterationsReached?: boolean;
+    }
+    
+    // Initialize trace info with proper typing
+    let traceInfo: TraceInfo | undefined = includeTraceInfo 
+      ? { iterations: 0, toolExecutions: [] } 
+      : undefined;
     
     // Main recursive loop
     while (iterations < maxIterations) {

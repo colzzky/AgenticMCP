@@ -99,6 +99,16 @@ export interface ProviderResponse {
     details?: unknown;
   };
   rawResponse?: unknown; // The raw response object from the provider
+
+  /**
+   * Additional trace information for debugging and monitoring
+   */
+  traceInfo?: Record<string, any>;
+  
+  /**
+   * Flag indicating whether maximum iterations were reached in a recursive tool loop
+   */
+  maxIterationsReached?: boolean;
 }
 
 /**

@@ -2,9 +2,9 @@
  * @file Factory for creating RoleModelConfigManager instances
  */
 import path from 'node:path';
-import { Container } from 'inversify';
+import { DIContainer } from '../../../core/di/container';
 import { RoleModelConfigManager } from './roleModelConfigManager.js';
-import { DITokens } from '../../../core/di/tokens.js';
+import { DI_TOKENS } from '../../../core/di/tokens';
 import type { PathDI, FileSystemDI } from '../../../types/global.types.js';
 import { Logger } from '../../../core/types/logger.types.js';
 
@@ -16,12 +16,12 @@ import { Logger } from '../../../core/types/logger.types.js';
  */
 export function createRoleModelConfigManager(
   configPath?: string,
-  container: Container = Container.instance
+  container: DIContainer = DIContainer.getInstance()
 ): RoleModelConfigManager {
   // Resolve dependencies from the container
-  const pathDI = container.get<PathDI>(DITokens.PathDI);
-  const fileSystemDI = container.get<FileSystemDI>(DITokens.FileSystemDI);
-  const logger = container.get<Logger>(DITokens.Logger);
+  const pathDI = container.get<PathDI>(DI_TOKENS.PATH_DI);
+  const fileSystemDI = container.get<FileSystemDI>(DI_TOKENS.FILE_SYSTEM_DI);
+  const logger = container.get<Logger>(DI_TOKENS.LOGGER);
   
   // Create and return the manager
   return new RoleModelConfigManager({
@@ -38,7 +38,7 @@ export function createRoleModelConfigManager(
  * @returns A RoleModelConfigManager instance
  */
 export function getDefaultRoleModelConfigManager(
-  container: Container = Container.instance
+  container: DIContainer = DIContainer.getInstance()
 ): RoleModelConfigManager {
   // Check for a configuration path in the environment variables
   const configPath = process.env.AGENTICMCP_ROLE_MODEL_CONFIG;

@@ -3,6 +3,7 @@
  */
 import type { PathDI, FileSystemDI } from '../../../types/global.types';
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { defaultRoleModelConfig, RoleModelConfig, RoleModelMapping } from './roleModelConfig.js';
 import { Logger } from '../../../core/types/logger.types.js';
@@ -53,7 +54,7 @@ export class RoleModelConfigManager {
    * @param configPath Path to the configuration file
    * @returns True if the configuration was loaded successfully, false otherwise
    */
-  public loadConfig(configPath: string): boolean {
+  public async loadConfig(configPath: string): Promise<boolean> {
     try {
       // Make sure the path is absolute
       const absolutePath = this.pathDI.isAbsolute(configPath) 
@@ -66,8 +67,8 @@ export class RoleModelConfigManager {
         return false;
       }
 
-      // Load the file content
-      const configContent = this.fileSystemDI.readFileSync(absolutePath, 'utf-8');
+      // Load the file content using native fs promises
+      const configContent = await readFile(absolutePath, 'utf-8');
       
       // Parse the JSON content
       const parsedConfig = JSON.parse(configContent);
@@ -94,13 +95,13 @@ export class RoleModelConfigManager {
    * Reloads the current configuration file if one is set
    * @returns True if the configuration was reloaded successfully, false otherwise
    */
-  public reloadConfig(): boolean {
+  public async reloadConfig(): Promise<boolean> {
     if (!this.configPath) {
       this.logger.warn('No configuration file path set, using default configuration');
       return false;
     }
     
-    return this.loadConfig(this.configPath);
+    return await this.loadConfig(this.configPath);
   }
 
   /**
