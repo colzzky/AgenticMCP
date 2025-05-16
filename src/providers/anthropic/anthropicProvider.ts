@@ -14,7 +14,7 @@ import type {
 import type { AnthropicProviderSpecificConfig } from '../../core/types/config.types';
 import type { ConfigManager } from '../../core/config/configManager';
 import type { Logger } from '../../core/types/logger.types';
-import { ToolResultsRequest } from '../../core/types/provider.types';
+import { ToolResultsRequest, RecursiveToolLoopOptions } from '../../core/types/provider.types';
 
 /**
  * AnthropicProvider implements the LLMProvider interface for Anthropic Claude API.
@@ -64,303 +64,214 @@ export class AnthropicProvider implements LLMProvider {
   }
 
   /**
-   * Extracts tool calls from Anthropic response content blocks
+   * Gets or initializes the Anthropic client
    */
-  private extractToolCallsFromResponse(content: any[]): ToolCall[] | undefined {
-    if (!content || content.length === 0) {
-      return undefined;
+  private async getClient(): Promise<Anthropic> {
+    if (this.client) {
+      return this.client;
     }
 
-    const toolCalls: ToolCall[] = [];
+    // Load provider config
+    this.providerConfig = await this.configManager.getProviderConfig<AnthropicProviderSpecificConfig>('anthropic');
+    
+    if (!this.providerConfig || !this.providerConfig.apiKey) {
+      throw new Error('Anthropic API key not found in config or environment');
+    }
 
-    for (const block of content) {
+    // Create and store client
+    this.client = new this.AnthropicClass({
+      apiKey: this.providerConfig.apiKey
+    });
+
+    return this.client;
+  }
+
+  /**
+   * Maps our internal message format to Anthropic's format
+   */
+  private mapMessagesToAnthropicFormat(messages: ChatMessage[]): MessageParam[] {
+    return messages.map(message => {
+      // Convert our message role to Anthropic's role format
+      const role = message.role === 'assistant' ? 'assistant' : 'user';
+      
+      // Basic content mapping
+      return typeof message.content === 'string' ? 
+        { role, content: message.content } : 
+        (Array.isArray(message.content) ? 
+          // Handle complex content with media
+          { role, content: message.content
+            .filter(part => typeof part === 'object' && 'text' in part)
+            .map(part => (part as { text: string }).text)
+            .join('\n') } : 
+          // Fallback for empty content
+          { role, content: '' }
+        );
+
+    });
+  }
+
+  /**
+   * Processes and formats tool calls from Anthropic's response
+   */
+  private extractToolCallsFromResponse(response: any): ToolCall[] | undefined {
+    if (!response.content || !Array.isArray(response.content)) {
+      return undefined;
+    }
+    
+    // Look for tool calls in the response
+    const toolCalls: ToolCall[] = [];
+    
+    for (const block of response.content) {
       if (block.type === 'tool_use') {
         toolCalls.push({
-          id: block.id,
-          call_id: block.id,
-          type: 'function_call',
+          id: block.id || `tool-call-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
           name: block.name,
-          arguments: JSON.stringify(block.input)
+          arguments: JSON.stringify(block.input) 
         });
       }
     }
-
+    
     return toolCalls.length > 0 ? toolCalls : undefined;
   }
 
   /**
-   * Extracts text content from Anthropic response content blocks
+   * Validates the API configuration and model settings
    */
-  private extractTextFromContentBlocks(content: any[]): string {
-    if (!content || content.length === 0) {
-      return '';
-    }
-
-    const textBlocks = content
-      .filter((block) => block.type === 'text')
-      .map((block) => (block.type === 'text' ? block.text : ''));
-
-    return textBlocks.join(' ');
-  }
-
-  get name(): string {
-    return 'anthropic';
-  }
-
-  get defaultModel(): string {
-    return 'claude-3-5-haiku-20241022';
-  }
-
-  /**
-   * Executes a tool call and returns the result
-   */
-  public async executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
-    if (!availableTools) {
-      throw new Error('No tools available to execute');
-    }
-
-    const { name, arguments: argsStr } = toolCall;
-    const toolFunction = availableTools[name];
-
-    if (!toolFunction) {
-      throw new Error(`Tool not found: ${name}`);
-    }
-
+  public async validateConfig(config?: ProviderConfig): Promise<boolean> {
     try {
-      // Parse the arguments string to an object
-      const args = JSON.parse(argsStr);
-
-      // Execute the function with the parsed arguments
-      const result = await toolFunction(args);
-
-      // Convert the result to a string if it's not already
-      return typeof result === 'string' ? result : JSON.stringify(result);
-    } catch (error_: unknown) {
-      const errorMessage = error_ instanceof Error ? error_.message : String(error_);
-      this.logger.error(`Error executing tool call ${name}: ${errorMessage}`);
-      return JSON.stringify({ error: errorMessage });
-    }
-  }
-
-  /**
-   * Configures the AnthropicProvider with API keys and settings.
-   * Uses ConfigManager to resolve API key.
-   */
-  async configure(config: AnthropicProviderSpecificConfig): Promise<void> {
-    this.providerConfig = config;
-    
-    // Check for environment variable first
-    let apiKey = process.env.ANTHROPIC_API_KEY;
-    
-    // Fall back to credential store if environment variable is not set
-    if (!apiKey) {
-      try {
-        const storedApiKey = await this.configManager.getResolvedApiKey(config);
-        if (storedApiKey) {
-          apiKey = storedApiKey;
-        }
-      } catch (error) {
-        this.logger.debug(`Error retrieving API key from credential store: ${error instanceof Error ? error.message : String(error)}`);
+      // Use provided config or load from config manager
+      const providerConfig = config?.providerSpecificConfig as AnthropicProviderSpecificConfig 
+        || (await this.configManager.getProviderConfig<AnthropicProviderSpecificConfig>('anthropic'));
+      
+      if (!providerConfig || !providerConfig.apiKey) {
+        this.logger.error('Anthropic API key not found in config');
+        return false;
       }
+      
+      // Basic validation passed
+      return true;
+    } catch (error) {
+      this.logger.error(`Error validating Anthropic config: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
     }
-    
-    if (!apiKey) {
-      throw new Error(
-        `Anthropic API key not found for providerType: ${config.providerType}. ` +
-        `Ensure it's set in credentials or as ANTHROPIC_API_KEY environment variable.`
-      );
-    }
-    
-    this.client = new this.AnthropicClass({ apiKey });
-    this.logger.debug(`AnthropicProvider configured for instance ${config.instanceName || 'default'}`);
   }
 
   /**
-   * Handles chat requests with Anthropic API.
+   * Initialize the provider with configuration
    */
-  async chat(request: ProviderRequest): Promise<ProviderResponse> {
-    if (!this.client || !this.providerConfig) {
-      throw new Error('AnthropicProvider not configured. Call configure() first.');
-    }
-    
+  public async initialize(config?: ProviderConfig): Promise<boolean> {
     try {
-      const model = request.model || this.providerConfig.model || this.defaultModel;
-      const max_tokens = request.maxTokens || this.providerConfig.maxTokens || 1024;
-
-      // Process complex messages with tool calls
-      const processedMessages: any[] = [];
-
-      if (request.messages) {
-        for (const msg of request.messages) {
-          if (msg.role !== 'user' && msg.role !== 'assistant') {
-            continue; // Skip system roles for now (could be handled in a system parameter)
-          }
-
-          // Handle simple text messages
-          if (!('tool_calls' in msg) && !('tool_call_id' in msg)) {
-            processedMessages.push({
-              role: msg.role,
-              content: msg.content
-            });
-            continue;
-          }
-
-          // Handle assistant messages with tool calls
-          if (msg.role === 'assistant' && 'tool_calls' in msg && msg.tool_calls) {
-            const contentBlocks: any[] = [];
-
-            // Add any text content
-            if (msg.content) {
-              contentBlocks.push({
-                type: 'text',
-                text: msg.content
-              });
-            }
-
-            // Add tool use blocks for each tool call
-            const toolCalls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
-            for (const toolCall of toolCalls) {
-              contentBlocks.push({
-                type: 'tool_use',
-                id: toolCall.id,
-                name: toolCall.name,
-                input: JSON.parse(toolCall.arguments)
-              });
-            }
-
-            processedMessages.push({
-              role: 'assistant',
-              content: contentBlocks
-            });
-            continue;
-          }
-
-          // Handle tool results from the user
-          if (msg.role === 'user' && 'tool_call_id' in msg && msg.tool_call_id) {
-            processedMessages.push({
-              role: 'user',
-              content: [
-                {
-                  type: 'tool_result',
-                  tool_use_id: msg.tool_call_id,
-                  content: msg.content
-                }
-              ]
-            });
-            continue;
-          }
-
-          // Default case - just add the message as is
-          processedMessages.push({
-            role: msg.role,
-            content: msg.content
-          });
-        }
+      // If config is provided, use it to initialize
+      if (config?.providerSpecificConfig) {
+        this.providerConfig = config.providerSpecificConfig as AnthropicProviderSpecificConfig;
+      } else {
+        // Otherwise load from config manager
+        this.providerConfig = await this.configManager.getProviderConfig<AnthropicProviderSpecificConfig>('anthropic');
       }
+      
+      if (!this.providerConfig || !this.providerConfig.apiKey) {
+        this.logger.error('Anthropic API key not found in config or environment');
+        return false;
+      }
+      
+      // Initialize client
+      this.client = new this.AnthropicClass({
+        apiKey: this.providerConfig.apiKey
+      });
+      
+      return true;
+    } catch (error) {
+      this.logger.error(`Error initializing Anthropic provider: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
+    }
+  }
 
-      // Build the params for the Anthropic API
-      const params: Anthropic.Messages.MessageCreateParams = {
-        model,
-        max_tokens,
-        messages: processedMessages,
-        temperature: request.temperature || this.providerConfig.temperature,
+  /**
+   * Main method to chat with Anthropic's Claude API
+   */
+  public async chat(request: ProviderRequest): Promise<ProviderResponse> {
+    try {
+      const client = await this.getClient();
+      
+      // Extract request parameters
+      const { messages, model, temperature, max_tokens, tools, tool_choice } = request;
+      
+      if (!messages || messages.length === 0) {
+        throw new Error('No messages provided for chat request');
+      }
+      
+      // Configure the request parameters
+      const params: MessageCreateParams = {
+        model: model || this.providerConfig?.defaultModel || 'claude-3-opus-20240229',
+        max_tokens: max_tokens || 1024,
+        temperature: temperature ?? 0.7,
+        messages: this.mapMessagesToAnthropicFormat(messages)
       };
-
-      // Add tools if provided
-      if (request.tools && request.tools.length > 0) {
-        params.tools = this.convertToolsToAnthropicFormat(request.tools);
+      
+      // Add tools if specified
+      if (tools && tools.length > 0) {
+        params.tools = this.convertToolsToAnthropicFormat(tools);
       }
-
-      // Handle tool choice parameter
-      if (request.toolChoice) {
-        if (typeof request.toolChoice === 'string') {
-          // For 'auto', we don't need to set anything as it's the default
-          // For 'none', we set tool_choice to 'none'
-          if (request.toolChoice === 'none') {
-            params.tool_choice = 'none' as any;
-          }
-          // For 'required', set to 'required'
-          else if (request.toolChoice === 'required') {
-            params.tool_choice = 'required' as any;
-          }
-        }
-        // For specific tool choice
-        else if (request.toolChoice && typeof request.toolChoice === 'object' && 
-                 'type' in request.toolChoice && request.toolChoice.type === 'function' && 
-                 'function' in request.toolChoice && 
-                 request.toolChoice.function && typeof request.toolChoice.function === 'object' &&
-                 'name' in request.toolChoice.function) {
-          params.tool_choice = { name: request.toolChoice.function.name } as any;
-        }
+      
+      // Add tool_choice if specified
+      if (tool_choice) {
+        params.tool_choice = tool_choice as ToolChoice;
       }
-
-      const completion = await this.client.messages.create(params);
-      this.logger.debug(`Anthropic chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${model}`);
-
-      // Extract text content from the response
-      const content = this.extractTextFromContentBlocks(completion.content);
-
+      
+      // Send the request to Anthropic
+      const response = await client.messages.create(params);
+      
+      // Extract content from the response
+      let content = '';
+      
+      if (response.content && Array.isArray(response.content)) {
+        content = response.content
+          .filter(block => block.type === 'text')
+          .map(block => (block as any).text)
+          .join('\n');
+      }
+      
       // Extract tool calls if any
-      const toolCalls = this.extractToolCallsFromResponse(completion.content);
-
+      const toolCalls = this.extractToolCallsFromResponse(response);
+      
+      // Return formatted response
       return {
-        success: true,
         content,
+        model: response.model,
         toolCalls,
-        choices: Array.isArray(completion.content)
-          ? completion.content
-              .filter((block: any) => block.type === 'text')
-              .map((block: any) => ({ text: block.text }))
-          : [],
-        usage: completion.usage ? {
-          promptTokens: completion.usage.input_tokens,
-          completionTokens: completion.usage.output_tokens,
-          totalTokens: completion.usage.input_tokens + completion.usage.output_tokens,
-        } : undefined
+        raw: response
       };
-    } catch (error: any) {
-      this.logger.error(`AnthropicProvider chat error: ${error.message}`);
-      return {
-        success: false,
-        content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-        error: {
-          message: error.message,
-          code: error.code,
-          details: error
-        }
-      };
+    } catch (error) {
+      this.logger.error(`Error in Anthropic chat: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
     }
   }
 
   /**
-   * Continues a conversation with tool call results
-   * @deprecated Use generateTextWithToolResults instead
+   * Continues a conversation with the results from tool executions
    */
   public async continueWithToolResults(
-    initialRequest: ProviderRequest,
-    initialResponse: ProviderResponse,
+    initialRequest: ProviderRequest, 
     toolResults: ToolCallOutput[]
   ): Promise<ProviderResponse> {
-    if (!initialRequest.messages) {
-      throw new Error('Initial request must contain messages');
+    const lastMessage = initialRequest.messages?.[initialRequest.messages.length - 1];
+    
+    // Create new messages array with the tool results appended
+    const newMessages = [...(initialRequest.messages || [])];
+    
+    // If there are tool results, add them to the conversation
+    if (toolResults && toolResults.length > 0) {
+      for (const result of toolResults) {
+        // Add the tool result as a message with tool_call_id
+        newMessages.push({
+          role: 'user',
+          content: result.output,
+          tool_call_id: result.call_id
+        });
+      }
     }
-
-    if (!initialResponse.toolCalls || initialResponse.toolCalls.length === 0) {
-      throw new Error('Initial response does not contain any tool calls');
-    }
-
-    // Create a new messages array with all previous messages plus tool calls and results
-    const newMessages = [...initialRequest.messages];
-
-    // Add the assistant's response with tool calls
-    const assistantMessage: ChatMessage = {
-      role: 'assistant',
-      content: initialResponse.content || '',
-      tool_calls: initialResponse.toolCalls
-    };
-    newMessages.push(assistantMessage);
-
-    // Create a tool results request
+    
+    // Create the tool results request
     const toolResultsRequest: ToolResultsRequest = {
       ...initialRequest,
       messages: newMessages,
@@ -417,5 +328,96 @@ export class AnthropicProvider implements LLMProvider {
       request.messages = [{ role: 'user', content: request.prompt }];
     }
     return this.chat(request);
+  }
+
+  /**
+   * Recursively handles tool calls until a final response with no tools is generated
+   * 
+   * @param request - The initial request object containing messages and other parameters
+   * @param toolExecutor - Tool executor to execute tool calls
+   * @param options - Additional options for the recursive execution
+   * @returns A promise that resolves to the provider's final response with no more tool calls
+   */
+  public async orchestrateToolLoop(
+    request: ProviderRequest,
+    toolExecutor: any,
+    options: RecursiveToolLoopOptions = {}
+  ): Promise<ProviderResponse> {
+    // Set default options
+    const maxIterations = options.maxIterations || 10;
+    const verbose = options.verbose || false;
+    const onProgress = options.onProgress || (() => {});
+    
+    // Initialize tracking variables
+    let currentRequest = { ...request };
+    let currentMessages = [...(request.messages || [])];
+    let iterations = 0;
+    
+    // Main recursive loop
+    while (iterations < maxIterations) {
+      iterations++;
+      
+      if (verbose) {
+        this.logger.debug(`Tool loop iteration ${iterations}/${maxIterations}`);
+      }
+      
+      // 1. Send request to LLM
+      const response = iterations === 1 
+        ? await this.chat(currentRequest) 
+        : await this.generateTextWithToolResults(currentRequest as ToolResultsRequest);
+      
+      // Report progress if callback is provided
+      onProgress(iterations, response);
+      
+      // 2. Check for tool calls
+      if (!response.toolCalls || response.toolCalls.length === 0) {
+        // No more tool calls, we have our final response
+        if (verbose) {
+          this.logger.debug(`Tool loop completed after ${iterations} iterations`);
+        }
+        return response;
+      }
+      
+      if (verbose) {
+        this.logger.debug(`Got ${response.toolCalls.length} tool calls, executing...`);
+      }
+      
+      // 3. Execute tool calls and collect results
+      const toolResults: ToolCallOutput[] = [];
+      for (const toolCall of response.toolCalls) {
+        try {
+          const output = await toolExecutor.executeTool(toolCall.name, JSON.parse(toolCall.arguments));
+          toolResults.push({
+            type: 'function_call_output',
+            call_id: toolCall.id,
+            output: typeof output === 'string' ? output : JSON.stringify(output)
+          });
+        } catch (error) {
+          this.logger.error(`Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`);
+          toolResults.push({
+            type: 'function_call_output',
+            call_id: toolCall.id,
+            output: `Error: ${error instanceof Error ? error.message : String(error)}`
+          });
+        }
+      }
+      
+      // 4. Prepare request for next iteration with tool results
+      currentMessages.push({
+        role: 'assistant',
+        content: response.content || '',
+        tool_calls: response.toolCalls
+      });
+      
+      // 5. Update current request for next iteration
+      currentRequest = {
+        messages: currentMessages,
+        tool_outputs: toolResults,
+        model: request.model,
+        temperature: request.temperature
+      };
+    }
+    
+    throw new Error(`Reached maximum iterations (${maxIterations}) in tool calling loop`);
   }
 }

@@ -4,6 +4,7 @@ import { registerCredentialCommands } from '../../commands/credentialCommands';
 import { McpCommands } from '../../commands/mcpCommands';
 import { LLMCommand } from '../../commands/llmCommand';
 import { ToolCommands } from '../../commands/toolCommands';
+import { RoleModelConfigCommand } from '../../commands/roleModelConfigCommand';
 import { ConfigManager } from '../config/configManager';
 import { ToolRegistry } from '../../tools/toolRegistry';
 import { ToolExecutor } from '../../tools/toolExecutor';
@@ -26,6 +27,7 @@ export type SetupCliCommandsFn = (
   mcpCommands: typeof McpCommands,
   llmCommand: typeof LLMCommand,
   toolCommands: typeof ToolCommands,
+  roleModelConfigCommand: typeof RoleModelConfigCommand,
   configManagerInstance: ConfigManager,
   loggerTool: Logger,
   toolRegistryInstance: ToolRegistry,
@@ -50,6 +52,7 @@ export const setupCliCommands: SetupCliCommandsFn = (
   mcpCommands: typeof McpCommands,
   llmCommand: typeof LLMCommand,
   toolCommands: typeof ToolCommands,
+  roleModelConfigCommand: typeof RoleModelConfigCommand,
   configManagerInstance: ConfigManager,
   loggerTool: Logger,
   toolRegistryInstance: ToolRegistry,
@@ -103,4 +106,7 @@ export const setupCliCommands: SetupCliCommandsFn = (
     toolExecutorInstance
   );
 
+  // Register role model configuration commands
+  const roleModelConfigInstance = new roleModelConfigCommand();
+  roleModelConfigInstance.registerCommands(program);
 }

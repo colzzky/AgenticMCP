@@ -19,6 +19,7 @@ import {
 import { convertToolsToGoogleFormat, convertToolChoiceToGoogleFormat } from './googleTypes';
 import { extractToolCallsFromGenAIResponse } from './googleToolExtraction';
 import { convertMessagesToGenAIFormat } from './googleMessageConversion';
+import { ToolExecutor } from '@/tools/toolExecutor';
 
 /**
  * GoogleProvider adapter for the Google Gemini API
@@ -436,5 +437,96 @@ export class GoogleProvider implements LLMProvider {
 
     // Use the generateTextWithToolResults method
     return this.generateTextWithToolResults(toolResultsRequest);
+  }
+
+  /**
+   * Recursively handles tool calls until a final response with no tools is generated
+   * 
+   * @param request - The initial request object containing messages and other parameters
+   * @param toolExecutor - Tool executor to execute tool calls
+   * @param options - Additional options for the recursive execution
+   * @returns A promise that resolves to the provider's final response with no more tool calls
+   */
+  public async orchestrateToolLoop(
+    request: ProviderRequest,
+    toolExecutor: any,
+    options: RecursiveToolLoopOptions = {}
+  ): Promise<ProviderResponse> {
+    // Set default options
+    const maxIterations = options.maxIterations || 10;
+    const verbose = options.verbose || false;
+    const onProgress = options.onProgress || (() => {});
+    
+    // Initialize tracking variables
+    let currentRequest = { ...request };
+    let currentMessages = [...(request.messages || [])];
+    let iterations = 0;
+    
+    // Main recursive loop
+    while (iterations < maxIterations) {
+      iterations++;
+      
+      if (verbose) {
+        this.logger.debug(`Tool loop iteration ${iterations}/${maxIterations}`);
+      }
+      
+      // 1. Send request to LLM
+      const response = iterations === 1 
+        ? await this.chat(currentRequest) 
+        : await this.generateTextWithToolResults(currentRequest as ToolResultsRequest);
+      
+      // Report progress if callback is provided
+      onProgress(iterations, response);
+      
+      // 2. Check for tool calls
+      if (!response.toolCalls || response.toolCalls.length === 0) {
+        // No more tool calls, we have our final response
+        if (verbose) {
+          this.logger.debug(`Tool loop completed after ${iterations} iterations`);
+        }
+        return response;
+      }
+      
+      if (verbose) {
+        this.logger.debug(`Got ${response.toolCalls.length} tool calls, executing...`);
+      }
+      
+      // 3. Execute tool calls and collect results
+      const toolResults: ToolCallOutput[] = [];
+      for (const toolCall of response.toolCalls) {
+        try {
+          const output = await toolExecutor.executeTool(toolCall.name, JSON.parse(toolCall.arguments));
+          toolResults.push({
+            type: 'function_call_output',
+            call_id: toolCall.id,
+            output: typeof output === 'string' ? output : JSON.stringify(output)
+          });
+        } catch (error) {
+          this.logger.error(`Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`);
+          toolResults.push({
+            type: 'function_call_output',
+            call_id: toolCall.id,
+            output: `Error: ${error instanceof Error ? error.message : String(error)}`
+          });
+        }
+      }
+      
+      // 4. Prepare request for next iteration with tool results
+      currentMessages.push({
+        role: 'assistant',
+        content: response.content || '',
+        tool_calls: response.toolCalls
+      });
+      
+      // 5. Update current request for next iteration
+      currentRequest = {
+        messages: currentMessages,
+        tool_outputs: toolResults,
+        model: request.model,
+        temperature: request.temperature
+      };
+    }
+    
+    throw new Error(`Reached maximum iterations (${maxIterations}) in tool calling loop`);
   }
 }

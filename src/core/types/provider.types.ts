@@ -74,7 +74,6 @@ export interface ProviderRequest {
   tools?: Tool[]; // Tools (functions) the model can call
   tool_choice?: 'auto' | 'required' | 'none' | { type: 'function'; function: { name: string } }; // Control when tools are called
   parallelToolCalls?: boolean; // Whether multiple tools can be called in parallel
-  parallel_tool_calls?: boolean; // Legacy name for parallelToolCalls
   [key: string]: unknown; // Allow other provider-specific parameters
 }
 
@@ -204,6 +203,29 @@ export interface LLMProvider {
    * @returns A promise that resolves to the provider's response.
    */
   generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse>;
+
+  /**
+   * Recursively handles tool calls until a final response with no tools is generated
+   * @param request - The initial request object containing messages and other parameters
+   * @param toolExecutor - Tool executor to execute tool calls
+   * @param options - Additional options for the recursive execution
+   * @returns A promise that resolves to the provider's final response with no more tool calls
+   */
+  orchestrateToolLoop?(request: ProviderRequest, toolExecutor: any, options?: RecursiveToolLoopOptions): Promise<ProviderResponse>;
+}
+
+/**
+ * Options for the recursive tool loop execution
+ */
+export interface RecursiveToolLoopOptions {
+  /** Maximum number of iterations to prevent infinite loops */
+  maxIterations?: number;
+  
+  /** Callback function to report progress for each iteration */
+  onProgress?: (iteration: number, response: ProviderResponse) => void;
+  
+  /** Whether to include verbose logging */
+  verbose?: boolean;
 }
 
 // Future methods could include:

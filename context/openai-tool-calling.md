@@ -1579,7 +1579,7 @@ You can also set `tool_choice` to `"none"` to imitate the behavior of passing no
 
 ### Parallel function calling
 
-The model may choose to call multiple functions in a single turn. You can prevent this by setting `parallel_tool_calls` to `false`, which ensures exactly zero or one tool is called.
+The model may choose to call multiple functions in a single turn. You can prevent this by setting `parallelToolCalls` to `false`, which ensures exactly zero or one tool is called.
 
 **Note:** Currently, if the model calls multiple functions in one turn then [strict mode](https://platform.openai.com/docs/guides/function-calling?api-mode=responses&lang=javascript#strict-mode) will be disabled for those calls.
 

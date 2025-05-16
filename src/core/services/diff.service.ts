@@ -23,7 +23,7 @@ export class DiffService implements IDiffService {
   }
 
   normalizeLineEndings(text: string): string {
-    return text.replace(/\r\n/g, '\n');
+    return text.replaceAll('\r\n', '\n');
   }
 
   createUnifiedDiff(originalContent: string, newContent: string, filepath: string = 'file'): string {

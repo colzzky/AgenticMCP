@@ -558,30 +558,30 @@ describe('OpenAIProvider - Function Calling', () => {
   });
 
   describe('Parallel Function Calls', () => {
-    it('should support parallel_tool_calls parameter', async () => {
+    it('should support parallelToolCalls parameter', async () => {
       const request: ProviderRequest = {
         messages: [{ role: 'user', content: 'What\'s the weather like in Paris and London?' }],
         tools: [getWeatherTool],
-        parallel_tool_calls: true
+        parallelToolCalls: true
       };
 
       await provider.chat(request);
 
       const requestOptions = mockOpenAIClient.chat.completions.create.mock.calls[0][0];
-      expect(requestOptions.parallel_tool_calls).toBe(true);
+      expect(requestOptions.parallelToolCalls).toBe(true);
     });
 
-    it('should disable parallel_tool_calls when specified', async () => {
+    it('should disable parallelToolCalls when specified', async () => {
       const request: ProviderRequest = {
         messages: [{ role: 'user', content: 'What\'s the weather like in Paris?' }],
         tools: [getWeatherTool],
-        parallel_tool_calls: false
+        parallelToolCalls: false
       };
 
       await provider.chat(request);
 
       const requestOptions = mockOpenAIClient.chat.completions.create.mock.calls[0][0];
-      expect(requestOptions.parallel_tool_calls).toBe(false);
+      expect(requestOptions.parallelToolCalls).toBe(false);
     });
   });
 });

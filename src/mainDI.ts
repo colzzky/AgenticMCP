@@ -18,6 +18,7 @@ import type { ToolResultFormatter as ToolResultFormatterType } from './tools/too
 import type { McpCommands as McpCommandsType } from './commands/mcpCommands';
 import type { LLMCommand as LLMCommandType } from './commands/llmCommand';
 import type { ToolCommands as ToolCommandsType } from './commands/toolCommands';
+import type { RoleModelConfigCommand as RoleModelConfigCommandType } from './commands/roleModelConfigCommand';
 import type { ConfigManager as ConfigManagerType } from './core/config/configManager';
 import type { ProviderInitializer as ProviderInitializerType } from './providers/providerInitializer';
 import type { ProviderFactory as ProviderFactoryType } from './providers/providerFactory';
@@ -78,6 +79,8 @@ export interface MainDependencies {
   McpCommands: typeof McpCommandsType;
   LLMCommand: typeof LLMCommandType;
   ToolCommands: typeof ToolCommandsType;
+  /** CLI commands for role model configuration */
+  RoleModelConfigCommand: typeof RoleModelConfigCommandType;
   McpServer: typeof McpServer;
   BaseMcpServer: typeof BaseMcpServer;
   StdioServerTransport: typeof StdioServerTransportType;
@@ -171,6 +174,7 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       deps.McpCommands,
       deps.LLMCommand,
       deps.ToolCommands,
+      deps.RoleModelConfigCommand,
       providers.configManager,
       deps.logger,
       tools.toolRegistry,

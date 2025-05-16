@@ -40,7 +40,7 @@ import type {
   DirectoryTreeResult,
   DirectoryTreeEntry,
 } from '../core/types/cli.types';
-import os from 'os';
+import os from 'node:os';
 import type { PathDI } from '../types/global.types';
 
 export interface FunctionDefinition {
@@ -281,7 +281,7 @@ export class FileSystemTool {
         throw new Error("Access denied - symlink target outside allowed directory");
       }
       return realPath;
-    } catch (error) {
+    } catch {
       // For new files that don't exist yet, verify parent directory
       const parentDir = this.pathDI.dirname(absolute);
       try {

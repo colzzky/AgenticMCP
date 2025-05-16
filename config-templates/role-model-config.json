@@ -1,0 +1,68 @@
+{
+  "default": {
+    "provider": "anthropic",
+    "model": "claude-3-sonnet-20240229",
+    "parameters": {
+      "temperature": 0.2,
+      "maxTokens": 4000
+    }
+  },
+  "roleMap": {
+    "coder": {
+      "provider": "anthropic",
+      "model": "claude-3-opus-20240229",
+      "parameters": {
+        "temperature": 0.1,
+        "maxTokens": 4000
+      }
+    },
+    "rewriter": {
+      "provider": "anthropic", 
+      "model": "claude-3-sonnet-20240229",
+      "parameters": {
+        "temperature": 0.7,
+        "maxTokens": 8000
+      }
+    },
+    "ui_ux": {
+      "provider": "anthropic",
+      "model": "claude-3-sonnet-20240229",
+      "parameters": {
+        "temperature": 0.4,
+        "maxTokens": 4000
+      }
+    },
+    "analyst": {
+      "provider": "anthropic",
+      "model": "claude-3-sonnet-20240229",
+      "parameters": {
+        "temperature": 0.3,
+        "maxTokens": 6000
+      }
+    },
+    "qa": {
+      "provider": "anthropic",
+      "model": "claude-3-sonnet-20240229",
+      "parameters": {
+        "temperature": 0.2,
+        "maxTokens": 4000
+      }
+    },
+    "project_manager": {
+      "provider": "anthropic",
+      "model": "claude-3-sonnet-20240229", 
+      "parameters": {
+        "temperature": 0.3,
+        "maxTokens": 4000
+      }
+    },
+    "custom": {
+      "provider": "anthropic",
+      "model": "claude-3-sonnet-20240229",
+      "parameters": {
+        "temperature": 0.3,
+        "maxTokens": 4000
+      }
+    }
+  }
+}
