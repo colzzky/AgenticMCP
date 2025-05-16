@@ -7,6 +7,7 @@ import { ToolExecutor } from '../../tools/toolExecutor';
 import { ToolResultFormatter } from '../../tools/toolResultFormatter';
 import type { Logger } from '../types/logger.types';
 import type { Tool } from '../../core/types/provider.types';
+import { getFileSystemToolDefinitions } from '../../tools/fileSystemToolDefinitions';
 
 
 export type SetupToolSystemFn = (
@@ -39,7 +40,8 @@ export const setupToolSystem: SetupToolSystemFn = (
   const toolRegistryInstance = new toolRegistry(loggerTool);
   
   // Register file system tools
-  const fileSystemTools = localCliToolInstance.getToolDefinitions();
+  // Use the proper file system tool definitions that match the Tool type
+  const fileSystemTools = getFileSystemToolDefinitions();
   const registeredToolCount = toolRegistryInstance.registerTools(fileSystemTools);
   loggerTool.debug(`Registered ${registeredToolCount} local CLI tools`);
 

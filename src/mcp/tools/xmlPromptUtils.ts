@@ -1,6 +1,59 @@
 import { getRoleDescription, getRoleInstructions } from './xmlPromptUtilsHelpers';
 import { roleEnums } from './roleSchemas';
 import type { AllRoleSchemas } from './roleSchemas';
+import type { Tool } from '../../core/types/provider.types';
+import { getFileSystemToolDefinitions } from '../../tools/fileSystemToolDefinitions';
+import { getUnifiedShellToolDefinition, shellCommandDescriptions } from '../../tools/unifiedShellToolDefinition';
+
+/**
+ * Formats tool definitions for inclusion in an XML prompt
+ * @param tools - Array of tool definitions
+ * @returns Formatted string of available tools
+ */
+export function formatAvailableTools(tools: Tool[]): string {
+  let toolsText = '\n<available_tools>';
+  
+  // Sort tools alphabetically for consistent presentation
+  const sortedTools = [...tools].sort((a, b) => a.name.localeCompare(b.name));
+  
+  for (const tool of sortedTools) {
+    // Handle the shell tool differently to include command descriptions
+    if (tool.name === 'shell') {
+      toolsText += `\n- ${tool.name}: ${tool.description?.split('.')[0]}`;
+      
+      // Add a subsection for shell commands with detailed descriptions
+      toolsText += '\n  Available shell commands:';
+      const commands = Object.keys(shellCommandDescriptions).sort();
+      for (const cmd of commands) {
+        // Format each shell command with its description
+        toolsText += `\n  * ${cmd}: ${shellCommandDescriptions[cmd]}`;
+      }
+    } else {
+      // Regular tools just get their brief description
+      toolsText += `\n- ${tool.name}: ${tool.description?.split('.')[0]}`;
+    }
+  }
+  
+  toolsText += '\n</available_tools>\n';
+  return toolsText;
+}
+
+/**
+ * Gets available tools string directly from the file system tool definitions
+ * and unified shell tool definition
+ * @returns Formatted string of available tools
+ */
+export function getAvailableToolsString(): string {
+  // Get the file system tools and unified shell tool definition directly
+  const fileSystemTools = getFileSystemToolDefinitions();
+  const unifiedShellTool = getUnifiedShellToolDefinition();
+  
+  // Combine all tools
+  // Cast the unified shell tool to Tool type explicitly
+  const allTools = [...fileSystemTools, unifiedShellTool as Tool];
+  
+  return formatAvailableTools(allTools);
+}
 
 export function constructXmlPrompt(
   role: roleEnums,
@@ -26,16 +79,7 @@ export function constructXmlPrompt(
       xmlPrompt += `<${key}>${typeof value === 'string' ? value : JSON.stringify(value)}</${key}>\n`;
     }
   }
-  xmlPrompt += `\n<available_tools>`
-  xmlPrompt += `\n- read_file: Read a file from the filesystem`
-  xmlPrompt += `\n- write_file: Write content to a file`
-  xmlPrompt += `\n- create_directory: Create a new directory`
-  xmlPrompt += `\n- delete_file: Delete a file`
-  xmlPrompt += `\n- delete_directory: Delete a directory`
-  xmlPrompt += `\n- list_directory: List files in a directory`
-  xmlPrompt += `\n- search_codebase: Search for content in files`
-  xmlPrompt += `\n- find_files: Find files matching a pattern`
-  xmlPrompt += `</available_tools>\n`;
+  xmlPrompt += getAvailableToolsString();
   xmlPrompt += `\n<instructions>\n${getRoleInstructions(role, specializedArgs)}\n</instructions>`;
   return xmlPrompt;
 }

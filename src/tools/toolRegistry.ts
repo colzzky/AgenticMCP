@@ -6,6 +6,7 @@
 import type { Tool } from '../core/types/provider.types';
 import { FileSystemTool } from './fileSystemTool';
 import type { Logger } from '../core/types/logger.types';
+import { ProviderType } from '../core/types/provider.types';
 
 /**
  * Registry for managing tool definitions that can be used by LLM providers
@@ -111,7 +112,7 @@ export class ToolRegistry {
    * @param cliTool - The FileSystemTool instance to register tools from
    * @returns The number of tools successfully registered
    */
-  public registerLocalCliTools(cliTool: FileSystemTool): number {
+  public registerFileSystemTools(cliTool: FileSystemTool): number {
     // Get tool definitions from the FileSystemTool instance
     const toolDefinitions = cliTool.getToolDefinitions();
     // Convert ToolDefinition[] to Tool[] format
@@ -126,10 +127,10 @@ export class ToolRegistry {
 
   /**
    * Validates that all registered tool definitions are compatible with the specified LLM provider
-   * @param provider - The name of the LLM provider to validate against ('openai', 'anthropic', 'google')
+   * @param provider - The name of the LLM provider to validate against
    * @returns Object containing validation results
    */
-  public validateToolsForProvider(provider: 'openai' | 'anthropic' | 'google'): { 
+  public validateToolsForProvider(provider: ProviderType): { 
     valid: boolean; 
     invalidTools: string[];
     messages: string[];
@@ -149,6 +150,7 @@ export class ToolRegistry {
       
       // Provider-specific validation
       switch (provider) {
+        case 'grok':
         case 'openai': {
           // OpenAI requires 'function' type and parameters.type to be 'object'
           if (tool.type !== 'function') {

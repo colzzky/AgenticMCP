@@ -127,7 +127,12 @@ export class McpCommands {
       const llmProvider = this.providerFactoryInstance.getProvider(providerName as any);
 
       // Register role-based tools
-      const mcpServerWithTools = this.roleBasedToolsRegistrar.register(mcpServer, this.logger, llmProvider, this.pathDI);
+      const mcpServerWithTools = this.roleBasedToolsRegistrar.register(
+        mcpServer, 
+        this.logger, 
+        llmProvider, 
+        this.pathDI
+      );
 
       this.logger.info(`Starting HTTP MCP server`);
       await mcpServerWithTools.connect(this.transport);

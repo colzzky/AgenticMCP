@@ -1,7 +1,8 @@
 // src/tools/unifiedShellToolDefinition.ts
 import { SHELL_COMMANDS } from './localShellCliToolDefinitions.js';
+import type { Tool } from '@/core/types/provider.types.js';
 
-export function getUnifiedShellToolDefinition() {
+export function getUnifiedShellToolDefinition(): Tool {
   return {
     type: 'function',
     name: 'shell',

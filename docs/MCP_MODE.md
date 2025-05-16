@@ -262,7 +262,7 @@ export function truncate(str, length = 50) {
 </related_files>
 
 <available_tools>
-- read_file: Read a file from the filesystem
+- read_file: Read the complete contents of a file from the file system
 - write_file: Write content to a file
 - create_directory: Create a new directory
 - delete_file: Delete a file

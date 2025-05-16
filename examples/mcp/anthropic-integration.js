@@ -26,7 +26,7 @@ async function chatWithClaude(anthropic, messages) {
     tools: [
       {
         name: 'read_file',
-        description: 'Read a file from the filesystem',
+        description: 'Read the complete contents of a file from the file system',
         input_schema: {
           type: 'object',
           properties: {

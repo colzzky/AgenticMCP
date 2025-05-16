@@ -66,7 +66,7 @@ describe('ProviderFactory', () => {
     getAllTools: jest.fn(),
     getTools: jest.fn(),
     validateToolsForProvider: jest.fn(),
-    registerLocalCliTools: jest.fn()
+    registerFileSystemTools: jest.fn()
   } as unknown as ToolRegistry;
 
 

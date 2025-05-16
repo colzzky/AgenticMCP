@@ -43,7 +43,7 @@ describe('providerSystemSetup', () => {
     getTools: jest.fn(),
     getAllTools: jest.fn(),
     getTool: jest.fn(),
-    registerLocalCliTools: jest.fn(),
+    registerFileSystemTools: jest.fn(),
     validateToolsForProvider: jest.fn()
   } as unknown as ToolRegistry;
   

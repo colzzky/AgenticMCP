@@ -22,7 +22,7 @@ describe('ToolExecutor', () => {
     registerTool: jest.fn(),
     registerTools: jest.fn(),
     getTools: jest.fn(),
-    registerLocalCliTools: jest.fn(),
+    registerFileSystemTools: jest.fn(),
     validateToolsForProvider: jest.fn()
   };
 

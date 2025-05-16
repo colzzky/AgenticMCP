@@ -38,13 +38,13 @@
 │   │   └── stdio-client.js
 │   └── mock-utility-test.ts
 ├── jest.config.js
-├── package-lock.json +88
-├── package.json +4
+├── package-lock.json
+├── package.json
 ├── project-summary.md
 ├── src/
 │   ├── commands/
 │   │   ├── configCommands.ts
-│   │   ├── credentialCommands.ts +4
+│   │   ├── credentialCommands.ts
 │   │   ├── llmCommand.ts
 │   │   ├── mcpCommands.ts
 │   │   └── toolCommands.ts
@@ -62,10 +62,17 @@
 │   │   │   ├── decorators.ts
 │   │   │   └── type.ts
 │   │   ├── config/
-│   │   │   ├── configManager.ts +35
+│   │   │   ├── configManager.ts
 │   │   │   └── index.ts
 │   │   ├── credentials/
-│   │   │   ├── credentialManager.ts +35
+│   │   │   ├── credentialManager.ts
+│   │   │   ├── file-keytar/
+│   │   │   │   ├── crypto-service.ts
+│   │   │   │   ├── file-keytar.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── interfaces.ts
+│   │   │   │   ├── key-management.ts
+│   │   │   │   └── storage-service.ts
 │   │   │   └── index.ts
 │   │   ├── di/
 │   │   │   ├── container.ts
@@ -78,12 +85,12 @@
 │   │   │   ├── diff.service.ts
 │   │   │   └── file-system.service.ts
 │   │   ├── setup/
-│   │   │   ├── cliCommandsSetup.ts +1
+│   │   │   ├── cliCommandsSetup.ts
 │   │   │   ├── dependencySetup.ts
 │   │   │   ├── index.ts
 │   │   │   ├── llmCommandSetup.ts
 │   │   │   ├── programSetup.ts
-│   │   │   ├── providerSystemSetup.ts +12
+│   │   │   ├── providerSystemSetup.ts
 │   │   │   ├── toolCommandsSetup.ts
 │   │   │   └── toolSystemSetup.ts
 │   │   ├── types/
@@ -99,8 +106,8 @@
 │   │       ├── index.ts
 │   │       ├── logger.ts
 │   │       └── validation.ts
-│   ├── index.ts +6
-│   ├── mainDI.ts +35
+│   ├── index.ts
+│   ├── mainDI.ts
 │   ├── mcp/
 │   │   ├── index.ts
 │   │   ├── mcpServer.ts
@@ -130,15 +137,17 @@
 │   │   ├── openai/
 │   │   │   ├── index.ts
 │   │   │   ├── openaiProvider.ts
-│   │   │   └── openaiProviderMappers.ts
+│   │   │   ├── openaiProviderMappers.ts
+│   │   │   └── openaiProviderUtils.ts
 │   │   ├── providerFactory.ts
 │   │   ├── providerInitializer.ts
 │   │   ├── providerModuleFactory.ts
 │   │   └── types.ts
 │   ├── tools/
 │   │   ├── factory/
-│   │   │   └── localCliToolFactory.ts
-│   │   ├── localCliTool.ts
+│   │   │   ├── localCliToolFactory.ts
+│   │   │   └── unifiedShellToolFactory.ts
+│   │   ├── fileSystemTool.ts
 │   │   ├── fileSystemToolDefinitions.ts
 │   │   ├── localShellCliTool.ts
 │   │   ├── localShellCliToolDefinitions.ts
@@ -147,10 +156,12 @@
 │   │   ├── shellCommandWrapper.ts
 │   │   ├── toolExecutor.ts
 │   │   ├── toolRegistry.ts
-│   │   └── toolResultFormatter.ts
+│   │   ├── toolResultFormatter.ts
+│   │   ├── unifiedShellCliTool.ts
+│   │   └── unifiedShellToolDefinition.ts
 │   ├── tsconfig.json
 │   └── types/
-│       ├── global.types.ts +3
+│       ├── global.types.ts
 │       ├── shell.types.d.ts
 │       ├── shell.types.js
 │       └── shell.types.ts
@@ -173,7 +184,10 @@
 │   │   ├── config/
 │   │   │   └── configManager.test.ts
 │   │   ├── credentials/
-│   │   │   └── credentialManager.test.ts
+│   │   │   ├── credentialManager.test.ts
+│   │   │   └── file-keytar/
+│   │   │       ├── crypto-service.test.ts
+│   │   │       └── file-keytar.test.ts
 │   │   ├── di/
 │   │   │   ├── container.test.ts
 │   │   │   ├── registry.test.disabled.ts
@@ -210,6 +224,7 @@
 │   │   │   ├── anthropicProvider.test.ts
 │   │   │   ├── anthropicProvider.toolCalling.test.ts
 │   │   │   └── anthropicProviderParallelToolCalling.test.ts
+│   │   ├── environmentVariables.test.ts
 │   │   ├── google/
 │   │   │   ├── googleMessageConversion.test.ts
 │   │   │   ├── googleProvider.test.ts
@@ -228,8 +243,9 @@
 │   │   ├── factory/
 │   │   │   ├── di-local-cli-tool-factory.test.ts
 │   │   │   ├── factoryMocks.ts
-│   │   │   └── localCliToolFactory.test.ts
-│   │   ├── localCliTool.test.ts
+│   │   │   ├── localCliToolFactory.test.ts
+│   │   │   └── unified-shell-cli-tool-factory.test.ts
+│   │   ├── fileSystemTool.test.ts
 │   │   ├── fileSystemToolDefinitions.test.ts
 │   │   ├── localShellCliTool.test.ts
 │   │   ├── localShellCliToolDefinitions.test.ts
@@ -238,9 +254,10 @@
 │   │   ├── shellCommandWrapper.test.ts
 │   │   ├── toolExecutor.test.ts
 │   │   ├── toolRegistry.test.ts
-│   │   └── toolResultFormatter.test.ts
+│   │   ├── toolResultFormatter.test.ts
+│   │   ├── unifiedShellCliTool.test.ts
+│   │   └── unifiedShellToolDefinition.test.ts
 │   └── tsconfig.json
 ├── tree.sh
-├── tsconfig.json
-└── turn-over-details.md
+└── tsconfig.json
 ```

@@ -70,7 +70,7 @@ describe('toolSystemSetup', () => {
   
   // Mock ToolRegistry
   const mockRegistryInstance = {
-    registerLocalCliTools: jest.fn().mockReturnValue(3),
+    registerFileSystemTools: jest.fn().mockReturnValue(3),
     registerTools: jest.fn().mockReturnValue(1),
     registerTool: jest.fn(),
     getTool: jest.fn(),
@@ -112,7 +112,7 @@ describe('toolSystemSetup', () => {
     // Assert
     // Verify tool registry initialization
     expect(MockToolRegistry).toHaveBeenCalledWith(mockLogger);
-    // We now use registerTools instead of registerLocalCliTools
+    // We now use registerTools instead of registerFileSystemTools
     expect(mockRegistryInstance.registerTools).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({ name: 'read_file' }),
@@ -148,7 +148,7 @@ describe('toolSystemSetup', () => {
   
   it('should handle tool registry with zero tools', () => {
     // Arrange
-    mockRegistryInstance.registerLocalCliTools.mockReturnValueOnce(0);
+    mockRegistryInstance.registerFileSystemTools.mockReturnValueOnce(0);
     mockRegistryInstance.registerTools.mockReturnValueOnce(0);
     mockLocalCliTool.getCommandMap.mockReturnValueOnce({});
     

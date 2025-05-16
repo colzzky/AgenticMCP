@@ -257,7 +257,7 @@ describe('ToolRegistry', () => {
     });
   });
 
-  describe('registerLocalCliTools', () => {
+  describe('registerFileSystemTools', () => {
     it('should register tools from a LocalCliTool instance', () => {
       // Arrange
       const mockLocalCliTool = {
@@ -288,7 +288,7 @@ describe('ToolRegistry', () => {
       };
       
       // Act
-      const result = registry.registerLocalCliTools(mockLocalCliTool as any);
+      const result = registry.registerFileSystemTools(mockLocalCliTool as any);
       
       // Assert
       expect(result).toBe(2);

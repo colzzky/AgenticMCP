@@ -80,7 +80,7 @@ const response = await openaiProvider.generateText({
 
 The LocalCliTool provides the following tools:
 
-- **read_file**: Read a file from the filesystem
+- **read_file**: Read the complete contents of a file from the file system
 - **write_file**: Write content to a file
 - **create_directory**: Create a directory
 - **delete_file**: Delete a file
