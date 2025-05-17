@@ -1,12 +1,12 @@
 // src/providers/openai/openaiProviderMappers.ts
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
-import { Message, Tool } from '../../core/types';
+import { ChatMessage, Tool } from '../../core/types';
 
 /**
- * Maps a single internal Message object to an OpenAI ChatCompletionMessageParam object.
+ * Maps a single internal ChatMessage object to an OpenAI ChatCompletionMessageParam object.
  */
-export function mapMessageToOpenAIParam(message: Message): ChatCompletionMessageParam {
+export function mapMessageToOpenAIParam(message: ChatMessage): ChatCompletionMessageParam {
   let mapped: ChatCompletionMessageParam;
 
   switch (message.role) {
@@ -53,7 +53,7 @@ export function mapMessageToOpenAIParam(message: Message): ChatCompletionMessage
       break;
     }
     default: {
-      // Should not happen if Message type is enforced
+      // Should not happen if ChatMessage type is enforced
       throw new Error(`Unsupported message role: ${(message as any).role}`);
     }
   }

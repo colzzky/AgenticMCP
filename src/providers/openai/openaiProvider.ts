@@ -155,7 +155,7 @@ export class OpenAIProvider implements LLMProvider {
         requestOptions.tools = mappers.mapToolsToOpenAIChatTools(request.tools);
         
         // Set parallelToolCalls based on request option (default to true if not specified)
-        requestOptions.parallelToolCalls = request.parallelToolCalls !== false;
+        requestOptions.parallel_tool_calls = request.parallelToolCalls !== false;
       }
 
       // Add tool_choice if specified
@@ -212,7 +212,7 @@ export class OpenAIProvider implements LLMProvider {
     }
 
     try {
-      const assistantIndex = request.messages.findIndex(
+      const assistantIndex = (request.messages as ChatMessage[]).findIndex(
         (msg) => msg.role === 'assistant' && msg.tool_calls && msg.tool_calls.length > 0
       );
 
@@ -338,34 +338,6 @@ export class OpenAIProvider implements LLMProvider {
     return this.chat(chatRequest);
   }
 
-  public async executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
-    if (!availableTools) {
-      throw new Error('No tools provided for execution');
-    }
-
-    try {
-      const tool = availableTools[toolCall.name];
-      if (!tool) {
-        throw new Error(`Tool not found: ${toolCall.name}`);
-      }
-
-      // Parse arguments JSON
-      let args: Record<string, any>;
-      try {
-        args = JSON.parse(toolCall.arguments);
-      } catch (error) {
-        throw new Error(`Invalid tool arguments: ${error instanceof Error ? error.message : String(error)}`);
-      }
-
-      // Execute tool with arguments
-      const result = await tool(args);
-      return typeof result === 'string' ? result : JSON.stringify(result);
-    } catch (error: unknown) {
-      this.logger.error(`Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`);
-      return `Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`;
-    }
-  }
-
   public async generateText(request: ProviderRequest): Promise<ProviderResponse> {
     return this.chat(request);
   }
@@ -449,94 +421,4 @@ export class OpenAIProvider implements LLMProvider {
     }
   }
 
-  /**
-   * Recursively handles tool calls until a final response with no tools is generated
-   * 
-   * @param request - The initial request object containing messages and other parameters
-   * @param toolExecutor - Tool executor to execute tool calls
-   * @param options - Additional options for the recursive execution
-   * @returns A promise that resolves to the provider's final response with no more tool calls
-   */
-  public async orchestrateToolLoop(
-    request: ProviderRequest,
-    toolExecutor: any,
-    options: RecursiveToolLoopOptions = {}
-  ): Promise<ProviderResponse> {
-    // Set default options
-    const maxIterations = options.maxIterations || 10;
-    const verbose = options.verbose || false;
-    const onProgress = options.onProgress || (() => {});
-    
-    // Initialize tracking variables
-    let currentRequest = { ...request };
-    let currentMessages = [...(request.messages || [])];
-    let iterations = 0;
-    
-    // Main recursive loop
-    while (iterations < maxIterations) {
-      iterations++;
-      
-      if (verbose) {
-        this.logger.debug(`Tool loop iteration ${iterations}/${maxIterations}`);
-      }
-      
-      // 1. Send request to LLM
-      const response = iterations === 1 
-        ? await this.chat(currentRequest) 
-        : await this.generateTextWithToolResults(currentRequest as ToolResultsRequest);
-      
-      // Report progress if callback is provided
-      onProgress(iterations, response);
-      
-      // 2. Check for tool calls
-      if (!response.toolCalls || response.toolCalls.length === 0) {
-        // No more tool calls, we have our final response
-        if (verbose) {
-          this.logger.debug(`Tool loop completed after ${iterations} iterations`);
-        }
-        return response;
-      }
-      
-      if (verbose) {
-        this.logger.debug(`Got ${response.toolCalls.length} tool calls, executing...`);
-      }
-      
-      // 3. Execute tool calls and collect results
-      const toolResults: ToolCallOutput[] = [];
-      for (const toolCall of response.toolCalls) {
-        try {
-          const output = await toolExecutor.executeTool(toolCall.name, JSON.parse(toolCall.arguments));
-          toolResults.push({
-            type: 'function_call_output',
-            call_id: toolCall.id,
-            output: typeof output === 'string' ? output : JSON.stringify(output)
-          });
-        } catch (error) {
-          this.logger.error(`Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`);
-          toolResults.push({
-            type: 'function_call_output',
-            call_id: toolCall.id,
-            output: `Error: ${error instanceof Error ? error.message : String(error)}`
-          });
-        }
-      }
-      
-      // 4. Prepare request for next iteration with tool results
-      currentMessages.push({
-        role: 'assistant',
-        content: response.content || '',
-        tool_calls: response.toolCalls
-      });
-      
-      // 5. Update current request for next iteration
-      currentRequest = {
-        messages: currentMessages,
-        tool_outputs: toolResults,
-        model: request.model,
-        temperature: request.temperature
-      };
-    }
-    
-    throw new Error(`Reached maximum iterations (${maxIterations}) in tool calling loop`);
-  }
 }

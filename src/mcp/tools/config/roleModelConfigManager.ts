@@ -4,7 +4,6 @@
 import type { PathDI, FileSystemDI } from '../../../types/global.types';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { defaultRoleModelConfig, RoleModelConfig, RoleModelMapping } from './roleModelConfig.js';
 import { Logger } from '../../../core/types/logger.types.js';
 
@@ -42,19 +41,10 @@ export class RoleModelConfigManager {
     this.fileSystemDI = params.fileSystemDI;
     this.pathDI = params.pathDI;
     this.logger = params.logger;
-
-    // If a config path was provided, try to load it immediately
     if (this.configPath) {
-      // First check synchronously to support tests
-      if (this.fileSystemDI.existsSync(this.configPath)) {
-        // We can't await in the constructor, so we'll start the load process
-        // and log any errors. Tests will need to handle the async nature.
-        this.loadConfig(this.configPath).catch(error => {
-          this.logger.error(`Failed to load config in constructor: ${error}`);
-        });
-      } else {
-        this.logger.error(`Role model configuration file not found: ${this.configPath}`);
-      }
+      this.loadConfig(this.configPath).catch(error => {
+        this.logger.error(`Failed to load config in constructor: ${error}`);
+      });
     }
   }
 

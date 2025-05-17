@@ -3,7 +3,7 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
-import type { LLMProvider, ProviderRequest, ProviderResponse, Tool, ToolCall, ChatMessage, ToolResultsRequest, Message, ToolCallOutput, RecursiveToolLoopOptions } from '../../core/types/provider.types';
+import type { LLMProvider, ProviderRequest, ProviderResponse, Tool, ToolCall, ChatMessage, ToolResultsRequest, ToolCallOutput, RecursiveToolLoopOptions } from '../../core/types/provider.types';
 import type { GoogleProviderSpecificConfig } from '../../core/types/config.types';
 import type { ConfigManager } from '../../core/config/configManager';
 import type { Logger } from '../../core/types/logger.types';
@@ -345,48 +345,29 @@ export class GoogleProvider implements LLMProvider {
     // and then continuing the conversation with a new chat request
     
     // Extract tool outputs and add them to the messages
-    const messages = [...(request.messages || [])];
+    const messages = [...(request.messages || [])] as ChatMessage[];
     
     // If there are tool outputs, add them to the conversation
     if (request.tool_outputs && request.tool_outputs.length > 0) {
       for (const output of request.tool_outputs) {
         // Add the tool output as a message from the 'tool' role
         messages.push({
-          role: 'tool', // Using 'tool' role as defined in Message type
+          role: 'assistant', // Using 'tool' role as defined in Message type
           content: output.output,
-          tool_call_id: output.call_id
+          tool_calls: [
+            {
+              id: output.call_id,
+              type: 'function_call',
+              name: output.call_id,
+              arguments: output.output || ''
+            }
+          ]
         });
       }
     }
     
     // Continue the conversation with the updated messages
     return this.chat({ ...request, messages });
-  }
-  
-  /**
-   * Executes a tool call and returns the result
-   * @param toolCall The tool call object from the model
-   * @param availableTools Map of tool functions that can be called
-   * @returns Promise with the tool call result as a string
-   */
-  public async executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
-    if (!availableTools) {
-      throw new Error('No tools available to execute');
-    }
-    
-    if (!availableTools[toolCall.name]) {
-      throw new Error(`Tool ${toolCall.name} not found`);
-    }
-
-    try {
-      const args = JSON.parse(toolCall.arguments);
-      const result = await availableTools[toolCall.name](args);
-      return typeof result === 'string' ? result : JSON.stringify(result);
-    } catch (error_: unknown) {
-      const errorMessage = error_ instanceof Error ? error_.message : String(error_);
-      this.logger.error(`Error executing tool call ${toolCall.name}: ${errorMessage}`);
-      return JSON.stringify({ error: errorMessage });
-    }
   }
   
   /**
@@ -439,94 +420,4 @@ export class GoogleProvider implements LLMProvider {
     return this.generateTextWithToolResults(toolResultsRequest);
   }
 
-  /**
-   * Recursively handles tool calls until a final response with no tools is generated
-   * 
-   * @param request - The initial request object containing messages and other parameters
-   * @param toolExecutor - Tool executor to execute tool calls
-   * @param options - Additional options for the recursive execution
-   * @returns A promise that resolves to the provider's final response with no more tool calls
-   */
-  public async orchestrateToolLoop(
-    request: ProviderRequest,
-    toolExecutor: any,
-    options: RecursiveToolLoopOptions = {}
-  ): Promise<ProviderResponse> {
-    // Set default options
-    const maxIterations = options.maxIterations || 10;
-    const verbose = options.verbose || false;
-    const onProgress = options.onProgress || (() => {});
-    
-    // Initialize tracking variables
-    let currentRequest = { ...request };
-    let currentMessages = [...(request.messages || [])];
-    let iterations = 0;
-    
-    // Main recursive loop
-    while (iterations < maxIterations) {
-      iterations++;
-      
-      if (verbose) {
-        this.logger.debug(`Tool loop iteration ${iterations}/${maxIterations}`);
-      }
-      
-      // 1. Send request to LLM
-      const response = iterations === 1 
-        ? await this.chat(currentRequest) 
-        : await this.generateTextWithToolResults(currentRequest as ToolResultsRequest);
-      
-      // Report progress if callback is provided
-      onProgress(iterations, response);
-      
-      // 2. Check for tool calls
-      if (!response.toolCalls || response.toolCalls.length === 0) {
-        // No more tool calls, we have our final response
-        if (verbose) {
-          this.logger.debug(`Tool loop completed after ${iterations} iterations`);
-        }
-        return response;
-      }
-      
-      if (verbose) {
-        this.logger.debug(`Got ${response.toolCalls.length} tool calls, executing...`);
-      }
-      
-      // 3. Execute tool calls and collect results
-      const toolResults: ToolCallOutput[] = [];
-      for (const toolCall of response.toolCalls) {
-        try {
-          const output = await toolExecutor.executeTool(toolCall.name, JSON.parse(toolCall.arguments));
-          toolResults.push({
-            type: 'function_call_output',
-            call_id: toolCall.id,
-            output: typeof output === 'string' ? output : JSON.stringify(output)
-          });
-        } catch (error) {
-          this.logger.error(`Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`);
-          toolResults.push({
-            type: 'function_call_output',
-            call_id: toolCall.id,
-            output: `Error: ${error instanceof Error ? error.message : String(error)}`
-          });
-        }
-      }
-      
-      // 4. Prepare request for next iteration with tool results
-      currentMessages.push({
-        role: 'assistant',
-        content: response.content || '',
-        tool_calls: response.toolCalls
-      });
-      
-      // 5. Update current request for next iteration
-      currentRequest = {
-        messages: currentMessages,
-        tool_outputs: toolResults,
-        model: request.model,
-        temperature: request.temperature
-      };
-    }
-    
-    throw new Error(`Reached maximum iterations (${maxIterations}) in tool calling loop`);
-  }
 }

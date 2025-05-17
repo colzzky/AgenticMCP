@@ -65,7 +65,7 @@ export interface ToolCallOutput {
  */
 export interface ProviderRequest {
   prompt?: string; // For completion-style requests
-  messages?: Message[] | Array<{ role: 'user' | 'assistant' | 'system'; content: string }>; // For chat-style requests
+  messages?: ChatMessage[] | Array<{ role: 'user' | 'assistant' | 'system'; content: string }>; // For chat-style requests
   model?: string; // Override provider's default model
   temperature?: number; // Sampling temperature (0-1)
   maxTokens?: number; // Max tokens to generate
@@ -74,7 +74,8 @@ export interface ProviderRequest {
   tools?: Tool[]; // Tools (functions) the model can call
   tool_choice?: 'auto' | 'required' | 'none' | { type: 'function'; function: { name: string } }; // Control when tools are called
   parallelToolCalls?: boolean; // Whether multiple tools can be called in parallel
-  [key: string]: unknown; // Allow other provider-specific parameters
+  system?: string; // System message
+  [key: string]: any; // Allow other provider-specific parameters
 }
 
 /**
@@ -112,21 +113,10 @@ export interface ProviderResponse {
 }
 
 /**
- * Represents a message in a conversation
- */
-export interface Message {
-  role: 'user' | 'assistant' | 'system' | 'tool';
-  content: string;
-  tool_call_id?: string;
-  tool_calls?: ToolCall[];
-  name?: string;
-}
-
-/**
  * Defines the structure for a chat message, which includes the role and content.
  */
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
   tool_calls?: ToolCall[]; // Tool calls made by the assistant
   tool_call_id?: string; // For tool_call_output messages
@@ -193,14 +183,6 @@ export interface LLMProvider {
   chat(request: ProviderRequest): Promise<ProviderResponse>;
 
   /**
-   * Executes a tool call and returns the result.
-   * @param toolCall - The tool call object from the model.
-   * @param availableTools - The available tools that can be called.
-   * @returns A promise that resolves to the tool call result.
-   */
-  executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string>;
-
-  /**
    * Generates text with optional tools.
    * @param request - The request object containing messages and other parameters.
    * @returns A promise that resolves to the provider's response.
@@ -214,14 +196,6 @@ export interface LLMProvider {
    */
   generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse>;
 
-  /**
-   * Recursively handles tool calls until a final response with no tools is generated
-   * @param request - The initial request object containing messages and other parameters
-   * @param toolExecutor - Tool executor to execute tool calls
-   * @param options - Additional options for the recursive execution
-   * @returns A promise that resolves to the provider's final response with no more tool calls
-   */
-  orchestrateToolLoop?(request: ProviderRequest, toolExecutor: any, options?: RecursiveToolLoopOptions): Promise<ProviderResponse>;
 }
 
 /**

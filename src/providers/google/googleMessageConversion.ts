@@ -3,12 +3,12 @@
  */
 
 import { Content } from '@google/genai';
-import { ChatMessage, Message } from '../../core/types/provider.types';
+import { ChatMessage } from '../../core/types/provider.types';
 
 /**
  * Convert messages from the common format to Google GenAI specific format
  */
-export function convertMessagesToGenAIFormat(messages: ChatMessage[] | Message[]): Content[] {
+export function convertMessagesToGenAIFormat(messages: ChatMessage[]): Content[] {
   if (!messages || messages.length === 0) return [];
   
   return messages.map((msg) => ({
