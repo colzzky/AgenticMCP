@@ -13,7 +13,7 @@ import type { AnthropicProviderSpecificConfig } from '../../../src/core/types/co
 jest.mock('@anthropic-ai/sdk', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
+    default: (jest.fn() as any).mockImplementation(() => ({
       messages: {
         create: jest.fn()
       }
@@ -38,7 +38,7 @@ describe('AnthropicProvider', () => {
     get: jest.fn(),
     set: jest.fn(),
     getProviderConfigByAlias: jest.fn(),
-    getResolvedApiKey: jest.fn().mockResolvedValue('mock-api-key'),
+    getResolvedApiKey: (jest.fn() as any).mockResolvedValue('mock-api-key'),
     getDefaults: jest.fn(),
     getMcpConfig: jest.fn()
   } as unknown as ConfigManager;
@@ -50,7 +50,7 @@ describe('AnthropicProvider', () => {
     }
   };
   
-  const MockAnthropicClass = jest.fn().mockImplementation(() => mockAnthropicClient);
+  const MockAnthropicClass = (jest.fn() as any).mockImplementation(() => mockAnthropicClient);
 
   let provider: AnthropicProvider;
   const mockConfig: AnthropicProviderSpecificConfig = {
@@ -64,7 +64,7 @@ describe('AnthropicProvider', () => {
     jest.clearAllMocks();
     
     // Setup the mock implementations
-    mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue('mock-api-key');
+    mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue('mock-api-key');
     
     // Mock any provider methods that need special implementation
     MockAnthropicClass.mockClear();
@@ -78,7 +78,7 @@ describe('AnthropicProvider', () => {
     expect(MockAnthropicClass).toHaveBeenCalled();
     
     // Make sure the mock transformMessages function is implemented
-    (provider as any).transformMessages = jest.fn().mockImplementation(messages => messages);
+    (provider as any).transformMessages = (jest.fn() as any).mockImplementation(messages => messages);
   });
 
   describe('Configuration', () => {
@@ -110,14 +110,10 @@ describe('AnthropicProvider', () => {
     it('should throw an error if API key is not found', async () => {
       const newProvider = new AnthropicProvider(mockConfigManager, mockLogger, MockAnthropicClass);
       // Return null to simulate API key not found
-      mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue(null);
+      mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue(undefined);
       
-      // The implementation returns false instead of throwing an error
-      const result = await newProvider.configure(mockConfig);
-      expect(result).toBe(false);
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Anthropic API key not found')
-      );
+      // Expect configure to throw an error
+      await expect(newProvider.configure(mockConfig)).rejects.toThrow(/API key not found/);
     });
   });
 

@@ -62,7 +62,7 @@ describe('DI Registry', () => {
     rmdir: jest.fn()
   };
   
-  const MockDiffService = jest.fn().mockImplementation(() => ({
+  const MockDiffService = (jest.fn() as any).mockImplementation(() => ({
     generateDiff: jest.fn()
   }));
   

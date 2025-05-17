@@ -21,7 +21,7 @@ import type { OpenAIProviderSpecificConfig } from '../../../src/core/types/confi
 jest.mock('openai', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
+    default: (jest.fn() as any).mockImplementation(() => ({
       chat: {
         completions: {
           create: jest.fn()
@@ -45,7 +45,7 @@ describe('OpenAIProvider - Tool Calling', () => {
     }
   };
   
-  const MockOpenAIClass = jest.fn().mockImplementation(() => mockOpenAIClient);
+  const MockOpenAIClass = (jest.fn() as any).mockImplementation(() => mockOpenAIClient);
 
   const mockConfig: OpenAIProviderSpecificConfig = {
     providerType: 'openai',
@@ -97,7 +97,7 @@ describe('OpenAIProvider - Tool Calling', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue('mock-api-key');
+    mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue('mock-api-key');
     provider = new OpenAIProvider(mockConfigManager, mockLogger, MockOpenAIClass);
     await provider.configure(mockConfig);
   });

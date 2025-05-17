@@ -1,23 +1,5 @@
 # Function Calling with the Gemini API
 
-- On this page
-- [How Function Calling Works](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#how_function_calling_works)
-  - [Step 1: Define Function Declaration](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#step_1_define_function_declaration)
-  - [Step 2: Call the model with function declarations](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#step_2_call_the_model_with_function_declarations)
-  - [Step 3: Execute set\_light\_values function code](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#step_3_execute_set_light_values_function_code)
-  - [Step 4: Create User friendly response with function result and call the model again](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#step_4_create_user_friendly_response_with_function_result_and_call_the_model_again)
-- [Function declarations](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#function_declarations)
-- [Parallel Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#parallel_function_calling)
-- [Compositional Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#compositional_function_calling)
-- [Function calling modes](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#function_calling_modes)
-- [Automatic Function Calling (Python Only)](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#automatic_function_calling_python_only)
-  - [Automatic Function schema declaration](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#automatic_function_schema_declaration)
-- [Multi-tool use: Combine Native Tools with Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#multi-tool_use_combine_native_tools_with_function_calling)
-- [Use Model Context Protocol (MCP)](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#use_model_context_protocol_mcp)
-- [Supported Models](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#supported_models)
-- [Best Practices](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#best_practices)
-- [Notes and Limitations](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#notes_and_limitations)
-
 Function calling lets you connect models to external tools and APIs.
 Instead of generating text responses, the model understands when to call specific
 functions and provides the necessary parameters to execute real-world actions.

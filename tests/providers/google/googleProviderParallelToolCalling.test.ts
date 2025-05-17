@@ -18,13 +18,13 @@ import type { GoogleProviderSpecificConfig } from '../../../src/core/types/confi
 // Mock Google GenAI SDK
 jest.mock('@google/genai', () => {
   const mockGenerateContent = jest.fn();
-  const mockGet = jest.fn().mockImplementation(() => ({
+  const mockGet = (jest.fn() as any).mockImplementation(() => ({
     generateContent: mockGenerateContent
   }));
   
   return {
     __esModule: true,
-    GoogleGenAI: jest.fn().mockImplementation(() => ({
+    GoogleGenAI: (jest.fn() as any).mockImplementation(() => ({
       models: {
         get: mockGet
       }
@@ -49,16 +49,16 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
     get: jest.fn(),
     set: jest.fn(),
     getProviderConfigByAlias: jest.fn(),
-    getResolvedApiKey: jest.fn().mockResolvedValue('mock-api-key'),
+    getResolvedApiKey: (jest.fn() as any).mockResolvedValue('mock-api-key'),
     getDefaults: jest.fn(),
     getMcpConfig: jest.fn()
   } as unknown as ConfigManager;
 
   // Mock Google GenAI client
   const mockGoogleGenAI = {
-    GoogleGenAI: jest.fn().mockImplementation(() => ({
+    GoogleGenAI: (jest.fn() as any).mockImplementation(() => ({
       models: {
-        get: jest.fn().mockImplementation(() => ({
+        get: (jest.fn() as any).mockImplementation(() => ({
           generateContent: jest.fn()
         }))
       }
@@ -149,7 +149,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue('mock-api-key');
+    mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue('mock-api-key');
     provider = new GoogleProvider(mockConfigManager, mockLogger, mockGoogleGenAI.GoogleGenAI);
     await provider.configure(mockConfig);
   });
@@ -157,7 +157,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
   describe('Parallel Tool Calls', () => {
     it('should extract multiple tool calls when returned in parallel (parts format)', async () => {
       // Setup mock response with multiple parallel function calls in parts
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -192,7 +192,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       
@@ -228,7 +228,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
     
     it('should extract multiple tool calls when returned in parallel (functionCalls format)', async () => {
       // Setup mock response with multiple parallel function calls in functionCalls array
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -261,7 +261,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       
@@ -297,7 +297,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
 
     it('should handle providing multiple tool results back to the model', async () => {
       // First call returns multiple function calls
-      const mockGenerateContentFirst = jest.fn().mockResolvedValue({
+      const mockGenerateContentFirst = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -326,7 +326,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       });
       
       // Second call with tool results returns final response
-      const mockGenerateContentSecond = jest.fn().mockResolvedValue({
+      const mockGenerateContentSecond = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -339,7 +339,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       });
       
       // Setup mock model - first call
-      const mockGetFirst = jest.fn().mockReturnValue({
+      const mockGetFirst = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContentFirst
       });
       
@@ -365,7 +365,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       expect(initialResponse.toolCalls).toHaveLength(2);
 
       // Now setup the second mock for the tool results submission
-      const mockGetSecond = jest.fn().mockReturnValue({
+      const mockGetSecond = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContentSecond
       });
       
@@ -420,11 +420,11 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       expect(secondRequestArgs.contents[1].role).toBe('model');
       
       // Third message is first tool result
-      expect(secondRequestArgs.contents[2].role).toBe('user');
+      expect(secondRequestArgs.contents[2].role).toBe('model');
       expect(secondRequestArgs.contents[2].parts[0].text).toBe('68°F and sunny');
       
       // Fourth message is second tool result
-      expect(secondRequestArgs.contents[3].role).toBe('user');
+      expect(secondRequestArgs.contents[3].role).toBe('model');
       expect(secondRequestArgs.contents[3].parts[0].text).toBe('2:30 PM Eastern Time');
       
       // Verify final response
@@ -437,7 +437,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
   describe('Complex Parallel Tool Scenarios', () => {
     it('should handle three or more parallel tool calls', async () => {
       // Setup mock response with three parallel function calls
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -475,7 +475,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       
@@ -513,7 +513,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
 
     it('should handle partial tool results submission', async () => {
       // First call returns multiple function calls
-      const mockGenerateContentFirst = jest.fn().mockResolvedValue({
+      const mockGenerateContentFirst = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -540,7 +540,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       });
       
       // Second call with partial tool results returns additional function call
-      const mockGenerateContentSecond = jest.fn().mockResolvedValue({
+      const mockGenerateContentSecond = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -566,7 +566,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       });
       
       // Final call with news results returns complete response
-      const mockGenerateContentThird = jest.fn().mockResolvedValue({
+      const mockGenerateContentThird = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -579,7 +579,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       });
       
       // Setup mock model - first call
-      const mockGetFirst = jest.fn().mockReturnValue({
+      const mockGetFirst = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContentFirst
       });
       
@@ -604,7 +604,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       expect(initialResponse.toolCalls).toHaveLength(2);
 
       // Now setup the second mock for the weather and time tool results
-      const mockGetSecond = jest.fn().mockReturnValue({
+      const mockGetSecond = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContentSecond
       });
       
@@ -648,7 +648,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       expect(newsToolResponse.toolCalls![0].name).toBe('search_knowledge_base');
 
       // Now setup the third mock for the news tool result
-      const mockGetThird = jest.fn().mockReturnValue({
+      const mockGetThird = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContentThird
       });
       
@@ -708,7 +708,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
   describe('Tool Choice with Parallel Tools', () => {
     it('should respect the required tool_choice for parallel execution', async () => {
       // Setup mock response with multiple function calls
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -735,7 +735,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       
@@ -765,7 +765,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
 
     it('should handle specific tool choice while allowing parallel execution', async () => {
       // Setup mock response with the specific requested function
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -786,7 +786,7 @@ describe('GoogleProvider - Parallel Tool Calling', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       

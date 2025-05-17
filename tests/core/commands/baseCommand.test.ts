@@ -175,7 +175,7 @@ describe('DefaultFilePathProcessorFactory', () => {
     cwd: jest.fn()
   } as unknown as NodeJS.Process;
 
-  const MockFilePathProcessor = jest.fn().mockImplementation(() => ({
+  const MockFilePathProcessor = (jest.fn() as any).mockImplementation(() => ({
     processArgs: jest.fn()
   }));
 

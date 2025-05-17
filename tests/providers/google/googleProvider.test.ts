@@ -12,13 +12,13 @@ import type { GoogleProviderSpecificConfig } from '../../../src/core/types/confi
 // Mock GoogleGenAI SDK
 jest.mock('@google/genai', () => {
   const mockGenerateContent = jest.fn();
-  const mockGet = jest.fn().mockImplementation(() => ({
+  const mockGet = (jest.fn() as any).mockImplementation(() => ({
     generateContent: mockGenerateContent
   }));
   
   return {
     __esModule: true,
-    GoogleGenAI: jest.fn().mockImplementation(() => ({
+    GoogleGenAI: (jest.fn() as any).mockImplementation(() => ({
       models: {
         get: mockGet
       }
@@ -43,16 +43,16 @@ describe('GoogleProvider', () => {
     get: jest.fn(),
     set: jest.fn(),
     getProviderConfigByAlias: jest.fn(),
-    getResolvedApiKey: jest.fn().mockResolvedValue('mock-api-key'),
+    getResolvedApiKey: (jest.fn() as any).mockResolvedValue('mock-api-key'),
     getDefaults: jest.fn(),
     getMcpConfig: jest.fn()
   } as unknown as ConfigManager;
 
   // Mock Google GenAI client
   const mockGoogleGenAI = {
-    GoogleGenAI: jest.fn().mockImplementation(() => ({
+    GoogleGenAI: (jest.fn() as any).mockImplementation(() => ({
       models: {
-        get: jest.fn().mockImplementation(() => ({
+        get: (jest.fn() as any).mockImplementation(() => ({
           generateContent: jest.fn()
         }))
       }
@@ -68,7 +68,7 @@ describe('GoogleProvider', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue('mock-api-key');
+    mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue('mock-api-key');
     provider = new GoogleProvider(mockConfigManager, mockLogger, mockGoogleGenAI.GoogleGenAI);
     await provider.configure(mockConfig);
   });
@@ -102,7 +102,7 @@ describe('GoogleProvider', () => {
       const newProvider = new GoogleProvider(mockConfigManager, mockLogger, mockGoogleGenAI.GoogleGenAI);
       
       // Make getResolvedApiKey return null
-      mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue(null);
+      mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue(null);
       
       // Expect configure to throw an error
       await expect(newProvider.configure(mockConfig))
@@ -143,7 +143,7 @@ describe('GoogleProvider', () => {
   describe('Chat method', () => {
     it('should properly format and send a basic chat request', async () => {
       // Setup mock response
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -161,7 +161,7 @@ describe('GoogleProvider', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       
@@ -212,7 +212,7 @@ describe('GoogleProvider', () => {
 
     it('should use configured model and temperature values', async () => {
       // Setup mock model/response
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [{ text: 'Response' }]
@@ -221,7 +221,7 @@ describe('GoogleProvider', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       
@@ -260,7 +260,7 @@ describe('GoogleProvider', () => {
 
     it('should override configured values with request values when provided', async () => {
       // Setup mock model/response
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [{ text: 'Response' }]
@@ -269,7 +269,7 @@ describe('GoogleProvider', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       
@@ -277,7 +277,7 @@ describe('GoogleProvider', () => {
       const modelProvider = new GoogleProvider(
         mockConfigManager, 
         mockLogger, 
-        jest.fn().mockImplementation(() => ({
+        (jest.fn() as any).mockImplementation(() => ({
           models: {
             get: mockGet
           }
@@ -331,7 +331,7 @@ describe('GoogleProvider', () => {
       
       // Directly mock the generateText method to return our error response
       const originalMethod = errorProvider.generateText;
-      errorProvider.generateText = jest.fn().mockResolvedValueOnce(mockErrorResponse);
+      errorProvider.generateText = (jest.fn() as any).mockResolvedValueOnce(mockErrorResponse);
 
       const request: ProviderRequest = {
         messages: [{ role: 'user', content: 'Hello' }]
@@ -352,7 +352,7 @@ describe('GoogleProvider', () => {
 
     it('should handle content blocking gracefully', async () => {
       // Setup mock response with blocked content
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         promptFeedback: {
           blockReason: 'SAFETY',
           blockReasonMessage: 'This content violates our safety policies.'
@@ -360,7 +360,7 @@ describe('GoogleProvider', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       
@@ -412,12 +412,12 @@ describe('GoogleProvider', () => {
         }]
       };
       
-      const mockContentGenerator = jest.fn().mockResolvedValue(mockGenAIResponse);
-      const mockGetModel = jest.fn().mockReturnValue({
+      const mockContentGenerator = (jest.fn() as any).mockResolvedValue(mockGenAIResponse);
+      const mockGetModel = (jest.fn() as any).mockReturnValue({
         generateContent: mockContentGenerator
       });
       
-      const mockGenAIClient = jest.fn().mockImplementation(() => ({
+      const mockGenAIClient = (jest.fn() as any).mockImplementation(() => ({
         models: {
           get: mockGetModel
         }
@@ -464,7 +464,7 @@ describe('GoogleProvider', () => {
   describe('Message Handling', () => {
     it('should convert ChatMessage[] to Google GenAI format', async () => {
       // Setup mock model/response
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [{ text: 'Response' }]
@@ -473,7 +473,7 @@ describe('GoogleProvider', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       
@@ -481,7 +481,7 @@ describe('GoogleProvider', () => {
       const conversionProvider = new GoogleProvider(
         mockConfigManager, 
         mockLogger, 
-        jest.fn().mockImplementation(() => ({
+        (jest.fn() as any).mockImplementation(() => ({
           models: {
             get: mockGet
           }
@@ -519,7 +519,7 @@ describe('GoogleProvider', () => {
 
     it('should handle response text extraction correctly', async () => {
       // Setup mock response with multiple text parts
-      const mockGenerateContent = jest.fn().mockResolvedValue({
+      const mockGenerateContent = (jest.fn() as any).mockResolvedValue({
         candidates: [{
           content: {
             parts: [
@@ -531,7 +531,7 @@ describe('GoogleProvider', () => {
       });
       
       // Setup mock model
-      const mockGet = jest.fn().mockReturnValue({
+      const mockGet = (jest.fn() as any).mockReturnValue({
         generateContent: mockGenerateContent
       });
       

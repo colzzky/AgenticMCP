@@ -22,7 +22,7 @@ import type { AnthropicProviderSpecificConfig } from '../../../src/core/types/co
 jest.mock('@anthropic-ai/sdk', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
+    default: (jest.fn() as any).mockImplementation(() => ({
       messages: {
         create: jest.fn()
       }
@@ -51,7 +51,7 @@ describe('AnthropicProvider - Tool Calling', () => {
         create: jest.fn()
       }
     };
-    MockAnthropicClass = jest.fn().mockImplementation(() => mockAnthropicClient);
+    MockAnthropicClass = (jest.fn() as any).mockImplementation(() => mockAnthropicClient);
     mockReset(mockLogger);
     mockReset(mockConfigManager);
     // You may need to mock AnthropicProvider's internal Anthropic class usage here if relevant
@@ -101,7 +101,7 @@ describe('AnthropicProvider - Tool Calling', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue('mock-api-key');
+    mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue('mock-api-key');
     provider = new AnthropicProvider(mockConfigManager, mockLogger, MockAnthropicClass);
     await provider.configure(mockConfig);
   });
@@ -511,7 +511,7 @@ describe('AnthropicProvider - Tool Calling', () => {
     });
 
     it('should handle tool execution errors', async () => {
-      const mockToolFunction = jest.fn().mockRejectedValue(new Error('Weather API is down'));
+      const mockToolFunction = (jest.fn() as any).mockRejectedValue(new Error('Weather API is down'));
 
       // Handle error gracefully
       expect(mockToolFunction()).rejects.toThrow('Weather API is down');
@@ -526,7 +526,7 @@ describe('AnthropicProvider - Tool Calling', () => {
         arguments: '{"location":"San Francisco, CA"}'
       };
 
-      const mockToolFunction = jest.fn().mockResolvedValue('68°F and sunny');
+      const mockToolFunction = (jest.fn() as any).mockResolvedValue('68°F and sunny');
       
       // The executeToolCall method might not exist in the updated implementation
       // Let's create a wrapper method to test the functionality

@@ -19,15 +19,15 @@ function createMockDeps() {
   
   // Mock the Commander program properly
   const mockCommandInstance = {
-    version: jest.fn().mockReturnThis(),
-    description: jest.fn().mockReturnThis(),
-    parseAsync: jest.fn().mockResolvedValue(undefined),
+    version: (jest.fn() as any).mockReturnThis(),
+    description: (jest.fn() as any).mockReturnThis(),
+    parseAsync: (jest.fn() as any).mockResolvedValue(undefined),
     outputHelp: jest.fn(),
-    on: jest.fn().mockReturnThis()
+    on: (jest.fn() as any).mockReturnThis()
   };
   
   // Set up Command constructor mock
-  deps.Command = jest.fn().mockImplementation(() => mockCommandInstance) as any;
+  deps.Command = (jest.fn() as any).mockImplementation(() => mockCommandInstance) as any;
   
   return deps;
 }
@@ -46,19 +46,19 @@ describe('mainDI Dependency Injection', () => {
     
     // Create a proper mock for the Command instance
     mockCommandInstance = {
-      version: jest.fn().mockReturnThis(),
-      description: jest.fn().mockReturnThis(),
-      parseAsync: jest.fn().mockResolvedValue(undefined),
+      version: (jest.fn() as any).mockReturnThis(),
+      description: (jest.fn() as any).mockReturnThis(),
+      parseAsync: (jest.fn() as any).mockResolvedValue(undefined),
       outputHelp: jest.fn(),
-      on: jest.fn().mockReturnThis()
+      on: (jest.fn() as any).mockReturnThis()
     };
     
     // Set up Command constructor mock
-    deps.Command = jest.fn().mockImplementation(() => mockCommandInstance) as any;
+    deps.Command = (jest.fn() as any).mockImplementation(() => mockCommandInstance) as any;
     
     // Mock the RoleBasedToolsRegistrarFactory
     deps.RoleBasedToolsRegistrarFactory = {
-      createDefault: jest.fn().mockReturnValue({})
+      createDefault: (jest.fn() as any).mockReturnValue({})
     } as any;
     
     // Always mock process.exit

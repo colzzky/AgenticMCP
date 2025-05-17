@@ -24,7 +24,7 @@ describe('ProviderInitializer', () => {
     getProvider: jest.fn(),
     configureProvider: jest.fn(),
     hasProviderType: jest.fn(),
-    getRegisteredProviderTypes: jest.fn().mockReturnValue(['openai', 'anthropic']),
+    getRegisteredProviderTypes: (jest.fn() as any).mockReturnValue(['openai', 'anthropic']),
     clearInstances: jest.fn(),
     setToolRegistry: jest.fn(),
     getToolRegistry: jest.fn()
@@ -33,14 +33,14 @@ describe('ProviderInitializer', () => {
   // Mock provider class
   class MockProvider implements LLMProvider {
     get name() { return 'mockProvider'; }
-    configure = jest.fn().mockResolvedValue(undefined);
+    configure = (jest.fn() as any).mockResolvedValue(undefined);
     setToolRegistry = jest.fn();
-    getAvailableTools = jest.fn().mockReturnValue([]);
-    generateCompletion = jest.fn().mockResolvedValue({ success: true, content: 'test completion' });
-    chat = jest.fn().mockResolvedValue({ success: true, content: 'test chat' });
-    executeToolCall = jest.fn().mockResolvedValue('tool result');
-    generateText = jest.fn().mockResolvedValue({ success: true, content: 'test text' });
-    generateTextWithToolResults = jest.fn().mockResolvedValue({ success: true, content: 'tool results' });
+    getAvailableTools = (jest.fn() as any).mockReturnValue([]);
+    generateCompletion = (jest.fn() as any).mockResolvedValue({ success: true, content: 'test completion' });
+    chat = (jest.fn() as any).mockResolvedValue({ success: true, content: 'test chat' });
+    executeToolCall = (jest.fn() as any).mockResolvedValue('tool result');
+    generateText = (jest.fn() as any).mockResolvedValue({ success: true, content: 'test text' });
+    generateTextWithToolResults = (jest.fn() as any).mockResolvedValue({ success: true, content: 'tool results' });
   }
 
   let providerInitializer: ProviderInitializer;
@@ -87,7 +87,7 @@ describe('ProviderInitializer', () => {
     it('should delegate to factory.getProvider with default instance name', () => {
       providerInitializer = new ProviderInitializer(mockFactory, mockLogger);
       const mockProviderInstance = new MockProvider();
-      mockFactory.getProvider = jest.fn().mockReturnValue(mockProviderInstance);
+      mockFactory.getProvider = (jest.fn() as any).mockReturnValue(mockProviderInstance);
       
       const provider = providerInitializer.getProvider('openai');
       
@@ -98,7 +98,7 @@ describe('ProviderInitializer', () => {
     it('should delegate to factory.getProvider with custom instance name', () => {
       providerInitializer = new ProviderInitializer(mockFactory, mockLogger);
       const mockProviderInstance = new MockProvider();
-      mockFactory.getProvider = jest.fn().mockReturnValue(mockProviderInstance);
+      mockFactory.getProvider = (jest.fn() as any).mockReturnValue(mockProviderInstance);
       
       const provider = providerInitializer.getProvider('anthropic', 'custom');
       
@@ -108,7 +108,7 @@ describe('ProviderInitializer', () => {
     
     it('should propagate errors from factory.getProvider', () => {
       providerInitializer = new ProviderInitializer(mockFactory, mockLogger);
-      mockFactory.getProvider = jest.fn().mockImplementation(() => {
+      mockFactory.getProvider = (jest.fn() as any).mockImplementation(() => {
         throw new Error('Provider not found');
       });
       
@@ -127,7 +127,7 @@ describe('ProviderInitializer', () => {
       
       // Mock successful provider retrieval
       const mockProviderInstance = new MockProvider();
-      mockFactory.getProvider = jest.fn().mockReturnValue(mockProviderInstance);
+      mockFactory.getProvider = (jest.fn() as any).mockReturnValue(mockProviderInstance);
       
       // Test getting a provider
       const provider = providerInitializer.getProvider('openai');
@@ -154,7 +154,7 @@ describe('ProviderInitializer', () => {
       providerInitializer = new ProviderInitializer(mockFactory, mockLogger);
       
       // Mock a failure
-      mockFactory.registerProvider = jest.fn().mockImplementation((type) => {
+      mockFactory.registerProvider = (jest.fn() as any).mockImplementation((type) => {
         if (type === 'anthropic') {
           throw new Error('Registration failed');
         }

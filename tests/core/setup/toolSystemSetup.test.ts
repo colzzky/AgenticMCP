@@ -11,7 +11,7 @@ import type { UnifiedShellCliTool } from '../../../src/tools/unifiedShellCliTool
 
 // Mock getLocalShellCliToolDefinitions module
 jest.mock('../../../src/tools/localShellCliToolDefinitions.js', () => ({
-  getLocalShellCliToolDefinitions: jest.fn().mockReturnValue([
+  getLocalShellCliToolDefinitions: (jest.fn() as any).mockReturnValue([
     { type: 'function', name: 'run_shell_command', description: 'Run shell command', parameters: { type: 'object', properties: {} } }
   ])
 }));
@@ -28,12 +28,12 @@ describe('toolSystemSetup', () => {
   
   // Mock localCliTool
   const mockLocalCliTool = {
-    getCommandMap: jest.fn().mockReturnValue({
+    getCommandMap: (jest.fn() as any).mockReturnValue({
       read_file: jest.fn(),
       write_file: jest.fn(),
       list_directory: jest.fn()
     }),
-    getToolDefinitions: jest.fn().mockReturnValue([
+    getToolDefinitions: (jest.fn() as any).mockReturnValue([
       { type: 'function', name: 'read_file', description: 'Read file contents', parameters: { type: 'object', properties: {} } },
       { type: 'function', name: 'write_file', description: 'Write to file', parameters: { type: 'object', properties: {} } }
     ])
@@ -42,10 +42,10 @@ describe('toolSystemSetup', () => {
   // Mock localShellCliTool
   const mockLocalShellCliTool = {
     execute: jest.fn(),
-    getToolDefinitions: jest.fn().mockReturnValue([
+    getToolDefinitions: (jest.fn() as any).mockReturnValue([
       { type: 'function', name: 'ls', description: 'List directory contents', parameters: { type: 'object', properties: {} } }
     ]),
-    getCommandMap: jest.fn().mockReturnValue({
+    getCommandMap: (jest.fn() as any).mockReturnValue({
       ls: jest.fn(),
       echo: jest.fn()
     })
@@ -54,7 +54,7 @@ describe('toolSystemSetup', () => {
   // Mock unifiedShellCliTool
   const mockUnifiedShellCliTool = {
     execute: jest.fn(),
-    getToolDefinition: jest.fn().mockReturnValue({
+    getToolDefinition: (jest.fn() as any).mockReturnValue({
       type: 'function', 
       name: 'shell', 
       description: 'Unified shell command execution', 
@@ -70,28 +70,28 @@ describe('toolSystemSetup', () => {
   
   // Mock ToolRegistry
   const mockRegistryInstance = {
-    registerFileSystemTools: jest.fn().mockReturnValue(3),
-    registerTools: jest.fn().mockReturnValue(1),
+    registerFileSystemTools: (jest.fn() as any).mockReturnValue(3),
+    registerTools: (jest.fn() as any).mockReturnValue(1),
     registerTool: jest.fn(),
     getTool: jest.fn(),
     getTools: jest.fn(),
     getAllTools: jest.fn(),
     validateToolsForProvider: jest.fn()
   };
-  const MockToolRegistry = jest.fn().mockImplementation(() => mockRegistryInstance);
+  const MockToolRegistry = (jest.fn() as any).mockImplementation(() => mockRegistryInstance);
   
   // Mock ToolExecutor
   const mockExecutorInstance = {
     executeTool: jest.fn(),
     executeToolCall: jest.fn()
   };
-  const MockToolExecutor = jest.fn().mockImplementation(() => mockExecutorInstance);
+  const MockToolExecutor = (jest.fn() as any).mockImplementation(() => mockExecutorInstance);
   
   // Mock ToolResultFormatter
   const mockFormatterInstance = {
     formatResult: jest.fn()
   };
-  const MockToolResultFormatter = jest.fn().mockImplementation(() => mockFormatterInstance);
+  const MockToolResultFormatter = (jest.fn() as any).mockImplementation(() => mockFormatterInstance);
   
   beforeEach(() => {
     jest.clearAllMocks();

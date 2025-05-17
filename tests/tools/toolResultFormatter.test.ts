@@ -315,7 +315,7 @@ describe('ToolResultFormatter', () => {
     it('should register a custom formatter', () => {
       // Setup
       const customFormatter = {
-        formatResult: jest.fn().mockReturnValue({
+        formatResult: (jest.fn() as any).mockReturnValue({
           type: 'function_call_output',
           call_id: 'test_call',
           output: 'Custom formatted output'
@@ -353,7 +353,7 @@ describe('ToolResultFormatter', () => {
 
       // Create and register a custom formatter with different behavior
       const customFormatter = {
-        formatResult: jest.fn().mockReturnValue({
+        formatResult: (jest.fn() as any).mockReturnValue({
           type: 'function_call_output',
           call_id: 'call_id',
           output: 'Custom override output'

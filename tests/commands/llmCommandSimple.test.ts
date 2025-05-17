@@ -32,9 +32,9 @@ describe('LLMCommand Functionality', () => {
   };
 
   const mockPathDI = {
-    isAbsolute: jest.fn().mockReturnValue(true),
-    resolve: jest.fn().mockImplementation((base, path) => path),
-    basename: jest.fn().mockImplementation((path) => path.split('/').pop())
+    isAbsolute: (jest.fn() as any).mockReturnValue(true),
+    resolve: (jest.fn() as any).mockImplementation((base, path) => path),
+    basename: (jest.fn() as any).mockImplementation((path) => path.split('/').pop())
   };
 
   const mockFileSystemDI = {
@@ -51,7 +51,7 @@ describe('LLMCommand Functionality', () => {
   };
 
   const mockProcessDI = {
-    cwd: jest.fn().mockReturnValue('/fake/cwd')
+    cwd: (jest.fn() as any).mockReturnValue('/fake/cwd')
   } as unknown as NodeJS.Process;
 
   // Create mock for FilePathProcessor
@@ -64,7 +64,7 @@ describe('LLMCommand Functionality', () => {
     fileSystemDI: mockFileSystemDI,
     processDi: mockProcessDI,
     factory: jest.fn() as any, // Mock the factory
-    create: jest.fn().mockReturnValue({
+    create: (jest.fn() as any).mockReturnValue({
       processArgs: mockProcessFileArgs
     })
   };
@@ -76,7 +76,7 @@ describe('LLMCommand Functionality', () => {
   };
 
   const mockProviderFactory = {
-    getProvider: jest.fn().mockReturnValue(mockLLMProvider)
+    getProvider: (jest.fn() as any).mockReturnValue(mockLLMProvider)
   } as unknown as ProviderFactory;
 
   let llmCommand: LLMCommand;

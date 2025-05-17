@@ -72,7 +72,7 @@ describe('DIContainer', () => {
   describe('registerSingleton and getSingleton', () => {
     it('should create singleton instances lazily', () => {
       // Arrange
-      const mockFactorySpy = jest.fn().mockReturnValue({ value: 'singleton-value' });
+      const mockFactorySpy = (jest.fn() as any).mockReturnValue({ value: 'singleton-value' });
       
       // Act - Register but don't get yet
       container.registerSingleton(DI_TOKENS.FILE_SYSTEM, mockFactorySpy);
@@ -83,7 +83,7 @@ describe('DIContainer', () => {
 
     it('should create singleton only once', () => {
       // Arrange
-      const mockFactorySpy = jest.fn().mockReturnValue({ value: 'singleton-value' });
+      const mockFactorySpy = (jest.fn() as any).mockReturnValue({ value: 'singleton-value' });
       
       // Act
       container.registerSingleton(DI_TOKENS.FILE_SYSTEM, mockFactorySpy);
@@ -121,7 +121,7 @@ describe('DIContainer', () => {
 
     it('should remove all registered singletons', () => {
       // Arrange
-      const mockFactory = jest.fn().mockReturnValue({ value: 'singleton-value' });
+      const mockFactory = (jest.fn() as any).mockReturnValue({ value: 'singleton-value' });
       container.registerSingleton(DI_TOKENS.FILE_SYSTEM, mockFactory);
       container.getSingleton(DI_TOKENS.FILE_SYSTEM); // Initialize the singleton
       

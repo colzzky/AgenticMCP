@@ -17,7 +17,7 @@ describe('ToolExecutor', () => {
 
   // Mock the tool registry
   const mockToolRegistry = {
-    getAllTools: jest.fn().mockReturnValue([]),
+    getAllTools: (jest.fn() as any).mockReturnValue([]),
     getTool: jest.fn(),
     registerTool: jest.fn(),
     registerTools: jest.fn(),
@@ -28,10 +28,10 @@ describe('ToolExecutor', () => {
 
   // Mock tool implementations
   const mockToolImplementations = {
-    test_tool: jest.fn().mockResolvedValue('tool result'),
-    failing_tool: jest.fn().mockRejectedValue(new Error('Tool failed')),
-    get_weather: jest.fn().mockResolvedValue({ temperature: 72, condition: 'sunny' }),
-    slow_tool: jest.fn().mockImplementation(() => new Promise(resolve => {
+    test_tool: (jest.fn() as any).mockResolvedValue('tool result'),
+    failing_tool: (jest.fn() as any).mockRejectedValue(new Error('Tool failed')),
+    get_weather: (jest.fn() as any).mockResolvedValue({ temperature: 72, condition: 'sunny' }),
+    slow_tool: (jest.fn() as any).mockImplementation(() => new Promise(resolve => {
       setTimeout(() => resolve({ result: 'slow result' }), 100);
     }))
   };

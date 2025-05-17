@@ -19,14 +19,14 @@ import { ConfigManager } from '../../../src/core/config/configManager';
 describe('ConfigManager', () => {
   // Create mock implementations
   const mockPathDI: PathDI = {
-    join: jest.fn().mockImplementation((path1, path2) => `${path1}/${path2}`),
-    dirname: jest.fn().mockImplementation((path) => path.slice(0, Math.max(0, path.lastIndexOf('/')))),
+    join: (jest.fn() as any).mockImplementation((path1, path2) => `${path1}/${path2}`),
+    dirname: (jest.fn() as any).mockImplementation((path) => path.slice(0, Math.max(0, path.lastIndexOf('/')))),
   } as unknown as PathDI;
 
   const mockFileSystemDI: FileSystemDI = {
-    mkdir: jest.fn().mockResolvedValue(undefined),
+    mkdir: (jest.fn() as any).mockResolvedValue(undefined),
     readFile: jest.fn(),
-    writeFile: jest.fn().mockResolvedValue(undefined),
+    writeFile: (jest.fn() as any).mockResolvedValue(undefined),
   } as unknown as FileSystemDI;
 
   // Mock logger

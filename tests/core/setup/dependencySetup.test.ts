@@ -25,7 +25,7 @@ describe('Dependency Injection Setup', () => {
   // Create mock for DIContainer
   const mockContainer: DIContainerMock = {
     register: jest.fn(),
-    get: jest.fn().mockImplementation((token) => {
+    get: (jest.fn() as any).mockImplementation((token) => {
       // Return different things based on the token
       switch(token) {
         case 'LOGGER': { return mockLogger;
@@ -65,7 +65,7 @@ describe('Dependency Injection Setup', () => {
   };
   
   // Mock FileSystem service class constructor
-  const MockFileSystemService = jest.fn().mockImplementation((pathDi, fsDi) => {
+  const MockFileSystemService = (jest.fn() as any).mockImplementation((pathDi, fsDi) => {
     return mockFileSystemService;
   });
   
@@ -76,18 +76,18 @@ describe('Dependency Injection Setup', () => {
   };
   
   // Mock Diff service class constructor
-  const MockDiffService = jest.fn().mockImplementation(() => {
+  const MockDiffService = (jest.fn() as any).mockImplementation(() => {
     return mockDiffService;
   });
   
   // Mock local CLI tool instance
   const mockLocalCliToolInstance = {
     // FileSystemTool methods
-    getCommandMap: jest.fn().mockReturnValue({})
+    getCommandMap: (jest.fn() as any).mockReturnValue({})
   };
   
   // Mock FileSystemTool class constructor
-  const MockFileSystemTool = jest.fn().mockImplementation((
+  const MockFileSystemTool = (jest.fn() as any).mockImplementation((
     config, logger, fileSystem, diffService, pathDi
   ) => {
     return mockLocalCliToolInstance;
@@ -96,11 +96,11 @@ describe('Dependency Injection Setup', () => {
   // Mock local shell CLI tool instance
   const mockLocalShellCliToolInstance = {
     // DILocalShellCliTool methods
-    getCommandMap: jest.fn().mockReturnValue({})
+    getCommandMap: (jest.fn() as any).mockReturnValue({})
   };
 
   // Mock DILocalShellCliTool class constructor
-  const MockDILocalShellCliTool = jest.fn().mockImplementation((
+  const MockDILocalShellCliTool = (jest.fn() as any).mockImplementation((
     config, logger, fileSystem, diffService, pathDi
   ) => {
     return mockLocalShellCliToolInstance;
@@ -108,7 +108,7 @@ describe('Dependency Injection Setup', () => {
   
   // Mock path
   const mockPath = {
-    join: jest.fn().mockImplementation((...parts) => parts.join('/')),
+    join: (jest.fn() as any).mockImplementation((...parts) => parts.join('/')),
     resolve: jest.fn(),
     normalize: jest.fn()
   };
@@ -126,7 +126,7 @@ describe('Dependency Injection Setup', () => {
   
   // Mock process
   const mockProcess = {
-    cwd: jest.fn().mockReturnValue('/test/dir'),
+    cwd: (jest.fn() as any).mockReturnValue('/test/dir'),
     exit: jest.fn(),
     argv: ['node', 'index.js'],
     env: {}

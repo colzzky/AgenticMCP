@@ -20,12 +20,12 @@ describe('McpCommands Functionality', () => {
   };
 
   const mockPathDI = {
-    resolve: jest.fn().mockImplementation((path) => path),
-    join: jest.fn().mockImplementation((...args) => args.join('/'))
+    resolve: (jest.fn() as any).mockImplementation((path) => path),
+    join: (jest.fn() as any).mockImplementation((...args) => args.join('/'))
   } as unknown as PathDI;
 
   const mockConfigManager = {
-    getConfig: jest.fn().mockReturnValue({
+    getConfig: (jest.fn() as any).mockReturnValue({
       defaultProvider: 'openai',
       mcp: {
         name: 'Test-MCP-Server',
@@ -39,15 +39,15 @@ describe('McpCommands Functionality', () => {
     loadConfig: jest.fn()
   } as unknown as ConfigManager;
 
-  const mockMcpServer = jest.fn().mockImplementation(() => ({
-    connect: jest.fn().mockResolvedValue(undefined),
-    disconnect: jest.fn().mockResolvedValue(undefined)
+  const mockMcpServer = (jest.fn() as any).mockImplementation(() => ({
+    connect: (jest.fn() as any).mockResolvedValue(undefined),
+    disconnect: (jest.fn() as any).mockResolvedValue(undefined)
   }));
 
   const mockBaseMcpServer = jest.fn();
 
   const mockProcess = {
-    cwd: jest.fn().mockReturnValue('/test/cwd'),
+    cwd: (jest.fn() as any).mockReturnValue('/test/cwd'),
     on: jest.fn()
   } as unknown as NodeJS.Process;
 
@@ -60,7 +60,7 @@ describe('McpCommands Functionality', () => {
   };
 
   const mockProviderFactory = {
-    getProvider: jest.fn().mockReturnValue(mockLLMProvider)
+    getProvider: (jest.fn() as any).mockReturnValue(mockLLMProvider)
   };
 
   const mockRoleBasedToolsRegistrar = {
@@ -73,8 +73,8 @@ describe('McpCommands Functionality', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockServerInstance = {
-      connect: jest.fn().mockResolvedValue(undefined),
-      disconnect: jest.fn().mockResolvedValue(undefined)
+      connect: (jest.fn() as any).mockResolvedValue(undefined),
+      disconnect: (jest.fn() as any).mockResolvedValue(undefined)
     };
     mockRoleBasedToolsRegistrar.register.mockReturnValue(mockServerInstance);
     mcpCommands = new McpCommands(
@@ -192,7 +192,7 @@ describe('McpCommands Functionality', () => {
       // Setup
       const options: ServeMcpOptions = {};
       const failingServerInstance = {
-        connect: jest.fn().mockRejectedValue(new Error('Connection failure')),
+        connect: (jest.fn() as any).mockRejectedValue(new Error('Connection failure')),
         disconnect: jest.fn()
       };
       mockRoleBasedToolsRegistrar.register.mockReturnValueOnce(failingServerInstance);
@@ -311,10 +311,10 @@ describe('McpCommands Functionality', () => {
     it('should register the serve:mcp command', () => {
       // Setup
       const mockProgram = {
-        command: jest.fn().mockReturnThis(),
-        description: jest.fn().mockReturnThis(),
-        option: jest.fn().mockReturnThis(),
-        action: jest.fn().mockReturnThis()
+        command: (jest.fn() as any).mockReturnThis(),
+        description: (jest.fn() as any).mockReturnThis(),
+        option: (jest.fn() as any).mockReturnThis(),
+        action: (jest.fn() as any).mockReturnThis()
       };
 
       // Execute

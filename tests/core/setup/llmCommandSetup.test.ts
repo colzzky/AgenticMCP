@@ -19,21 +19,21 @@ describe('llmCommandSetup', () => {
   
   // Mock Command object
   const mockCommand = {
-    command: jest.fn().mockReturnThis(),
-    description: jest.fn().mockReturnThis(),
-    option: jest.fn().mockReturnThis(),
-    allowUnknownOption: jest.fn().mockReturnThis(),
-    action: jest.fn().mockReturnThis()
+    command: (jest.fn() as any).mockReturnThis(),
+    description: (jest.fn() as any).mockReturnThis(),
+    option: (jest.fn() as any).mockReturnThis(),
+    allowUnknownOption: (jest.fn() as any).mockReturnThis(),
+    action: (jest.fn() as any).mockReturnThis()
   };
   
   // Mock LLMCommand class and instance
   const mockLLMCommandInstance = {
     name: 'llm',
     description: 'Execute LLM commands',
-    execute: jest.fn().mockResolvedValue({ success: true, message: 'Command executed successfully' })
+    execute: (jest.fn() as any).mockResolvedValue({ success: true, message: 'Command executed successfully' })
   };
   
-  const MockLLMCommand = jest.fn().mockImplementation(() => mockLLMCommandInstance);
+  const MockLLMCommand = (jest.fn() as any).mockImplementation(() => mockLLMCommandInstance);
   
   // Mock FilePathProcessorFactory
   const mockFilePathProcessorFactory: FilePathProcessorFactory = () => ({

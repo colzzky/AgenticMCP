@@ -18,8 +18,8 @@ describe('MCPServer', () => {
   };
 
   // Mock the BaseMcpServer
-  const mockConnect = jest.fn().mockResolvedValue(undefined);
-  const mockClose = jest.fn().mockResolvedValue(undefined);
+  const mockConnect = (jest.fn() as any).mockResolvedValue(undefined);
+  const mockClose = (jest.fn() as any).mockResolvedValue(undefined);
   const mockTool = jest.fn();
 
   // Mock server instance
@@ -30,10 +30,10 @@ describe('MCPServer', () => {
   };
   
   // Mock server class constructor
-  const MockBaseMcpServer = jest.fn().mockImplementation(() => mockServerInstance);
+  const MockBaseMcpServer = (jest.fn() as any).mockImplementation(() => mockServerInstance);
 
   // Mock transport
-  const MockTransport = jest.fn().mockImplementation(() => ({}));
+  const MockTransport = (jest.fn() as any).mockImplementation(() => ({}));
 
   let mcpServer: McpServer;
 
@@ -167,7 +167,7 @@ describe('MCPServer', () => {
         param1: z.string(),
         param2: z.number()
       };
-      const handler = jest.fn().mockResolvedValue('Tool result');
+      const handler = (jest.fn() as any).mockResolvedValue('Tool result');
       
       // Register tool
       mcpServer.registerTool(toolName, description, schema, handler);
@@ -246,7 +246,7 @@ describe('MCPServer', () => {
         param1: z.string()
       };
       const handlerResult = 'Handler result';
-      const handler = jest.fn().mockResolvedValue(handlerResult);
+      const handler = (jest.fn() as any).mockResolvedValue(handlerResult);
       const toolArgs = { param1: 'value1' };
       
       // Register tool
@@ -289,7 +289,7 @@ describe('MCPServer', () => {
           { type: 'code', text: 'console.log("hello")', language: 'javascript' }
         ]
       };
-      const handler = jest.fn().mockResolvedValue(structuredResult);
+      const handler = (jest.fn() as any).mockResolvedValue(structuredResult);
       
       // Register tool
       mcpServer.registerTool(toolName, description, schema, handler);
@@ -312,7 +312,7 @@ describe('MCPServer', () => {
         param1: z.string()
       };
       const objectResult = { key1: 'value1', key2: 42 };
-      const handler = jest.fn().mockResolvedValue(objectResult);
+      const handler = (jest.fn() as any).mockResolvedValue(objectResult);
       
       // Register tool
       mcpServer.registerTool(toolName, description, schema, handler);
@@ -340,7 +340,7 @@ describe('MCPServer', () => {
         param1: z.string()
       };
       const error = new Error('Handler error');
-      const handler = jest.fn().mockRejectedValue(error);
+      const handler = (jest.fn() as any).mockRejectedValue(error);
       
       // Register tool
       mcpServer.registerTool(toolName, description, schema, handler);

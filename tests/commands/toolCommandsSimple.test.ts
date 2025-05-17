@@ -55,7 +55,7 @@ describe('ToolCommands Functionality', () => {
   };
 
   // Mock tool registry
-  const mockGetAllTools = jest.fn().mockReturnValue([mockTool1, mockTool2]);
+  const mockGetAllTools = (jest.fn() as any).mockReturnValue([mockTool1, mockTool2]);
   const mockToolRegistry = {
     getAllTools: mockGetAllTools
   } as unknown as InstanceType<typeof ToolRegistry>;

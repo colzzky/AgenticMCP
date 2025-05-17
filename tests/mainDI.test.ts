@@ -15,11 +15,11 @@ function createMockDependencies(): MainDependencies & {
   callOrder: string[];
 } {
   const mockCommandInstance = {
-    version: jest.fn().mockReturnThis(),
-    description: jest.fn().mockReturnThis(),
-    parseAsync: jest.fn().mockResolvedValue(undefined),
+    version: (jest.fn() as any).mockReturnThis(),
+    description: (jest.fn() as any).mockReturnThis(),
+    parseAsync: (jest.fn() as any).mockResolvedValue(undefined),
     outputHelp: jest.fn(),
-    on: jest.fn().mockReturnThis(),
+    on: (jest.fn() as any).mockReturnThis(),
   };
 
   const callOrder: string[] = [];
@@ -40,13 +40,13 @@ function createMockDependencies(): MainDependencies & {
 
   // Mock CredentialManager as a class
   const mockCredentialManagerInstance = {};
-  const mockCredentialManager = jest.fn().mockImplementation(() => mockCredentialManagerInstance);
+  const mockCredentialManager = (jest.fn() as any).mockImplementation(() => mockCredentialManagerInstance);
 
   // Mock FileSystemService and DefaultFilePathProcessorFactory
   const mockFileSystemServiceInstance = {};
-  const mockFileSystemService = jest.fn().mockImplementation(() => mockFileSystemServiceInstance);
+  const mockFileSystemService = (jest.fn() as any).mockImplementation(() => mockFileSystemServiceInstance);
   const mockFilePathProcessorFactoryInstance = {};
-  const mockDefaultFilePathProcessorFactory = jest.fn().mockImplementation(() => mockFilePathProcessorFactoryInstance);
+  const mockDefaultFilePathProcessorFactory = (jest.fn() as any).mockImplementation(() => mockFilePathProcessorFactoryInstance);
 
   // Mock local CLI tool instance and other components
   const mockLocalCliToolInstance = {};
@@ -57,42 +57,42 @@ function createMockDependencies(): MainDependencies & {
   const mockProviderInitializer = {};
   // Track ProviderFactory instantiation and arguments
   const mockProviderFactoryInstance = {};
-  const mockProviderFactory = jest.fn().mockImplementation((configManager, logger) => {
+  const mockProviderFactory = (jest.fn() as any).mockImplementation((configManager, logger) => {
     mockProviderFactory.calledWith = [configManager, logger];
     return mockProviderFactoryInstance;
   });
 
   const mockLogger = {
-    info: jest.fn().mockImplementation(() => { }),
-    error: jest.fn().mockImplementation(() => { }),
-    debug: jest.fn().mockImplementation(() => { }),
-    warn: jest.fn().mockImplementation(() => { }),
-    setLogLevel: jest.fn().mockImplementation(() => { }),
+    info: (jest.fn() as any).mockImplementation(() => { }),
+    error: (jest.fn() as any).mockImplementation(() => { }),
+    debug: (jest.fn() as any).mockImplementation(() => { }),
+    warn: (jest.fn() as any).mockImplementation(() => { }),
+    setLogLevel: (jest.fn() as any).mockImplementation(() => { }),
   } as const;
 
   const mockProcess = {
-    cwd: jest.fn().mockReturnValue('/test/dir'),
+    cwd: (jest.fn() as any).mockReturnValue('/test/dir'),
     exit: jest.fn(),
     argv: ['node', 'index.js'],
     env: {},
   };
 
-  const mockSetupDependencyInjection = jest.fn().mockImplementation(
-    recordCall('setupDependencyInjection', jest.fn().mockReturnValue({
+  const mockSetupDependencyInjection = (jest.fn() as any).mockImplementation(
+    recordCall('setupDependencyInjection', (jest.fn() as any).mockReturnValue({
       localCliToolInstance: mockLocalCliToolInstance,
       localShellCliToolInstance: mockLocalShellCliToolInstance
     }))
   ) as unknown as SetupDependencyInjectionFn;
 
-  const mockSetupToolSystem = jest.fn().mockImplementation(
-    recordCall('setupToolSystem', jest.fn().mockReturnValue({
+  const mockSetupToolSystem = (jest.fn() as any).mockImplementation(
+    recordCall('setupToolSystem', (jest.fn() as any).mockReturnValue({
       toolRegistry: mockToolRegistry,
       toolExecutor: mockToolExecutor,
       toolResultFormatter: mockToolResultFormatter,
     }))
   ) as unknown as SetupToolSystemFn;
 
-  const mockSetupProviderSystem = jest.fn().mockImplementation(
+  const mockSetupProviderSystem = (jest.fn() as any).mockImplementation(
     recordCall('setupProviderSystem', jest.fn((configManager, providerInitializer, toolRegistry, logger, path, fs, defaultAppConfig, ProviderFactoryCtor, credentialManagerInstance) => {
       // Simulate real DI: instantiate ProviderFactory
       const providerFactoryInstance = ProviderFactoryCtor(configManager, logger);
@@ -105,16 +105,16 @@ function createMockDependencies(): MainDependencies & {
     }))
   ) as unknown as SetupProviderSystemFn;
 
-  const mockSetupCliCommands = jest.fn().mockImplementation(
+  const mockSetupCliCommands = (jest.fn() as any).mockImplementation(
     recordCall('setupCliCommands', jest.fn())
   ) as unknown as SetupCliCommandsFn;
 
-  const mockRunProgram = jest.fn().mockImplementation(
-    recordCall('runProgram', jest.fn().mockResolvedValue(undefined))
+  const mockRunProgram = (jest.fn() as any).mockImplementation(
+    recordCall('runProgram', (jest.fn() as any).mockResolvedValue(undefined))
   ) as unknown as RunProgramFn;
 
   const mockDIContainer = {
-    getInstance: jest.fn().mockReturnValue({
+    getInstance: (jest.fn() as any).mockReturnValue({
       register: jest.fn(),
       get: jest.fn(),
     }),
@@ -130,8 +130,8 @@ function createMockDependencies(): MainDependencies & {
     logger: mockLogger,
     process: mockProcess as unknown as NodeJS.Process,
     path: {
-      join: jest.fn().mockImplementation((...parts) => parts.join('/')),
-      resolve: jest.fn().mockReturnValue('/resolved/path'),
+      join: (jest.fn() as any).mockImplementation((...parts) => parts.join('/')),
+      resolve: (jest.fn() as any).mockReturnValue('/resolved/path'),
     } as any,
     fs: {
       readFile: jest.fn(),
@@ -144,7 +144,7 @@ function createMockDependencies(): MainDependencies & {
     setupProviderSystem: mockSetupProviderSystem,
     setupCliCommands: mockSetupCliCommands,
     runProgram: mockRunProgram,
-    Command: jest.fn().mockImplementation(() => mockCommandInstance),
+    Command: (jest.fn() as any).mockImplementation(() => mockCommandInstance),
     DIContainer: mockDIContainer,
     FileSystemService: jest.fn(),
     DiffService: jest.fn(),
@@ -154,7 +154,7 @@ function createMockDependencies(): MainDependencies & {
     ToolResultFormatter: jest.fn(),
     ConfigManager: jest.fn(),
     ProviderInitializer: jest.fn(),
-    ProviderFactory: jest.fn().mockImplementation(() => ({
+    ProviderFactory: (jest.fn() as any).mockImplementation(() => ({
       setToolRegistry: jest.fn(),
     })),
     FileSystemService: mockFileSystemService,
@@ -168,7 +168,7 @@ function createMockDependencies(): MainDependencies & {
     StdioServerTransport: jest.fn(),
     CredentialManager: mockCredentialManager,
     RoleBasedToolsRegistrarFactory: {
-      createDefault: jest.fn().mockReturnValue({}),
+      createDefault: (jest.fn() as any).mockReturnValue({}),
     },
     DILocalShellCliTool: mockDILocalShellCliTool,
     DefaultShellCommandWrapper: mockDefaultShellCommandWrapper,

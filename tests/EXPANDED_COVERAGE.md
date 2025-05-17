@@ -73,9 +73,9 @@ Tests use constructor-based dependency injection to replace real dependencies wi
 ```typescript
 // Example from ConfigManager tests
 const mockFileSystemDI: FileSystemDI = {
-  mkdir: jest.fn().mockResolvedValue(undefined),
+  mkdir: (jest.fn() as any).mockResolvedValue(undefined),
   readFile: jest.fn(),
-  writeFile: jest.fn().mockResolvedValue(undefined),
+  writeFile: (jest.fn() as any).mockResolvedValue(undefined),
 } as unknown as FileSystemDI;
 
 const configManager = new ConfigManager('test-app', mockPathDI, mockFileSystemDI);
@@ -88,7 +88,7 @@ Tests provide specific mock implementations of interfaces to control behavior:
 ```typescript
 // Example from ToolExecutor tests
 const mockToolRegistry = {
-  getTool: jest.fn().mockImplementation((name) => {
+  getTool: (jest.fn() as any).mockImplementation((name) => {
     if (name === 'testTool') {
       return { name: 'testTool', description: 'Test tool', schema: {} };
     }

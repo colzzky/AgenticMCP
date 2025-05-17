@@ -21,7 +21,7 @@ import type { OpenAIProviderSpecificConfig } from '../../../src/core/types/confi
 jest.mock('openai', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
+    default: (jest.fn() as any).mockImplementation(() => ({
       chat: {
         completions: {
           create: jest.fn()
@@ -48,7 +48,7 @@ describe('OpenAIProvider - Function Calling', () => {
     get: jest.fn(),
     set: jest.fn(),
     getProviderConfigByAlias: jest.fn(),
-    getResolvedApiKey: jest.fn().mockResolvedValue('mock-api-key'),
+    getResolvedApiKey: (jest.fn() as any).mockResolvedValue('mock-api-key'),
     getDefaults: jest.fn(),
     getMcpConfig: jest.fn()
   } as unknown as ConfigManager;
@@ -62,7 +62,7 @@ describe('OpenAIProvider - Function Calling', () => {
     }
   };
   
-  const MockOpenAIClass = jest.fn().mockImplementation(() => mockOpenAIClient);
+  const MockOpenAIClass = (jest.fn() as any).mockImplementation(() => mockOpenAIClient);
 
   let provider: OpenAIProvider;
   const mockConfig: OpenAIProviderSpecificConfig = {
@@ -128,7 +128,7 @@ describe('OpenAIProvider - Function Calling', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue('mock-api-key');
+    mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue('mock-api-key');
     provider = new OpenAIProvider(mockConfigManager, mockLogger, MockOpenAIClass);
     await provider.configure(mockConfig);
   });
@@ -568,7 +568,7 @@ describe('OpenAIProvider - Function Calling', () => {
       await provider.chat(request);
 
       const requestOptions = mockOpenAIClient.chat.completions.create.mock.calls[0][0];
-      expect(requestOptions.parallelToolCalls).toBe(true);
+      expect(requestOptions.parallel_tool_calls).toBe(true);
     });
 
     it('should disable parallelToolCalls when specified', async () => {
@@ -581,7 +581,7 @@ describe('OpenAIProvider - Function Calling', () => {
       await provider.chat(request);
 
       const requestOptions = mockOpenAIClient.chat.completions.create.mock.calls[0][0];
-      expect(requestOptions.parallelToolCalls).toBe(false);
+      expect(requestOptions.parallel_tool_calls).toBe(false);
     });
   });
 });

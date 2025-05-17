@@ -18,7 +18,7 @@ const mockClear = jest.fn();
 jest.mock('../../../src/core/di/container.js', () => {
   return {
     DIContainer: {
-      getInstance: jest.fn().mockReturnValue({
+      getInstance: (jest.fn() as any).mockReturnValue({
         register: mockRegister,
         registerSingleton: mockRegisterSingleton,
         get: mockGet,
@@ -42,7 +42,7 @@ import {
 import { DIContainer } from '../../../src/core/di/container.js';
 
 // Mock DiffService class
-const mockDiffService = jest.fn().mockImplementation(() => ({}));
+const mockDiffService = (jest.fn() as any).mockImplementation(() => ({}));
 
 describe('DI Registry', () => {
   // Common test setup
@@ -71,7 +71,7 @@ describe('DI Registry', () => {
   };
   
   const mockProcess = {
-    cwd: jest.fn().mockReturnValue('/test-dir'),
+    cwd: (jest.fn() as any).mockReturnValue('/test-dir'),
     env: {}
   } as unknown as NodeJS.Process;
 

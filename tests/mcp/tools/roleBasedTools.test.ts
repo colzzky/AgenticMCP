@@ -8,15 +8,15 @@ import type { PathDI } from '../../../src/global.types.js';
 
 // We need to mock the entire roleHandlers module
 jest.mock('../../../src/mcp/tools/roleHandlers.js', () => ({
-  handleRoleBasedTool: jest.fn().mockResolvedValue('Mock response')
+  handleRoleBasedTool: (jest.fn() as any).mockResolvedValue('Mock response')
 }));
 
 // Mock the DI container with a more comprehensive implementation
 jest.mock('../../../src/core/di/container.js', () => {
   return {
     DIContainer: {
-      getInstance: jest.fn().mockReturnValue({
-        get: jest.fn().mockImplementation((token) => {
+      getInstance: (jest.fn() as any).mockReturnValue({
+        get: (jest.fn() as any).mockImplementation((token) => {
           // Provide specific mock implementations for various tokens
           if (token === 'core:logger') {
             return {
@@ -29,18 +29,18 @@ jest.mock('../../../src/core/di/container.js', () => {
           }
           if (token === 'core:fs') {
             return {
-              readFile: jest.fn().mockImplementation((_, cb) => cb(null, '')),
-              writeFile: jest.fn().mockImplementation((_, __, cb) => cb(null)),
-              access: jest.fn().mockImplementation((_, cb) => cb(null)),
-              stat: jest.fn().mockImplementation((_, cb) => cb(null, { isDirectory: () => false })),
-              readdir: jest.fn().mockImplementation((_, cb) => cb(null, []))
+              readFile: (jest.fn() as any).mockImplementation((_, cb) => cb(null, '')),
+              writeFile: (jest.fn() as any).mockImplementation((_, __, cb) => cb(null)),
+              access: (jest.fn() as any).mockImplementation((_, cb) => cb(null)),
+              stat: (jest.fn() as any).mockImplementation((_, cb) => cb(null, { isDirectory: () => false })),
+              readdir: (jest.fn() as any).mockImplementation((_, cb) => cb(null, []))
             };
           }
           if (token === 'core:path') {
             return {
-              join: jest.fn().mockImplementation((...args) => args.join('/')),
-              resolve: jest.fn().mockImplementation((...args) => args.join('/')),
-              dirname: jest.fn().mockImplementation((p) => p)
+              join: (jest.fn() as any).mockImplementation((...args) => args.join('/')),
+              resolve: (jest.fn() as any).mockImplementation((...args) => args.join('/')),
+              dirname: (jest.fn() as any).mockImplementation((p) => p)
             };
           }
           // Return empty objects for other tokens to avoid undefined errors
@@ -52,10 +52,10 @@ jest.mock('../../../src/core/di/container.js', () => {
   };
 });
 jest.mock('../../../src/tools/factory/localCliToolFactory.js', () => ({
-  createFileSystemTool: jest.fn().mockImplementation(() => ({
-    execute: jest.fn().mockResolvedValue({ success: true, content: 'mocked file content' }),
-    getToolDefinitions: jest.fn().mockReturnValue([]),
-    getCommandMap: jest.fn().mockReturnValue({})
+  createFileSystemTool: (jest.fn() as any).mockImplementation(() => ({
+    execute: (jest.fn() as any).mockResolvedValue({ success: true, content: 'mocked file content' }),
+    getToolDefinitions: (jest.fn() as any).mockReturnValue([]),
+    getCommandMap: (jest.fn() as any).mockReturnValue({})
   }))
 }));
 
@@ -97,7 +97,7 @@ describe('registerRoleBasedTools', () => {
     
     // Setup mock PathDI with resolve method
     mockPathDI = {
-      resolve: jest.fn().mockImplementation(path => path)
+      resolve: (jest.fn() as any).mockImplementation(path => path)
     } as unknown as PathDI;
   });
   

@@ -63,23 +63,23 @@ describe('providerSystemSetup', () => {
     setConfigValue: jest.fn(),
     getResolvedApiKey: jest.fn()
   };
-  const MockConfigManager = jest.fn().mockImplementation(() => mockConfigManagerInstance);
+  const MockConfigManager = (jest.fn() as any).mockImplementation(() => mockConfigManagerInstance);
   
   // Mock ProviderFactory
   const mockProviderFactoryInstance = {
     createProvider: jest.fn(),
     setToolRegistry: jest.fn()
   };
-  const MockProviderFactory = jest.fn().mockImplementation(() => mockProviderFactoryInstance);
+  const MockProviderFactory = (jest.fn() as any).mockImplementation(() => mockProviderFactoryInstance);
   
   // Mock ProviderInitializer - Create this after the factory
   const mockProviderInitializerInstance = {
     initializeProvider: jest.fn(),
     registerProviders: jest.fn(),
     getProviderNames: jest.fn(),
-    getFactory: jest.fn().mockReturnValue(mockProviderFactoryInstance)
+    getFactory: (jest.fn() as any).mockReturnValue(mockProviderFactoryInstance)
   };
-  const MockProviderInitializer = jest.fn().mockImplementation(() => mockProviderInitializerInstance);
+  const MockProviderInitializer = (jest.fn() as any).mockImplementation(() => mockProviderInitializerInstance);
   
   // Mock CredentialManager
   const mockCredentialManagerInstance = {

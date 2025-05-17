@@ -19,7 +19,7 @@ import type { AnthropicProviderSpecificConfig } from '../../../src/core/types/co
 jest.mock('@anthropic-ai/sdk', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
+    default: (jest.fn() as any).mockImplementation(() => ({
       messages: {
         create: jest.fn()
       }
@@ -44,7 +44,7 @@ describe('AnthropicProvider - Parallel Tool Calling', () => {
     get: jest.fn(),
     set: jest.fn(),
     getProviderConfigByAlias: jest.fn(),
-    getResolvedApiKey: jest.fn().mockResolvedValue('mock-api-key'),
+    getResolvedApiKey: (jest.fn() as any).mockResolvedValue('mock-api-key'),
     getDefaults: jest.fn(),
     getMcpConfig: jest.fn()
   } as unknown as ConfigManager;
@@ -56,7 +56,7 @@ describe('AnthropicProvider - Parallel Tool Calling', () => {
     }
   };
   
-  const MockAnthropicClass = jest.fn().mockImplementation(() => mockAnthropicClient);
+  const MockAnthropicClass = (jest.fn() as any).mockImplementation(() => mockAnthropicClient);
 
   let provider: AnthropicProvider;
   const mockConfig: AnthropicProviderSpecificConfig = {
@@ -142,7 +142,7 @@ describe('AnthropicProvider - Parallel Tool Calling', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue('mock-api-key');
+    mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue('mock-api-key');
     provider = new AnthropicProvider(mockConfigManager, mockLogger, MockAnthropicClass);
     await provider.configure(mockConfig);
   });

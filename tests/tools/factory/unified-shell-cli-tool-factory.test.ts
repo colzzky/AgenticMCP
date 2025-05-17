@@ -15,7 +15,7 @@ const mockLogger = mock<Logger>();
 const mockShellWrapper = mock<ShellCommandWrapper>();
 
 // Mock module factory function
-const mockCreateUnifiedShellCliTool = jest.fn().mockImplementation(
+const mockCreateUnifiedShellCliTool = (jest.fn() as any).mockImplementation(
   (config, container?) => {
     // Create and return a new UnifiedShellCliTool instance
     return new UnifiedShellCliTool(config, mockShellWrapper, mockLogger);
@@ -23,8 +23,8 @@ const mockCreateUnifiedShellCliTool = jest.fn().mockImplementation(
 );
 
 // Manually mock the DI container functions
-const mockGetFn = jest.fn().mockReturnValue(mockLogger);
-const mockGetSingletonFn = jest.fn().mockReturnValue(mockShellWrapper);
+const mockGetFn = (jest.fn() as any).mockReturnValue(mockLogger);
+const mockGetSingletonFn = (jest.fn() as any).mockReturnValue(mockShellWrapper);
 const mockRegisterFn = jest.fn();
 
 // Mock container object
@@ -35,7 +35,7 @@ const mockContainer = {
 };
 
 // Mock the DIContainer.getInstance function
-const mockGetInstance = jest.fn().mockReturnValue(mockContainer);
+const mockGetInstance = (jest.fn() as any).mockReturnValue(mockContainer);
 
 describe('unifiedShellToolFactory', () => {
   beforeEach(() => {
@@ -68,8 +68,8 @@ describe('unifiedShellToolFactory', () => {
   it('should use provided container when specified', () => {
     // Setup custom container
     const customContainer = {
-      get: jest.fn().mockReturnValue(mockLogger),
-      getSingleton: jest.fn().mockReturnValue(mockShellWrapper),
+      get: (jest.fn() as any).mockReturnValue(mockLogger),
+      getSingleton: (jest.fn() as any).mockReturnValue(mockShellWrapper),
       register: jest.fn(),
     };
     

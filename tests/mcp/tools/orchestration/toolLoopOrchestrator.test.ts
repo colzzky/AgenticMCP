@@ -29,37 +29,6 @@ describe('ToolLoopOrchestrator', () => {
   });
 
   describe('orchestrate', () => {
-    it('should use provider-specific implementation when available', async () => {
-      // Setup
-      const mockProviderResponse: ProviderResponse = {
-        content: 'Final response',
-        model: 'test-model'
-      };
-
-      const mockProvider = {
-        orchestrateToolLoop: jest.fn().mockResolvedValue(mockProviderResponse),
-        chat: jest.fn(),
-        generateTextWithToolResults: jest.fn()
-      } as unknown as LLMProvider;
-
-      const request = {
-        messages: [{ role: 'user', content: 'Hello' }],
-        model: 'test-model'
-      };
-
-      // Execute
-      const result = await orchestrator.orchestrate(mockProvider, request);
-
-      // Assert
-      expect(mockProvider.orchestrateToolLoop).toHaveBeenCalledWith(
-        request,
-        mockToolExecutor,
-        expect.any(Object)
-      );
-      expect(result).toBe(mockProviderResponse);
-      expect(mockLogger.debug).toHaveBeenCalledWith('Using provider-specific tool loop orchestration');
-    });
-
     it('should handle a sequence of tool calls and return final response', async () => {
       // Setup - Mock LLM provider without orchestrateToolLoop method
       const toolCall1: ToolCall = {
@@ -95,7 +64,7 @@ describe('ToolLoopOrchestrator', () => {
       };
 
       const mockProvider = {
-        chat: jest.fn().mockResolvedValue(firstResponse),
+        chat: (jest.fn() as any).mockResolvedValue(firstResponse),
         generateTextWithToolResults: jest.fn()
           .mockResolvedValueOnce(secondResponse)
           .mockResolvedValueOnce(finalResponse)
@@ -143,8 +112,8 @@ describe('ToolLoopOrchestrator', () => {
       };
 
       const mockProvider = {
-        chat: jest.fn().mockResolvedValue(responseWithToolCall),
-        generateTextWithToolResults: jest.fn().mockResolvedValue(responseWithToolCall)
+        chat: (jest.fn() as any).mockResolvedValue(responseWithToolCall),
+        generateTextWithToolResults: (jest.fn() as any).mockResolvedValue(responseWithToolCall)
       } as unknown as LLMProvider;
 
       // Mock tool executor to always return a value
@@ -187,8 +156,8 @@ describe('ToolLoopOrchestrator', () => {
       };
 
       const mockProvider = {
-        chat: jest.fn().mockResolvedValue(responseWithToolCall),
-        generateTextWithToolResults: jest.fn().mockResolvedValue(finalResponse)
+        chat: (jest.fn() as any).mockResolvedValue(responseWithToolCall),
+        generateTextWithToolResults: (jest.fn() as any).mockResolvedValue(finalResponse)
       } as unknown as LLMProvider;
 
       // Mock tool executor to throw an error
@@ -242,8 +211,8 @@ describe('ToolLoopOrchestrator', () => {
       };
 
       const mockProvider = {
-        chat: jest.fn().mockResolvedValue(firstResponse),
-        generateTextWithToolResults: jest.fn().mockResolvedValue(finalResponse)
+        chat: (jest.fn() as any).mockResolvedValue(firstResponse),
+        generateTextWithToolResults: (jest.fn() as any).mockResolvedValue(finalResponse)
       } as unknown as LLMProvider;
 
       mockToolExecutor.executeTool.mockResolvedValue(12);

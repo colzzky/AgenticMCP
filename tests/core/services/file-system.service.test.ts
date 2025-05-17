@@ -10,20 +10,20 @@ import type { DirectoryEntry } from '../../../src/core/interfaces/file-system.in
 describe('FileSystemService', () => {
   // Mock dependencies
   const mockPathDI: PathDI = {
-    join: jest.fn().mockImplementation((...paths) => paths.join('/')),
-    resolve: jest.fn().mockImplementation((...paths) => paths.join('/')),
-    dirname: jest.fn().mockImplementation((path) => {
+    join: (jest.fn() as any).mockImplementation((...paths) => paths.join('/')),
+    resolve: (jest.fn() as any).mockImplementation((...paths) => paths.join('/')),
+    dirname: (jest.fn() as any).mockImplementation((path) => {
       const parts = path.split('/');
       parts.pop();
       return parts.join('/') || '.';
     }),
-    basename: jest.fn().mockImplementation((path) => path.split('/').pop() || ''),
-    extname: jest.fn().mockImplementation((path) => {
+    basename: (jest.fn() as any).mockImplementation((path) => path.split('/').pop() || ''),
+    extname: (jest.fn() as any).mockImplementation((path) => {
       const parts = path.split('.');
       return parts.length > 1 ? `.${parts.pop()}` : '';
     }),
-    isAbsolute: jest.fn().mockImplementation((path) => path.startsWith('/')),
-    relative: jest.fn().mockImplementation((from, to) => to.replace(from, '')),
+    isAbsolute: (jest.fn() as any).mockImplementation((path) => path.startsWith('/')),
+    relative: (jest.fn() as any).mockImplementation((from, to) => to.replace(from, '')),
     sep: '/'
   };
 

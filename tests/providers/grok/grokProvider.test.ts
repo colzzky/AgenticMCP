@@ -12,10 +12,10 @@ import type { OpenAIProviderSpecificConfig } from '../../../src/core/types/confi
 jest.mock('openai', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
+    default: (jest.fn() as any).mockImplementation(() => ({
       chat: {
         completions: {
-          create: jest.fn().mockResolvedValue({
+          create: (jest.fn() as any).mockResolvedValue({
             id: 'mock-completion-id',
             model: 'grok-1',
             choices: [
@@ -57,7 +57,7 @@ describe('GrokProvider', () => {
     get: jest.fn(),
     set: jest.fn(),
     getProviderConfigByAlias: jest.fn(),
-    getResolvedApiKey: jest.fn().mockResolvedValue('mock-api-key'),
+    getResolvedApiKey: (jest.fn() as any).mockResolvedValue('mock-api-key'),
     getDefaults: jest.fn(),
     getMcpConfig: jest.fn()
   } as unknown as ConfigManager;
@@ -71,7 +71,7 @@ describe('GrokProvider', () => {
     }
   };
   
-  const MockOpenAIClass = jest.fn().mockImplementation(() => mockOpenAIClient);
+  const MockOpenAIClass = (jest.fn() as any).mockImplementation(() => mockOpenAIClient);
 
   let provider: GrokProvider;
   const mockConfig: OpenAIProviderSpecificConfig = {
@@ -82,7 +82,7 @@ describe('GrokProvider', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue('mock-api-key');
+    mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue('mock-api-key');
     // Create provider with the mocked OpenAI class
     provider = new GrokProvider(mockConfigManager, mockLogger);
     // Replace the provider's internal OpenAI class with our mock

@@ -40,7 +40,7 @@ export const mockPathDI: PathDI = {
   dirname: jest.fn(),
   basename: jest.fn(),
   extname: jest.fn(),
-  isAbsolute: jest.fn().mockReturnValue(true),
+  isAbsolute: (jest.fn() as any).mockReturnValue(true),
   sep: '/'
 } as unknown as PathDI;
 
@@ -60,8 +60,8 @@ export function setupContainerDefaultMocks() {
 }
 
 // Mock FileSystemTool constructor
-export const mockFileSystemTool = jest.fn().mockImplementation(() => ({
-  getCommandMap: jest.fn().mockReturnValue({}),
-  getToolDefinitions: jest.fn().mockReturnValue([]),
-  execute: jest.fn().mockResolvedValue({})
+export const mockFileSystemTool = (jest.fn() as any).mockImplementation(() => ({
+  getCommandMap: (jest.fn() as any).mockReturnValue({}),
+  getToolDefinitions: (jest.fn() as any).mockReturnValue([]),
+  execute: (jest.fn() as any).mockResolvedValue({})
 }));

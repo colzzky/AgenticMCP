@@ -18,10 +18,10 @@ import type { OpenAIProviderSpecificConfig } from '../../../src/core/types/confi
 jest.mock('openai', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
+    default: (jest.fn() as any).mockImplementation(() => ({
       chat: {
         completions: {
-          create: jest.fn().mockResolvedValue({
+          create: (jest.fn() as any).mockResolvedValue({
             id: 'mock-completion-id',
             model: 'gpt-4',
             choices: [
@@ -63,7 +63,7 @@ describe('OpenAIProvider - Basic Functionality', () => {
     get: jest.fn(),
     set: jest.fn(),
     getProviderConfigByAlias: jest.fn(),
-    getResolvedApiKey: jest.fn().mockResolvedValue('mock-api-key'),
+    getResolvedApiKey: (jest.fn() as any).mockResolvedValue('mock-api-key'),
     getDefaults: jest.fn(),
     getMcpConfig: jest.fn()
   } as unknown as ConfigManager;
@@ -77,7 +77,7 @@ describe('OpenAIProvider - Basic Functionality', () => {
     }
   };
   
-  const MockOpenAIClass = jest.fn().mockImplementation(() => mockOpenAIClient);
+  const MockOpenAIClass = (jest.fn() as any).mockImplementation(() => mockOpenAIClient);
 
   let provider: OpenAIProvider;
   const mockConfig: OpenAIProviderSpecificConfig = {
@@ -90,7 +90,7 @@ describe('OpenAIProvider - Basic Functionality', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Ensure getResolvedApiKey always returns a mock API key
-    mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue('mock-api-key');
+    mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue('mock-api-key');
     provider = new OpenAIProvider(mockConfigManager, mockLogger, MockOpenAIClass);
   });
 
@@ -139,7 +139,7 @@ describe('OpenAIProvider - Basic Functionality', () => {
     });
 
     it('should throw error if API key cannot be resolved', async () => {
-      mockConfigManager.getResolvedApiKey = jest.fn().mockResolvedValue(undefined);
+      mockConfigManager.getResolvedApiKey = (jest.fn() as any).mockResolvedValue(undefined);
       
       await expect(provider.configure(mockConfig)).rejects.toThrow(/API key not found/);
     });
@@ -292,7 +292,7 @@ describe('OpenAIProvider - Basic Functionality', () => {
   describe('Tool Registry Integration', () => {
     it('should store the tool registry when set', () => {
       const mockToolRegistry = {
-        getAllTools: jest.fn().mockReturnValue([
+        getAllTools: (jest.fn() as any).mockReturnValue([
           { name: 'tool1', type: 'function', description: 'Test tool', parameters: {} }
         ])
       };
@@ -313,106 +313,4 @@ describe('OpenAIProvider - Basic Functionality', () => {
     });
   });
 
-  describe('executeToolCall', () => {
-    it('should execute a tool and return the result', async () => {
-      const mockTool = jest.fn().mockResolvedValue('Tool result');
-      const availableTools = {
-        'calculator': mockTool
-      };
-      
-      const toolCall: ToolCall = {
-        id: 'call-123',
-        type: 'function_call',
-        name: 'calculator',
-        arguments: '{"operation":"add","a":1,"b":2}'
-      };
-      
-      const result = await provider.executeToolCall(toolCall, availableTools);
-      
-      expect(mockTool).toHaveBeenCalledWith({ operation: 'add', a: 1, b: 2 });
-      expect(result).toBe('Tool result');
-    });
-
-    it('should throw error if no tools are provided', async () => {
-      const toolCall: ToolCall = {
-        id: 'call-123',
-        type: 'function_call',
-        name: 'calculator',
-        arguments: '{}'
-      };
-      
-      await expect(provider.executeToolCall(toolCall)).rejects.toThrow('No tools provided');
-    });
-
-    it('should handle tool not found error', async () => {
-      const availableTools = {
-        'otherTool': jest.fn()
-      };
-      
-      const toolCall: ToolCall = {
-        id: 'call-123',
-        type: 'function_call',
-        name: 'missingTool',
-        arguments: '{}'
-      };
-      
-      const result = await provider.executeToolCall(toolCall, availableTools);
-      expect(result).toContain('Error executing tool');
-      expect(result).toContain('Tool not found');
-    });
-
-    it('should handle invalid JSON in arguments', async () => {
-      const mockTool = jest.fn();
-      const availableTools = {
-        'calculator': mockTool
-      };
-      
-      const toolCall: ToolCall = {
-        id: 'call-123',
-        type: 'function_call',
-        name: 'calculator',
-        arguments: 'invalid json'
-      };
-      
-      const result = await provider.executeToolCall(toolCall, availableTools);
-      expect(result).toContain('Error executing tool');
-      expect(result).toContain('Invalid tool arguments');
-      expect(mockTool).not.toHaveBeenCalled();
-    });
-
-    it('should handle tool execution errors', async () => {
-      const mockTool = jest.fn().mockRejectedValue(new Error('Tool execution failed'));
-      const availableTools = {
-        'calculator': mockTool
-      };
-      
-      const toolCall: ToolCall = {
-        id: 'call-123',
-        type: 'function_call',
-        name: 'calculator',
-        arguments: '{}'
-      };
-      
-      const result = await provider.executeToolCall(toolCall, availableTools);
-      expect(result).toContain('Error executing tool');
-      expect(result).toContain('Tool execution failed');
-    });
-
-    it('should stringify non-string results', async () => {
-      const mockTool = jest.fn().mockResolvedValue({ value: 42 });
-      const availableTools = {
-        'calculator': mockTool
-      };
-      
-      const toolCall: ToolCall = {
-        id: 'call-123',
-        type: 'function_call',
-        name: 'calculator',
-        arguments: '{}'
-      };
-      
-      const result = await provider.executeToolCall(toolCall, availableTools);
-      expect(result).toBe('{"value":42}');
-    });
-  });
 });

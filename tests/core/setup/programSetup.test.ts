@@ -24,13 +24,13 @@ interface CommandMock {
 describe('Program Setup', () => {
   // Create mock for Command
   const mockCommand: CommandMock = {
-    on: jest.fn().mockImplementation((event, handler) => {
+    on: (jest.fn() as any).mockImplementation((event, handler) => {
       if (event === '--help') {
         mockHelpHandler = handler;
       }
       return mockCommand;
     }),
-    parseAsync: jest.fn().mockResolvedValue(undefined),
+    parseAsync: (jest.fn() as any).mockResolvedValue(undefined),
     outputHelp: jest.fn()
   };
   
@@ -48,7 +48,7 @@ describe('Program Setup', () => {
   
   // Mock process
   const mockProcess = {
-    cwd: jest.fn().mockReturnValue('/test/dir'),
+    cwd: (jest.fn() as any).mockReturnValue('/test/dir'),
     exit: jest.fn(),
     argv: ['node', 'app.js'],
     env: {}

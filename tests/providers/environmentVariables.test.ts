@@ -26,7 +26,7 @@ describe('Provider Environment Variable Support', () => {
     get: jest.fn(),
     set: jest.fn(),
     getProviderConfigByAlias: jest.fn(),
-    getResolvedApiKey: jest.fn().mockResolvedValue('stored-api-key'),
+    getResolvedApiKey: (jest.fn() as any).mockResolvedValue('stored-api-key'),
     getDefaults: jest.fn(),
     getMcpConfig: jest.fn()
   } as unknown as ConfigManager;
@@ -50,7 +50,7 @@ describe('Provider Environment Variable Support', () => {
 
   describe('OpenAIProvider', () => {
     // Mock OpenAI client
-    const MockOpenAIClass = jest.fn().mockImplementation(() => ({
+    const MockOpenAIClass = (jest.fn() as any).mockImplementation(() => ({
       chat: { completions: { create: jest.fn() } }
     }));
 
@@ -83,7 +83,7 @@ describe('Provider Environment Variable Support', () => {
 
   describe('AnthropicProvider', () => {
     // Mock Anthropic client
-    const MockAnthropicClass = jest.fn().mockImplementation(() => ({
+    const MockAnthropicClass = (jest.fn() as any).mockImplementation(() => ({
       messages: { create: jest.fn() }
     }));
 
@@ -115,8 +115,8 @@ describe('Provider Environment Variable Support', () => {
 
   describe('GoogleProvider', () => {
     // Mock Google client
-    const MockGoogleClass = jest.fn().mockImplementation(() => ({
-      models: { get: jest.fn().mockReturnValue({ generateContent: jest.fn() }) }
+    const MockGoogleClass = (jest.fn() as any).mockImplementation(() => ({
+      models: { get: (jest.fn() as any).mockReturnValue({ generateContent: jest.fn() }) }
     }));
 
     it('should use API key from environment variable', async () => {
@@ -146,7 +146,7 @@ describe('Provider Environment Variable Support', () => {
 
   describe('GrokProvider', () => {
     // Mock OpenAI client for Grok
-    const MockOpenAIClass = jest.fn().mockImplementation(() => ({
+    const MockOpenAIClass = (jest.fn() as any).mockImplementation(() => ({
       chat: { completions: { create: jest.fn() } }
     }));
 

@@ -224,7 +224,7 @@ describe('FileContextManager', () => {
     it('should add a processor to the pipeline', async () => {
       // Create a mock processor that adds a token count
       const mockProcessor: ContextProcessor = {
-        process: jest.fn().mockImplementation(async (item: ContextItem) => {
+        process: (jest.fn() as any).mockImplementation(async (item: ContextItem) => {
           return { 
             ...item, 
             tokens: item.content.split(/\s+/).length,
@@ -254,7 +254,7 @@ describe('FileContextManager', () => {
     it('should handle processors that return multiple items', async () => {
       // Create a mock processor that splits one item into two
       const mockProcessor: ContextProcessor = {
-        process: jest.fn().mockImplementation(async (item: ContextItem) => {
+        process: (jest.fn() as any).mockImplementation(async (item: ContextItem) => {
           const item1 = { ...item, id: `${item.id}-1` };
           const item2 = { ...item, id: `${item.id}-2` };
           return [item1, item2];
@@ -295,7 +295,7 @@ describe('FileContextManager', () => {
 
       // Add a processor
       const mockProcessor: ContextProcessor = {
-        process: jest.fn().mockImplementation(async (item: ContextItem) => {
+        process: (jest.fn() as any).mockImplementation(async (item: ContextItem) => {
           return { ...item, tokens: 5 };
         })
       };
@@ -331,12 +331,12 @@ describe('FileContextManager', () => {
 
       // Add multiple processors
       const processor1: ContextProcessor = {
-        process: jest.fn().mockImplementation(async (item: ContextItem) => {
+        process: (jest.fn() as any).mockImplementation(async (item: ContextItem) => {
           return { ...item, metadata: { ...item.metadata, processor1: true } };
         })
       };
       const processor2: ContextProcessor = {
-        process: jest.fn().mockImplementation(async (item: ContextItem) => {
+        process: (jest.fn() as any).mockImplementation(async (item: ContextItem) => {
           return { ...item, metadata: { ...item.metadata, processor2: true } };
         })
       };

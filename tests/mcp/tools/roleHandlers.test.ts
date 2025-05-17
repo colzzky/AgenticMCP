@@ -10,7 +10,7 @@ import type { LLMProvider } from '../../../src/core/types/provider.types.js';
 import type { PathDI } from '../../../src/global.types.js';
 
 // Define a mock for the handleRoleBasedTool function
-const mockHandleRoleBasedTool = jest.fn().mockImplementation(async ({ 
+const mockHandleRoleBasedTool = (jest.fn() as any).mockImplementation(async ({ 
   args, role, logger, llmProvider 
 }) => {
   // Handle LLM errors
@@ -42,7 +42,7 @@ const mockHandleRoleBasedTool = jest.fn().mockImplementation(async ({
 });
 
 // Mock the localCliTool
-const mockExecFunction = jest.fn().mockImplementation((command, args) => {
+const mockExecFunction = (jest.fn() as any).mockImplementation((command, args) => {
   if (command === 'read_file') {
     return Promise.resolve({ success: true, content: 'Mock file content' });
   }
@@ -71,7 +71,7 @@ const mockLocalCliTool = {
 
 // Mock processFileOperations for our tests
 jest.mock('../../../src/mcp/tools/roleHandlers.js', () => ({
-  processFileOperations: jest.fn().mockImplementation(async (response, localCliTool, logger) => {
+  processFileOperations: (jest.fn() as any).mockImplementation(async (response, localCliTool, logger) => {
     const fileOpRegex = /<file_operation>([^]*?)<\/file_operation>/g;
     let match;
     let processedResponse = response;
@@ -162,13 +162,13 @@ jest.mock('../../../src/mcp/tools/roleHandlers.js', () => ({
 
 // Mock the factory directly
 jest.mock('../../../src/tools/factory/localCliToolFactory.js', () => ({
-  createFileSystemTool: jest.fn().mockReturnValue(mockLocalCliTool)
+  createFileSystemTool: (jest.fn() as any).mockReturnValue(mockLocalCliTool)
 }));
 
 // Mock the xmlPromptUtils
 jest.mock('../../../src/mcp/tools/xmlPromptUtils.js', () => ({
-  constructXmlPrompt: jest.fn().mockReturnValue('<mocked_xml_prompt>'),
-  selectModelForRole: jest.fn().mockReturnValue('claude-3-sonnet-20240229')
+  constructXmlPrompt: (jest.fn() as any).mockReturnValue('<mocked_xml_prompt>'),
+  selectModelForRole: (jest.fn() as any).mockReturnValue('claude-3-sonnet-20240229')
 }));
 
 describe('roleHandlers module', () => {
@@ -192,8 +192,8 @@ describe('roleHandlers module', () => {
   };
 
   const mockPathDI: PathDI = {
-    resolve: jest.fn().mockImplementation(path => path),
-    join: jest.fn().mockImplementation((a, b) => `${a}/${b}`),
+    resolve: (jest.fn() as any).mockImplementation(path => path),
+    join: (jest.fn() as any).mockImplementation((a, b) => `${a}/${b}`),
     dirname: jest.fn(),
     basename: jest.fn(),
     extname: jest.fn()
@@ -254,7 +254,7 @@ describe('roleHandlers module', () => {
       `;
       
       // Mock the function implementation for this test
-      const mockImplementation = jest.fn().mockImplementation((command, args) => {
+      const mockImplementation = (jest.fn() as any).mockImplementation((command, args) => {
         return Promise.resolve({ success: true, path: args.path });
       });
       

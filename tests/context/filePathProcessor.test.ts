@@ -9,9 +9,9 @@ import type { PathDI, FileSystemDI } from '../../src/global.types.js';
 import type { ContextItem } from '../../src/core/types/context.types.js';
 
 // Create mock implementation for FileContextManager
-const mockAddSource = jest.fn().mockResolvedValue(undefined);
-const mockClearContext = jest.fn().mockResolvedValue(undefined);
-const mockGetContextItems = jest.fn().mockResolvedValue([]);
+const mockAddSource = (jest.fn() as any).mockResolvedValue(undefined);
+const mockClearContext = (jest.fn() as any).mockResolvedValue(undefined);
+const mockGetContextItems = (jest.fn() as any).mockResolvedValue([]);
 
 // Module variables (to be set in beforeAll)
 let FilePathProcessorModule: typeof import('../../src/context/filePathProcessor.js');
@@ -20,7 +20,7 @@ let ContextManagerModule: typeof import('../../src/context/contextManager.js');
 // Setup the mocks before any imports
 jest.mock('../../src/context/contextManager.js', () => {
   return {
-    FileContextManager: jest.fn().mockImplementation(() => ({
+    FileContextManager: (jest.fn() as any).mockImplementation(() => ({
       addSource: mockAddSource,
       clearContext: mockClearContext,
       getContextItems: mockGetContextItems
@@ -46,16 +46,16 @@ describe('DIFilePathProcessor', () => {
   };
 
   const mockPathDI: PathDI = {
-    isAbsolute: jest.fn().mockImplementation((path) => path.startsWith('/')),
-    resolve: jest.fn().mockImplementation((base, path) => `${base}/${path}`),
-    join: jest.fn().mockImplementation((...paths) => paths.join('/')),
-    dirname: jest.fn().mockImplementation((path) => {
+    isAbsolute: (jest.fn() as any).mockImplementation((path) => path.startsWith('/')),
+    resolve: (jest.fn() as any).mockImplementation((base, path) => `${base}/${path}`),
+    join: (jest.fn() as any).mockImplementation((...paths) => paths.join('/')),
+    dirname: (jest.fn() as any).mockImplementation((path) => {
       const parts = path.split('/');
       parts.pop();
       return parts.join('/') || '.';
     }),
-    basename: jest.fn().mockImplementation((path) => path.split('/').pop() || ''),
-    extname: jest.fn().mockImplementation((path) => {
+    basename: (jest.fn() as any).mockImplementation((path) => path.split('/').pop() || ''),
+    extname: (jest.fn() as any).mockImplementation((path) => {
       const parts = path.split('.');
       return parts.length > 1 ? `.${parts.pop()}` : '';
     }),
@@ -93,7 +93,7 @@ describe('DIFilePathProcessor', () => {
   };
 
   const mockProcessDI = {
-    cwd: jest.fn().mockReturnValue('/test/cwd')
+    cwd: (jest.fn() as any).mockReturnValue('/test/cwd')
   } as unknown as NodeJS.Process;
 
   let filePathProcessor: InstanceType<typeof FilePathProcessorModule.DIFilePathProcessor>;

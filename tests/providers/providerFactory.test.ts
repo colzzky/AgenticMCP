@@ -15,23 +15,23 @@ import { AnthropicProvider } from '../../src/providers/anthropic/anthropicProvid
 // Mock provider classes for registration tests
 class MockOpenAIProvider implements LLMProvider {
   get name() { return 'openai'; }
-  configure = jest.fn().mockResolvedValue(undefined);
+  configure = (jest.fn() as any).mockResolvedValue(undefined);
   setToolRegistry = jest.fn();
-  getAvailableTools = jest.fn().mockReturnValue([]);
-  generateCompletion = jest.fn().mockResolvedValue({ success: true });
-  chat = jest.fn().mockResolvedValue({ success: true });
-  executeToolCall = jest.fn().mockResolvedValue('');
-  generateText = jest.fn().mockResolvedValue({ success: true });
-  generateTextWithToolResults = jest.fn().mockResolvedValue({ success: true });
+  getAvailableTools = (jest.fn() as any).mockReturnValue([]);
+  generateCompletion = (jest.fn() as any).mockResolvedValue({ success: true });
+  chat = (jest.fn() as any).mockResolvedValue({ success: true });
+  executeToolCall = (jest.fn() as any).mockResolvedValue('');
+  generateText = (jest.fn() as any).mockResolvedValue({ success: true });
+  generateTextWithToolResults = (jest.fn() as any).mockResolvedValue({ success: true });
 }
 class MockAnthropicProvider implements LLMProvider {
   get name() { return 'anthropic'; }
-  configure = jest.fn().mockResolvedValue(undefined);
-  generateCompletion = jest.fn().mockResolvedValue({ success: true });
-  chat = jest.fn().mockResolvedValue({ success: true });
-  executeToolCall = jest.fn().mockResolvedValue('');
-  generateText = jest.fn().mockResolvedValue({ success: true });
-  generateTextWithToolResults = jest.fn().mockResolvedValue({ success: true });
+  configure = (jest.fn() as any).mockResolvedValue(undefined);
+  generateCompletion = (jest.fn() as any).mockResolvedValue({ success: true });
+  chat = (jest.fn() as any).mockResolvedValue({ success: true });
+  executeToolCall = (jest.fn() as any).mockResolvedValue('');
+  generateText = (jest.fn() as any).mockResolvedValue({ success: true });
+  generateTextWithToolResults = (jest.fn() as any).mockResolvedValue({ success: true });
   // No setToolRegistry on purpose
 }
 

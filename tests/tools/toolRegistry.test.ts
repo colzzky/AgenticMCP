@@ -261,7 +261,7 @@ describe('ToolRegistry', () => {
     it('should register tools from a LocalCliTool instance', () => {
       // Arrange
       const mockLocalCliTool = {
-        getToolDefinitions: jest.fn().mockReturnValue([
+        getToolDefinitions: (jest.fn() as any).mockReturnValue([
           {
             type: 'function',
             function: {
