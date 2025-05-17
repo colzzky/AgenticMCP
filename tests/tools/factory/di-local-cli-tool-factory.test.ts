@@ -6,21 +6,21 @@ import { describe, it, expect } from '@jest/globals';
 
 // We'll do very basic verification of the file existence and exports
 // This avoids issues with deep mocking of dependencies
-describe('localCliToolFactory', () => {
+describe('fileSystemToolFactory', () => {
   it('should exist as a module', async () => {
     // We can dynamically import the module to check it exists
     // without executing the actual functions
-    const module = await import('../../../src/tools/factory/localCliToolFactory.js');
+    const module = await import('../../../src/tools/factory/fileSystemToolFactory.js');
     expect(module).toBeDefined();
   });
   
   it('should export createFileSystemTool function', async () => {
-    const module = await import('../../../src/tools/factory/localCliToolFactory.js');
+    const module = await import('../../../src/tools/factory/fileSystemToolFactory.js');
     expect(typeof module.createFileSystemTool).toBe('function');
   });
   
   it('should have proper parameter requirements', async () => {
-    const module = await import('../../../src/tools/factory/localCliToolFactory.js');
+    const module = await import('../../../src/tools/factory/fileSystemToolFactory.js');
     
     // Verify function signature to ensure it requires config
     const functionString = module.createFileSystemTool.toString();

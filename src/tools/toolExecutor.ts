@@ -3,8 +3,9 @@
  * Responsible for executing tool calls from LLMs and formatting results
  */
 
-import type { Tool, ToolCall, ToolCallOutput } from '../core/types/provider.types';
+import type { ToolCall, ToolCallOutput } from '../core/types/provider.types';
 import type { Logger } from '../core/types/logger.types';
+import type { CommandMap, CommandHandler } from '../core/types/cli.types';
 import { ToolRegistry } from './toolRegistry';
 
 /**
@@ -50,19 +51,19 @@ export interface ToolExecutionResult {
 export class ToolExecutor {
   private config: ToolExecutorConfig;
   private logger: Logger;
+  private toolImplementations: CommandMap;
   private toolRegistry: ToolRegistry;
-  private toolImplementations: Record<string, Function>;
 
   /**
    * Creates a new ToolExecutor instance
-   * @param toolRegistry - Registry containing tool definitions
+   * @param toolRegistry - ToolRegistry instance
    * @param toolImplementations - Map of tool names to their implementation functions
    * @param logger - Logger instance
    * @param config - Configuration options
    */
   constructor(
     toolRegistry: ToolRegistry,
-    toolImplementations: Record<string, Function>,
+    toolImplementations: CommandMap,
     logger: Logger,
     config: Partial<ToolExecutorConfig> = {}
   ) {
@@ -70,7 +71,6 @@ export class ToolExecutor {
     this.toolImplementations = toolImplementations;
     this.logger = logger;
     this.config = { ...DEFAULT_CONFIG, ...config };
-
     this.logger.debug('ToolExecutor initialized with config:', JSON.stringify(this.config));
   }
 
@@ -205,27 +205,10 @@ export class ToolExecutor {
   }
 
   /**
-   * Registers a tool implementation
-   * @param name - Name of the tool
-   * @param implementation - Function implementing the tool
-   * @returns True if registration was successful, false if a tool with the same name already exists
-   */
-  public registerToolImplementation(name: string, implementation: Function): boolean {
-    if (this.toolImplementations[name]) {
-      this.logger.warn(`Tool implementation with name '${name}' already exists`);
-      return false;
-    }
-    
-    this.toolImplementations[name] = implementation;
-    this.logger.debug(`Registered tool implementation: ${name}`);
-    return true;
-  }
-
-  /**
    * Gets all registered tool implementations
    * @returns Record mapping tool names to their implementation functions
    */
-  public getToolImplementations(): Record<string, Function> {
+  public getToolImplementations(): CommandMap {
     return { ...this.toolImplementations };
   }
 
@@ -268,4 +251,9 @@ export class ToolExecutor {
       throw error;
     }
   }
+
+  public getAllTools() {
+    return this.toolRegistry.getAllTools();
+  }
+
 }

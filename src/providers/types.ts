@@ -1,6 +1,6 @@
 import type { ProviderType, LLMProvider } from '../core/types/provider.types';
 import type { ProviderSpecificConfig } from '../core/types/config.types';
-import type { ToolRegistry } from '../tools/toolRegistry';
+import { ToolExecutor } from '../tools/toolExecutor';
 import type { Logger } from '../core/types/logger.types';
 import type { ProviderFactory } from './providerFactory';
 
@@ -57,13 +57,14 @@ export interface ProviderFactoryInterface {
    * Sets the tool registry to be used by providers.
    * @param toolRegistry - The tool registry to use
    */
-  setToolRegistry(toolRegistry: ToolRegistry): void;
+  setTools(toolRegistry: InstanceType<typeof ToolExecutor>): void;
   
   /**
    * Gets the tool registry if set.
    * @returns The tool registry or undefined if not set
    */
-  getToolRegistry(): ToolRegistry | undefined;
+  getTools(): InstanceType<typeof ToolExecutor> | undefined;
+
 }
 
 /**

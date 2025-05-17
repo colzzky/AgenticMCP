@@ -7,7 +7,6 @@ import {
   ProviderResponse,
   RecursiveToolLoopOptions
 } from '../../../core/types/provider.types';
-import { ToolExecutor } from '../../../tools/toolExecutor';
 import { orchestrateToolLoop } from '@/providers/providerUtils';
 
 /**
@@ -42,11 +41,9 @@ export interface ToolLoopOrchestratorOptions extends RecursiveToolLoopOptions {
  */
 export class ToolLoopOrchestrator {
   private logger: Logger;
-  private toolExecutor: ToolExecutor;
 
-  constructor(logger: Logger, toolExecutor: ToolExecutor) {
+  constructor(logger: Logger) {
     this.logger = logger;
-    this.toolExecutor = toolExecutor;
   }
 
   /**
@@ -68,6 +65,6 @@ export class ToolLoopOrchestrator {
     options: ToolLoopOrchestratorOptions = {}
   ): Promise<ProviderResponse> {
     this.logger.debug('Using provider-specific tool loop orchestration');
-    return orchestrateToolLoop(provider, request, this.toolExecutor, this.logger, options);
+    return orchestrateToolLoop(provider, request, this.logger, options);
   }
 }

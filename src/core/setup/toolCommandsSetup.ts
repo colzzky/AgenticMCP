@@ -1,6 +1,5 @@
 import { Command } from 'commander';
 import { ToolCommands } from '../../commands/toolCommands';
-import { ToolRegistry } from '../../tools/toolRegistry';
 import { ToolExecutor } from '../../tools/toolExecutor';
 import type { Logger } from '../types/logger.types';
 
@@ -11,10 +10,10 @@ export function registerToolCommands(
   program: Command,
   toolCommands: typeof ToolCommands,
   loggerTool: Logger,
-  toolRegistry: ToolRegistry,
   toolExecutor: ToolExecutor
 ): void {
-  const toolCommandsInstance = new toolCommands(toolRegistry, toolExecutor);
+
+  const toolCommandsInstance = new toolCommands(toolExecutor);
   program
     .command(toolCommandsInstance.name)
     .description(toolCommandsInstance.description)

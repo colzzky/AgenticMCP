@@ -1,5 +1,6 @@
 // src/core/types/provider.types.ts
 
+import { ToolExecutor } from '@/tools/toolExecutor';
 import { ProviderSpecificConfig } from './config.types';
 
 /**
@@ -146,6 +147,8 @@ export interface ToolResultsRequest extends ProviderRequest {
  * Defines the core functionality that any LLM provider must implement.
  */
 export interface LLMProvider {
+
+  toolExecutor?: InstanceType<typeof ToolExecutor>
   // Getter for the provider's name
   get name(): string;
   get defaultModel(): string;
@@ -155,12 +158,6 @@ export interface LLMProvider {
    * @param config - The configuration object for the provider.
    */
   configure(config: ProviderConfig): Promise<void> | void;
-
-  /**
-   * Sets the tool registry for the provider.
-   * @param toolRegistry - The tool registry to use.
-   */
-  setToolRegistry?(toolRegistry: object): void;
 
   /**
    * Gets the available tools from the registry.
@@ -195,6 +192,19 @@ export interface LLMProvider {
    * @returns A promise that resolves to the provider's response.
    */
   generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse>;
+
+  /**
+   * Sets the tool executor to be used by providers.
+   * @param toolExecutor - The tool executor to use
+   */
+  setTools(toolExecutor: ToolExecutor): void;
+
+  /**
+   * Executes a tool call.
+   * @param toolCall - The tool call to execute
+   * @returns A promise that resolves to the provider's response
+   */
+  executeToolCall(toolCall: ToolCall): Promise<ProviderResponse>;
 
 }
 

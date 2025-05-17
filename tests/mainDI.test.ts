@@ -79,7 +79,7 @@ function createMockDependencies(): MainDependencies & {
 
   const mockSetupDependencyInjection = (jest.fn() as any).mockImplementation(
     recordCall('setupDependencyInjection', (jest.fn() as any).mockReturnValue({
-      localCliToolInstance: mockLocalCliToolInstance,
+      fileSystemToolInstance: mockLocalCliToolInstance,
       localShellCliToolInstance: mockLocalShellCliToolInstance
     }))
   ) as unknown as SetupDependencyInjectionFn;
@@ -170,7 +170,7 @@ function createMockDependencies(): MainDependencies & {
     RoleBasedToolsRegistrarFactory: {
       createDefault: (jest.fn() as any).mockReturnValue({}),
     },
-    DILocalShellCliTool: mockDILocalShellCliTool,
+    LocalShellCliTool: mockDILocalShellCliTool,
     DefaultShellCommandWrapper: mockDefaultShellCommandWrapper,
     SHELL_COMMANDS: mockSHELL_COMMANDS,
     defaultAppConfig: {

@@ -16,6 +16,33 @@ import {
 } from '../core/types/provider.types';
 import { ToolExecutor } from '@/tools/toolExecutor';
 
+
+/**
+ * Executes a tool call and returns the result
+ * @param toolCall The tool call object from the model
+ * @param availableTools Map of tool functions that can be called
+ * @returns Promise with the tool call result as a string
+ */
+export async function executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
+    if (!availableTools) {
+        throw new Error('No tools available to execute');
+    }
+
+    if (!availableTools[toolCall.name]) {
+        throw new Error(`Tool ${toolCall.name} not found`);
+    }
+
+    try {
+        const args = JSON.parse(toolCall.arguments);
+        const result = await availableTools[toolCall.name](args);
+        return typeof result === 'string' ? result : JSON.stringify(result);
+    } catch (error_: unknown) {
+        const errorMessage = error_ instanceof Error ? error_.message : String(error_);
+        console.error(`Error executing tool call ${toolCall.name}: ${errorMessage}`);
+        return JSON.stringify({ error: errorMessage });
+    }
+}
+
 /**
 * Recursively handles tool calls until a final response with no tools is generated
 * 
@@ -27,7 +54,6 @@ import { ToolExecutor } from '@/tools/toolExecutor';
 export async function orchestrateToolLoop(
     provider: LLMProvider,
     request: ProviderRequest,
-    toolExecutor: ToolExecutor,
     logger: Logger,
     options: RecursiveToolLoopOptions = {}
 ): Promise<ProviderResponse> {
@@ -74,7 +100,7 @@ export async function orchestrateToolLoop(
         const toolResults: ToolCallOutput[] = [];
         for (const toolCall of response.toolCalls) {
             try {
-                const output = await toolExecutor.executeTool(toolCall.name, JSON.parse(toolCall.arguments));
+                const output = await provider.executeToolCall(toolCall);
                 toolResults.push({
                     type: 'function_call_output',
                     call_id: toolCall.id,
@@ -104,33 +130,8 @@ export async function orchestrateToolLoop(
             model: request.model,
             temperature: request.temperature
         };
+
     }
 
     throw new Error(`Reached maximum iterations (${maxIterations}) in tool calling loop`);
-}
-
-/**
- * Executes a tool call and returns the result
- * @param toolCall The tool call object from the model
- * @param availableTools Map of tool functions that can be called
- * @returns Promise with the tool call result as a string
- */
-export async function executeToolCall(toolCall: ToolCall, availableTools?: Record<string, Function>): Promise<string> {
-    if (!availableTools) {
-        throw new Error('No tools available to execute');
-    }
-
-    if (!availableTools[toolCall.name]) {
-        throw new Error(`Tool ${toolCall.name} not found`);
-    }
-
-    try {
-        const args = JSON.parse(toolCall.arguments);
-        const result = await availableTools[toolCall.name](args);
-        return typeof result === 'string' ? result : JSON.stringify(result);
-    } catch (error_: unknown) {
-        const errorMessage = error_ instanceof Error ? error_.message : String(error_);
-        console.error(`Error executing tool call ${toolCall.name}: ${errorMessage}`);
-        return JSON.stringify({ error: errorMessage });
-    }
 }

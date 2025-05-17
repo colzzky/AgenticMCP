@@ -1,4 +1,4 @@
-// Types extracted from localCliTool.ts to reduce line count and fix max-lines lint error
+// Types extracted from fileSystemTool.ts to reduce line count and fix max-lines lint error
 
 export interface DirectoryEntry {
   name: string;
@@ -62,19 +62,17 @@ export interface DirectoryTreeEntry {
 }
 
 export interface DirectoryTreeResult { tree: string; }
-
 export interface CreateDirectoryResult { success: boolean; }
 export interface DeleteFileResult { success: boolean; }
 export interface DeleteDirectoryResult { success: boolean; }
 export interface SearchCodebaseResult { results: FileSearchResult[]; }
 export interface FindFilesResult { files: string[]; }
-
-export type CommandHandler<Args, Result> = (args: Args) => Promise<Result>;
-
 export interface ReadMultipleFilesArgs { paths: string[]; }
 export interface ReadMultipleFilesResult { content: string; }
+export type CommandHandler<Args, Result> = (args: Args) => Promise<Result>;
+export interface CommandMap extends Record<string, CommandHandler<any, any>> {}
 
-export interface LocalCliCommandMap {
+export type LocalCliCommandMap = CommandMap & {
   create_directory: CommandHandler<CreateDirectoryArgs, CreateDirectoryResult>;
   get_directory_tree: CommandHandler<DirectoryTreeArgs, DirectoryTreeResult>;
   write_file: CommandHandler<WriteFileArgs, WriteFileResult>;

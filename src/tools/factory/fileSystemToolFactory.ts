@@ -6,7 +6,7 @@ import { DI_TOKENS } from '../../core/di/tokens';
 import { IFileSystem } from '../../core/interfaces/file-system.interface';
 import { IDiffService } from '../../core/interfaces/diff-service.interface';
 import { Logger } from '../../core/types/logger.types';
-import { FileSystemTool, LocalCliToolConfig } from '../services/fileSystem';
+import { FileSystemTool, FileSystemToolConfig } from '../services/fileSystem';
 import type { PathDI } from '../../types/global.types';
 
 /**
@@ -16,7 +16,7 @@ import type { PathDI } from '../../types/global.types';
  * @returns A new FileSystemTool instance
  */
 export function createFileSystemTool(
-  config: LocalCliToolConfig,
+  config: FileSystemToolConfig,
   container: DIContainer = DIContainer.getInstance()
 ): FileSystemTool {
   const logger = container.get(DI_TOKENS.LOGGER) as Logger;

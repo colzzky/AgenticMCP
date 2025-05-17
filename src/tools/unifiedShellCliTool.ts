@@ -1,7 +1,6 @@
 // src/tools/unifiedShellCliTool.ts
 import { ShellCommandWrapper, ShellCommandResult } from '../types/shell.types.js';
 import { Logger } from '../core/types/logger.types.js';
-import { SHELL_COMMANDS } from './localShellCliToolDefinitions.js';
 import { getUnifiedShellToolDefinition } from './unifiedShellToolDefinition.js';
 
 export interface UnifiedShellCliToolConfig {

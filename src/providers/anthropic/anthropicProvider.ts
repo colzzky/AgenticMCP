@@ -23,12 +23,13 @@ import {
   convertToolsToAnthropicFormat,
   mapMessagesToAnthropicFormat,
 } from './anthropicProviderUtils';
+import { ProviderBase } from '../providerBase';
 
 /**
  * AnthropicProvider implements the LLMProvider interface for Anthropic Claude API.
  * Uses dependency injection for better testability.
  */
-export class AnthropicProvider implements LLMProvider {
+export class AnthropicProvider extends ProviderBase {
   private providerConfig?: AnthropicProviderSpecificConfig;
   private client?: Anthropic;
   private configManager: ConfigManager;
@@ -48,6 +49,7 @@ export class AnthropicProvider implements LLMProvider {
     logger: Logger,
     AnthropicClass: typeof Anthropic = Anthropic
   ) {
+    super();
     this.configManager = configManager;
     this.logger = logger;
     this.AnthropicClass = AnthropicClass;

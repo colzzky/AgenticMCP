@@ -1,7 +1,5 @@
 import { ConfigManager } from '../config/configManager';
-import { ProviderInitializer } from '../../providers/providerInitializer';
 import { ProviderFactory } from '../../providers/providerFactory';
-import { ToolRegistry } from '../../tools/toolRegistry';
 import { AppConfig } from '../../config/appConfig';
 import type { Logger } from '../types/logger.types';
 import type { PathDI, FileSystemDI } from '../../types/global.types';
@@ -11,11 +9,11 @@ import { OpenAIProvider } from '../../providers/openai/openaiProvider';
 import { AnthropicProvider } from '../../providers/anthropic/anthropicProvider';
 import { GoogleProvider } from '../../providers/google/googleProvider';
 import { GrokProvider } from '../../providers/grok/grokProvider';
+import { ToolExecutor } from '@/tools/toolExecutor';
 
 export type SetupProviderSystemFn = (
   configManager: typeof ConfigManager,
-  providerInitializer: typeof ProviderInitializer,
-  toolRegistryInstance: ToolRegistry,
+  toolExecutor: InstanceType<typeof ToolExecutor>,
   loggerTool: Logger,
   pathDi: PathDI,
   fsDi: FileSystemDI,
@@ -32,8 +30,7 @@ export type SetupProviderSystemFn = (
  */
 export const setupProviderSystem: SetupProviderSystemFn = (
   configManager: typeof ConfigManager,
-  providerInitializer: typeof ProviderInitializer,
-  toolRegistryInstance: ToolRegistry,
+  toolExecutor: InstanceType<typeof ToolExecutor>,
   loggerTool: Logger,
   pathDi: PathDI,
   fsDi: FileSystemDI,
@@ -52,26 +49,17 @@ export const setupProviderSystem: SetupProviderSystemFn = (
     loggerTool
   );
 
+  const providerFactory = new factory(configManagerInstance, loggerTool);
+
   // --- Register all providers here ---
-  const providerClasses = new Map();
-  providerClasses.set('openai', OpenAIProvider);
-  providerClasses.set('anthropic', AnthropicProvider);
-  providerClasses.set('google', GoogleProvider);
-  providerClasses.set('grok', GrokProvider);
+  providerFactory.registerProvider('openai', OpenAIProvider);
+  providerFactory.registerProvider('anthropic', AnthropicProvider);
+  providerFactory.registerProvider('google', GoogleProvider);
+  providerFactory.registerProvider('grok', GrokProvider);
   // --- End provider registration ---
 
-  // Initialize provider system with dependency injection
-  const providerInitializerInstance = new providerInitializer(
-    new factory(configManagerInstance, loggerTool),
-    loggerTool,
-    providerClasses
-  );
-
-  // Get provider factory instance
-  const providerFactory = providerInitializerInstance.getFactory();
-
   // Connect provider factory with tool registry
-  providerFactory.setToolRegistry(toolRegistryInstance);
+  providerFactory.setTools(toolExecutor);
   loggerTool.debug('Connected tool registry with provider factory');
 
   return {

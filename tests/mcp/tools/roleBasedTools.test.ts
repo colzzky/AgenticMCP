@@ -51,7 +51,7 @@ jest.mock('../../../src/core/di/container.js', () => {
     }
   };
 });
-jest.mock('../../../src/tools/factory/localCliToolFactory.js', () => ({
+jest.mock('../../../src/tools/factory/fileSystemToolFactory.js', () => ({
   createFileSystemTool: (jest.fn() as any).mockImplementation(() => ({
     execute: (jest.fn() as any).mockResolvedValue({ success: true, content: 'mocked file content' }),
     getToolDefinitions: (jest.fn() as any).mockReturnValue([]),

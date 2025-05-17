@@ -13,7 +13,7 @@ export interface ToolDefinition {
 /**
  * Configuration for LocalCliTool
  */
-export interface LocalCliToolConfig {
+export interface FileSystemToolConfig {
   /** Absolute base directory for all file operations */
   baseDir: string;
   /** Whitelisted shell commands (not implemented here) */

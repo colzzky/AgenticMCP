@@ -1,9 +1,9 @@
 import type { LLMProvider, ProviderType } from '../core/types/provider.types';
 import type { ProviderSpecificConfig } from '../core/types/config.types';
 import type { ConfigManager } from '../core/config/configManager';
-import type { ToolRegistry } from '../tools/toolRegistry';
 import type { Logger } from '../core/types/logger.types';
 import type { ProviderFactoryInterface } from './types';
+import type { ToolExecutor } from '../tools/toolExecutor';
 
 /**
  * Factory for creating and managing LLM providers.
@@ -14,7 +14,7 @@ export class ProviderFactory implements ProviderFactoryInterface {
   private providerMap: Map<string, new (...args: any[]) => LLMProvider> = new Map();
   private instanceMap: Map<string, LLMProvider> = new Map();
   private configManager: ConfigManager;
-  private toolRegistry?: ToolRegistry;
+  private toolExecutor?: ToolExecutor;
   private logger: Logger;
 
   /**
@@ -64,9 +64,9 @@ export class ProviderFactory implements ProviderFactoryInterface {
       // Note: We're passing the logger as a dependency to the provider
       const instance = new ProviderClass(this.configManager, this.logger);
       
-      // Inject the tool registry if available
-      if (this.toolRegistry && typeof instance.setToolRegistry === 'function') {
-        instance.setToolRegistry(this.toolRegistry);
+      // Inject the tool executor if available
+      if (this.toolExecutor && typeof instance.setTools === 'function') {
+        instance.setTools(this.toolExecutor);
       }
       
       // Cache the instance
@@ -137,27 +137,20 @@ export class ProviderFactory implements ProviderFactoryInterface {
   }
 
   /**
-   * Sets the tool registry to be used by providers.
-   * @param toolRegistry - The tool registry to use
+   * Sets the tool executor to be used by providers.
+   * @param toolRegistry - The tool executor to use
    */
-  setToolRegistry(toolRegistry: ToolRegistry): void {
-    this.toolRegistry = toolRegistry;
-    
-    // Update existing provider instances
-    for (const [key, instance] of this.instanceMap.entries()) {
-      if (typeof instance.setToolRegistry === 'function') {
-        instance.setToolRegistry(toolRegistry);
-      }
-    }
-    
-    this.logger.debug('Set tool registry for provider factory');
+  setTools(toolExecutor: InstanceType<typeof ToolExecutor>): void {
+    this.toolExecutor = toolExecutor;
+    this.logger.debug('Set tool executor for provider factory');
   }
 
   /**
-   * Gets the tool registry if set.
-   * @returns The tool registry or undefined if not set
+   * Gets the tool executor if set.
+   * @returns The tool executor or undefined if not set
    */
-  getToolRegistry(): ToolRegistry | undefined {
-    return this.toolRegistry;
+  getTools(): InstanceType<typeof ToolExecutor> | undefined {
+    return this.toolExecutor;
   }
+
 }

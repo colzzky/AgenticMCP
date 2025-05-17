@@ -20,7 +20,7 @@ We've added comprehensive tests for the following core components:
 ### Tool Infrastructure
 - **tests/tools/toolRegistry.test.ts**: Tests for the tool registration and management system
 - **tests/tools/toolExecutor.test.ts**: Tests for the tool execution logic
-- **tests/tools/localCliTool.test.ts**: Tests for the local CLI tool implementation
+- **tests/tools/fileSystemTool.test.ts**: Tests for the local CLI tool implementation
 
 ### Provider System
 - **tests/providers/providerFactory.test.ts**: Tests for the LLM provider factory 

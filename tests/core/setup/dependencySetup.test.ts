@@ -95,11 +95,11 @@ describe('Dependency Injection Setup', () => {
 
   // Mock local shell CLI tool instance
   const mockLocalShellCliToolInstance = {
-    // DILocalShellCliTool methods
+    // LocalShellCliTool methods
     getCommandMap: (jest.fn() as any).mockReturnValue({})
   };
 
-  // Mock DILocalShellCliTool class constructor
+  // Mock LocalShellCliTool class constructor
   const MockDILocalShellCliTool = (jest.fn() as any).mockImplementation((
     config, logger, fileSystem, diffService, pathDi
   ) => {
@@ -199,7 +199,7 @@ describe('Dependency Injection Setup', () => {
       mockLocalCliToolInstance
     );
     
-    // Verify DILocalShellCliTool is used
+    // Verify LocalShellCliTool is used
     expect(MockDILocalShellCliTool).toHaveBeenCalled();
     
     // Verify LocalShellCliToolInstance registration
@@ -209,7 +209,7 @@ describe('Dependency Injection Setup', () => {
     );
     
     // Verify return value contains both instances
-    expect(result).toHaveProperty('localCliToolInstance', mockLocalCliToolInstance);
+    expect(result).toHaveProperty('fileSystemToolInstance', mockLocalCliToolInstance);
     expect(result).toHaveProperty('localShellCliToolInstance', mockLocalShellCliToolInstance);
   });
 });

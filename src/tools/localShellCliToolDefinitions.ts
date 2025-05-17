@@ -8,7 +8,7 @@ export const SHELL_COMMANDS = [
   "grep", "sed", "awk", "cut", "tr", "sort", "uniq", "paste", "column", "nl", "yes"
 ] as const;
 
-type ShellCommandName = typeof SHELL_COMMANDS[number];
+export type ShellCommandName = typeof SHELL_COMMANDS[number];
 
 export function getLocalShellCliToolDefinitions() {
   const descriptions: Record<string, string> = {

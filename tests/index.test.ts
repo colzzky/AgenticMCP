@@ -77,7 +77,7 @@ describe('mainDI Dependency Injection', () => {
     
     deps.setupDependencyInjection.mockImplementation((...args) => {
       callOrder.push('setupDependencyInjection');
-      return { localCliToolInstance: {}, localShellCliToolInstance: {} };
+      return { fileSystemToolInstance: {}, localShellCliToolInstance: {} };
     });
     deps.setupToolSystem.mockImplementation((...args) => {
       callOrder.push('setupToolSystem');
@@ -121,7 +121,7 @@ describe('mainDI Dependency Injection', () => {
     testError.stack = 'Fake stack trace';
     
     // Mock the required functions to avoid "undefined" errors before the error throw
-    deps.setupDependencyInjection.mockReturnValue({ localCliToolInstance: {}, localShellCliToolInstance: {} });
+    deps.setupDependencyInjection.mockReturnValue({ fileSystemToolInstance: {}, localShellCliToolInstance: {} });
     deps.setupToolSystem.mockReturnValue({ toolRegistry: {}, toolExecutor: {}, toolResultFormatter: {} });
     deps.setupProviderSystem.mockReturnValue({ configManager: {}, providerInitializer: {}, providerFactory: {} });
     
@@ -147,7 +147,7 @@ describe('mainDI Dependency Injection', () => {
     const marker = jest.fn();
     
     // Mock the required functions to avoid "undefined" errors before the test
-    deps.setupDependencyInjection.mockReturnValue({ localCliToolInstance: {}, localShellCliToolInstance: {} });
+    deps.setupDependencyInjection.mockReturnValue({ fileSystemToolInstance: {}, localShellCliToolInstance: {} });
     deps.setupToolSystem.mockReturnValue({ toolRegistry: {}, toolExecutor: {}, toolResultFormatter: {} });
     deps.setupProviderSystem.mockReturnValue({ configManager: {}, providerInitializer: {}, providerFactory: {} });
     

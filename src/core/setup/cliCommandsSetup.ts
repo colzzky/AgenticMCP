@@ -6,7 +6,6 @@ import { LLMCommand } from '../../commands/llmCommand';
 import { ToolCommands } from '../../commands/toolCommands';
 import { RoleModelConfigCommand } from '../../commands/roleModelConfigCommand';
 import { ConfigManager } from '../config/configManager';
-import { ToolRegistry } from '../../tools/toolRegistry';
 import { ToolExecutor } from '../../tools/toolExecutor';
 import { FilePathProcessorFactory } from '../commands/type';
 import { McpServer } from "../../mcp/mcpServer";
@@ -23,14 +22,12 @@ import type { ProviderFactoryInterface } from '../../providers/types';
 export type SetupCliCommandsFn = (
   program: Command,
   pathDi: PathDI,
-  fsDi: any,
   mcpCommands: typeof McpCommands,
   llmCommand: typeof LLMCommand,
   toolCommands: typeof ToolCommands,
   roleModelConfigCommand: typeof RoleModelConfigCommand,
   configManagerInstance: ConfigManager,
   loggerTool: Logger,
-  toolRegistryInstance: ToolRegistry,
   toolExecutorInstance: ToolExecutor,
   processDi: NodeJS.Process,
   filePathProcessorFactory: FilePathProcessorFactory,
@@ -48,14 +45,12 @@ export type SetupCliCommandsFn = (
 export const setupCliCommands: SetupCliCommandsFn = (
   program: Command,
   pathDi: PathDI,
-  fsDi: any,
   mcpCommands: typeof McpCommands,
   llmCommand: typeof LLMCommand,
   toolCommands: typeof ToolCommands,
   roleModelConfigCommand: typeof RoleModelConfigCommand,
   configManagerInstance: ConfigManager,
   loggerTool: Logger,
-  toolRegistryInstance: ToolRegistry,
   toolExecutorInstance: ToolExecutor,
   processDi: NodeJS.Process,
   filePathProcessorFactory: FilePathProcessorFactory,
@@ -102,7 +97,6 @@ export const setupCliCommands: SetupCliCommandsFn = (
     program,
     toolCommands,
     loggerTool,
-    toolRegistryInstance,
     toolExecutorInstance
   );
 

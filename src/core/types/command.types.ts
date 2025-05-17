@@ -1,6 +1,3 @@
-// src/core/types/command.types.ts
-import type { PathDI, FileSystemDI } from '../../types/global.types';
-
 /**
  * Represents the execution context for a command.
  * This might include configuration, session data, or other relevant information.

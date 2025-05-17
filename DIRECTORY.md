@@ -153,7 +153,7 @@
 │   ├── tools/
 │   │   ├── commands/
 │   │   ├── factory/
-│   │   │   ├── localCliToolFactory.ts
+│   │   │   ├── fileSystemToolFactory.ts
 │   │   │   └── unifiedShellToolFactory.ts
 │   │   ├── fileSystemTool.ts
 │   │   ├── fileSystemToolDefinitions.ts

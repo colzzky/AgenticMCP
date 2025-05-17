@@ -5,7 +5,6 @@
 import { Command, CommandContext, CommandOutput } from '../core/types/command.types';
 import { AgentCommand, CommandHandler, CommandParam } from '../core/commands/decorators';
 import { info } from '../core/utils/logger';
-import { ToolRegistry } from '../tools/toolRegistry';
 import { ToolExecutor } from '../tools/toolExecutor';
 
 /**
@@ -23,14 +22,11 @@ export class ToolCommands implements Command {
   aliases = ['tool'];
   options = [];
 
-  protected toolRegistry: InstanceType<typeof ToolRegistry>;
   protected toolExecutor: InstanceType<typeof ToolExecutor>;
 
   constructor(
-    toolRegistry: InstanceType<typeof ToolRegistry>,
     toolExecutor: InstanceType<typeof ToolExecutor>
   ) {
-    this.toolRegistry = toolRegistry;
     this.toolExecutor = toolExecutor;
   }
 
@@ -40,16 +36,8 @@ export class ToolCommands implements Command {
   async execute(context: CommandContext, ...args: unknown[]): Promise<CommandOutput> {
     info(`Executing tools command with args: ${JSON.stringify(args)}`);
 
-    if (!this.toolRegistry) {
-      return {
-        success: false,
-        message: 'Tool registry is not initialized',
-        data: undefined
-      };
-    }
-
     // Get all registered tools
-    const tools = this.toolRegistry.getAllTools();
+    const tools = this.toolExecutor.getAllTools();
 
     return {
       success: true,
@@ -71,7 +59,7 @@ export class ToolCommands implements Command {
     description: 'List all registered tools'
   })
   async listTools(): Promise<CommandOutput> {
-    if (!this.toolRegistry) {
+    if (!this.toolExecutor) {
       return {
         success: false,
         message: 'Tool registry is not initialized',
@@ -79,7 +67,7 @@ export class ToolCommands implements Command {
       };
     }
 
-    const tools = this.toolRegistry.getAllTools();
+    const tools = this.toolExecutor.getAllTools();
 
     return {
       success: true,

@@ -1,9 +1,11 @@
+import { orchestrateToolLoop } from '@/providers/providerUtils';
 import type { PathDI } from '../../types/global.types';
-import { createFileSystemTool } from '../../tools/factory/localCliToolFactory.js';
+import { createFileSystemTool } from '@/tools/factory/fileSystemToolFactory';
 import type { Logger } from '../../core/types/logger.types.js';
 import type { LLMProvider } from '../../core/types/provider.types.js';
 import { constructXmlPrompt, selectModelForRole } from './xmlPromptUtils';
 import { roleEnums, AllRoleSchemas } from './roleSchemas';
+import { ToolExecutor } from '@/tools/toolExecutor';
 
 /**
  * Interface to define the structure of regex matches
@@ -18,7 +20,7 @@ interface FileOperationMatch {
  */
 export async function processFileOperations(
   response: string,
-  localCliTool: ReturnType<typeof createFileSystemTool>,
+  fileSystemTool: ReturnType<typeof createFileSystemTool>,
   logger: Logger
 ): Promise<string> {
   const fileOpRegex = /<file_operation>([^]*?)<\/file_operation>/g;
@@ -42,7 +44,7 @@ export async function processFileOperations(
         logger.debug(`Executing file operation: ${command} on path: ${filePath}`);
         let result;
         switch (command) {
-          case 'read_file': { result = await localCliTool.execute('read_file', { path: filePath }); break; }
+          case 'read_file': { result = await fileSystemTool.execute('read_file', { path: filePath }); break; }
           case 'write_file': {
             // Check for allowOverwrite parameter in the file operation
             const allowOverwriteMatch = /allowoverwrite:\s*(true|false)/i.exec(match.content);
@@ -51,7 +53,7 @@ export async function processFileOperations(
             // Make sure content is a string
             const contentStr = content || '';
 
-            result = await localCliTool.execute('write_file', {
+            result = await fileSystemTool.execute('write_file', {
               path: filePath,
               content: contentStr,
               allowOverwrite
@@ -63,12 +65,12 @@ export async function processFileOperations(
             }
             break;
           }
-          case 'create_directory': { result = await localCliTool.execute('create_directory', { path: filePath }); break; }
-          case 'delete_file': { result = await localCliTool.execute('delete_file', { path: filePath }); break; }
-          case 'delete_directory': { result = await localCliTool.execute('delete_directory', { path: filePath }); break; }
-          case 'list_directory': { result = await localCliTool.execute('list_directory', { path: filePath }); break; }
-          case 'search_codebase': { result = await localCliTool.execute('search_codebase', { query: content || filePath, recursive: true }); break; }
-          case 'find_files': { result = await localCliTool.execute('find_files', { pattern: filePath, recursive: true }); break; }
+          case 'create_directory': { result = await fileSystemTool.execute('create_directory', { path: filePath }); break; }
+          case 'delete_file': { result = await fileSystemTool.execute('delete_file', { path: filePath }); break; }
+          case 'delete_directory': { result = await fileSystemTool.execute('delete_directory', { path: filePath }); break; }
+          case 'list_directory': { result = await fileSystemTool.execute('list_directory', { path: filePath }); break; }
+          case 'search_codebase': { result = await fileSystemTool.execute('search_codebase', { query: content || filePath, recursive: true }); break; }
+          case 'find_files': { result = await fileSystemTool.execute('find_files', { pattern: filePath, recursive: true }); break; }
           default: { throw new Error(`Unknown file operation command: ${command}`); }
         }
         const resultText = `<file_operation_result command="${command}" path="${filePath}">\n${JSON.stringify(result, undefined, 2)}\n</file_operation_result>`;
@@ -129,12 +131,23 @@ export async function handleRoleBasedTool({
   ];
   try {
     logger.info(`Executing ${role} role-based tool with prompt: ${prompt.slice(0, 100)}...`);
-    const providerResponse = await llmProvider.chat({
+    /*const providerResponse = await llmProvider.chat({
       messages,
       maxTokens: 4000,
       temperature: 0.2,
       model: selectModelForRole(role)
-    });
+    });*/
+
+    const providerResponse = await orchestrateToolLoop(
+      llmProvider,
+      {
+        messages,
+        maxTokens: 4000,
+        temperature: 0.2,
+        model: selectModelForRole(role)
+      },
+      logger
+    );
     logger.debug(`Processing file operations in ${role} response`);
     const responseContent = providerResponse.content || '';
     const processedResponse = await processFileOperations(

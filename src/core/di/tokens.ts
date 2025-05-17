@@ -20,7 +20,7 @@ export enum DI_TOKENS {
 
   // Tools
   TOOL_REGISTRY = 'tools:registry',
-  LOCAL_CLI_TOOL = 'tools:localCliTool',
+  LOCAL_CLI_TOOL = 'tools:fileSystemTool',
   TOOL_EXECUTOR = 'tools:executor',
   TOOL_LOOP_ORCHESTRATOR = 'tools:loopOrchestrator',
   DIFF_SERVICE = 'tools:diffService',

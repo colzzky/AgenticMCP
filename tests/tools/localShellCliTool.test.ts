@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { DILocalShellCliTool, LocalShellCliToolConfig } from '../../src/tools/localShellCliTool.js';
+import { LocalShellCliTool, LocalShellCliToolConfig } from '../../src/tools/localShellCliTool.js';
 import type { Logger } from '../../src/core/types/logger.types.js';
 import type { ShellCommandWrapper, ShellCommandResult } from '../../types/shell.types.js';
 
@@ -12,8 +12,8 @@ const mockShellWrapper: ShellCommandWrapper = {
   getAllowedCommands: mockGetAllowedCommands
 };
 
-describe('DILocalShellCliTool', () => {
-  let tool: DILocalShellCliTool;
+describe('LocalShellCliTool', () => {
+  let tool: LocalShellCliTool;
   const allowedCommands = ['ls', 'echo'];
   let logger: Logger;
 
@@ -53,7 +53,7 @@ describe('DILocalShellCliTool', () => {
     };
 
     // Initialize tool
-    tool = new DILocalShellCliTool(
+    tool = new LocalShellCliTool(
       { allowedCommands },
       mockShellWrapper,
       logger

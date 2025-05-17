@@ -19,19 +19,19 @@ import type { McpCommands as McpCommandsType } from './commands/mcpCommands';
 import type { LLMCommand as LLMCommandType } from './commands/llmCommand';
 import type { ToolCommands as ToolCommandsType } from './commands/toolCommands';
 import type { RoleModelConfigCommand as RoleModelConfigCommandType } from './commands/roleModelConfigCommand';
-import type { ConfigManager as ConfigManagerType } from './core/config/configManager';
+import { ConfigManager, type ConfigManager as ConfigManagerType } from './core/config/configManager';
 import type { ProviderInitializer as ProviderInitializerType } from './providers/providerInitializer';
 import type { ProviderFactory as ProviderFactoryType } from './providers/providerFactory';
 import type { CredentialManager } from './core/credentials';
 import type { DefaultFilePathProcessorFactory } from './core/commands/baseCommand';
 import type { DIFilePathProcessor } from './context/filePathProcessor';
-import type { McpServer } from './mcp/mcpServer';
+import { McpServer } from './mcp/mcpServer';
 import type { McpServer as BaseMcpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { StdioServerTransport as StdioServerTransportType } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { RoleBasedToolsRegistrar } from './mcp/tools/types';
 import type { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';
 import { FileKeytar } from './core/credentials/file-keytar';
-import { DILocalShellCliTool } from './tools/localShellCliTool';
+import { LocalShellCliTool } from './tools/localShellCliTool';
 import { UnifiedShellCliTool } from './tools/unifiedShellCliTool';
 import { FileSystemTool } from './tools/services/fileSystem';
 import { FileSystemService } from './core/services/file-system.service';
@@ -88,7 +88,7 @@ export interface MainDependencies {
   RoleBasedToolsRegistrarFactory: { createDefault: () => RoleBasedToolsRegistrar };
 
   // Shell Tool
-  DILocalShellCliTool: typeof DILocalShellCliTool;
+  LocalShellCliTool: typeof LocalShellCliTool;
   UnifiedShellCliTool: typeof UnifiedShellCliTool;
   DefaultShellCommandWrapper: typeof DefaultShellCommandWrapper;
   SHELL_COMMANDS: readonly string[];
@@ -122,15 +122,13 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       deps.process,
       deps.spawn,
       deps.FileSystemTool,
-      deps.DILocalShellCliTool
+      deps.LocalShellCliTool
     );
 
     // Set up the tools system
     const tools = deps.setupToolSystem(
-      diResult.localCliToolInstance,
+      diResult.fileSystemToolInstance,
       diResult.localShellCliToolInstance,
-      diResult.unifiedShellCliToolInstance,
-      deps.ToolRegistry,
       deps.ToolExecutor,
       deps.ToolResultFormatter,
       deps.logger
@@ -144,8 +142,7 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
     // Set up provider system with app config
     const providers = deps.setupProviderSystem(
       deps.ConfigManager,
-      deps.ProviderInitializer,
-      tools.toolRegistry,
+      tools.toolExecutor,
       deps.logger,
       deps.path,
       deps.fs,
@@ -170,14 +167,12 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
     deps.setupCliCommands(
       program,
       deps.path,
-      deps.fs,
       deps.McpCommands,
       deps.LLMCommand,
       deps.ToolCommands,
       deps.RoleModelConfigCommand,
       providers.configManager,
       deps.logger,
-      tools.toolRegistry,
       tools.toolExecutor,
       deps.process,
       filePathProcessorFactory,

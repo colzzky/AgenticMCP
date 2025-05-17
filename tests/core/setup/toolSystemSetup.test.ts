@@ -6,7 +6,7 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { setupToolSystem } from '../../../src/core/setup/toolSystemSetup.js';
 import type { Logger } from '../../../src/core/types/logger.types.js';
 import type { FileSystemTool } from '../../../src/tools/services/fileSystem/index.js';
-import type { DILocalShellCliTool } from '../../../src/tools/localShellCliTool.js';
+import type { LocalShellCliTool } from '../../../src/tools/localShellCliTool.js';
 import type { UnifiedShellCliTool } from '../../../src/tools/unifiedShellCliTool.js';
 
 // Mock getLocalShellCliToolDefinitions module
@@ -26,7 +26,7 @@ describe('toolSystemSetup', () => {
     setLogLevel: jest.fn()
   };
   
-  // Mock localCliTool
+  // Mock fileSystemTool
   const mockLocalCliTool = {
     getCommandMap: (jest.fn() as any).mockReturnValue({
       read_file: jest.fn(),
@@ -49,7 +49,7 @@ describe('toolSystemSetup', () => {
       ls: jest.fn(),
       echo: jest.fn()
     })
-  } as unknown as DILocalShellCliTool;
+  } as unknown as LocalShellCliTool;
   
   // Mock unifiedShellCliTool
   const mockUnifiedShellCliTool = {

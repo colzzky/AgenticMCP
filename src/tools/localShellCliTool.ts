@@ -1,17 +1,20 @@
 // src/tools/localShellCliTool.ts
 import { ShellCommandWrapper, ShellCommandResult } from '../types/shell.types';
 import { Logger } from '../core/types/logger.types';
-import { getLocalShellCliToolDefinitions, SHELL_COMMANDS } from './localShellCliToolDefinitions';
+import { type ShellCommandName } from './localShellCliToolDefinitions';
+import { type CommandHandler, type CommandMap } from '../core/types/cli.types';
+import { ToolDefinition } from './types';
+import { Tool } from '../core/types/provider.types';
 
 export interface LocalShellCliToolConfig {
   allowedCommands: string[];
 }
 
-type ShellCommandMap = {
-  [K in typeof SHELL_COMMANDS[number]]: (args: { args?: string[] }) => Promise<ShellCommandResult>
+type ShellCommandMap = CommandMap & {
+  [K in ShellCommandName]: CommandHandler<{ args?: string[] }, ShellCommandResult>;
 };
 
-export class DILocalShellCliTool {
+export class LocalShellCliTool {
   private shellWrapper: ShellCommandWrapper;
   private logger: Logger;
   private allowedCommands: Set<string>;
@@ -37,10 +40,40 @@ export class DILocalShellCliTool {
     return this.commandMap;
   }
 
-  public getToolDefinitions() {
-    return getLocalShellCliToolDefinitions().filter(def =>
-      this.allowedCommands.has(def.name)
-    );
+  public getTools(): Tool[] {
+    return [
+      {
+        type: 'function',
+        name: 'shell_command',
+        description: 'Execute a shell command',
+        parameters: {
+          type: 'object',
+          properties: {
+            command: {
+              type: 'string',
+            },
+            args: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          required: ['command'],
+        },
+      }
+    ]
+  }
+
+  public getToolDefinitions(): ToolDefinition[] {
+    return this.getTools().map((tool: Tool) => ({
+      type: 'function',
+      function: {
+        name: tool.name,
+        description: tool.description || '',
+        parameters: tool.parameters,
+      },
+    }));
   }
 
   // Generic dispatcher for LLM/registry use

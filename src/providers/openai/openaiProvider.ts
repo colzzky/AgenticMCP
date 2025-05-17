@@ -18,18 +18,20 @@ import type { Logger } from '../../core/types/logger.types';
 import type { OpenAIProviderSpecificConfig } from '../../core/types/config.types';
 import * as mappers from './openaiProviderMappers';
 import { handleProviderError, buildProviderResponseFromCompletion } from './openaiProviderUtils';
+import type { ToolRegistry } from '../../tools/toolRegistry';
+import { ProviderBase } from '../providerBase';
 
 /**
  * OpenAIProvider implements the LLMProvider interface for OpenAI API.
  * Uses dependency injection for better testability.
  */
-export class OpenAIProvider implements LLMProvider {
+export class OpenAIProvider extends ProviderBase {
   private client?: OpenAI;
   private providerConfig?: OpenAIProviderSpecificConfig;
   private configManager: ConfigManager;
   private logger: Logger;
   private OpenAIClass: typeof OpenAI;
-  private toolRegistry?: object;
+  private toolRegistry?: ToolRegistry;
 
   /**
    * Creates a new OpenAIProvider with dependency injection.
@@ -43,6 +45,7 @@ export class OpenAIProvider implements LLMProvider {
     logger: Logger,
     OpenAIClass: typeof OpenAI = OpenAI
   ) {
+    super();
     this.configManager = configManager;
     this.logger = logger;
     this.OpenAIClass = OpenAIClass;
@@ -52,8 +55,12 @@ export class OpenAIProvider implements LLMProvider {
    * Sets the tool registry for the provider.
    * @param toolRegistry - The tool registry to use.
    */
-  public setToolRegistry(toolRegistry: object): void {
+  public setToolRegistry(toolRegistry: ToolRegistry): void {
     this.toolRegistry = toolRegistry;
+  }
+
+  public getToolRegistry(): ToolRegistry {
+    return this.toolRegistry!;
   }
 
   /**

@@ -5,7 +5,7 @@ import { logger } from './core/utils/logger';
 import { ConfigManager } from './core/config/configManager';
 import { DIContainer } from './core/di/container';
 import { FileSystemTool } from './tools/services/fileSystem';
-import { DILocalShellCliTool } from './tools/localShellCliTool';
+import { LocalShellCliTool } from './tools/localShellCliTool';
 import { UnifiedShellCliTool } from './tools/unifiedShellCliTool';
 import { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';
 import { SHELL_COMMANDS } from './tools/localShellCliToolDefinitions';
@@ -70,7 +70,7 @@ export async function main(): Promise<void> {
     FileSystemService,
     DiffService,
     FileSystemTool,
-    DILocalShellCliTool,
+    LocalShellCliTool,
     UnifiedShellCliTool,
     DefaultShellCommandWrapper,
     SHELL_COMMANDS,

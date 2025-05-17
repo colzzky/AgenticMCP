@@ -41,7 +41,7 @@ const mockHandleRoleBasedTool = (jest.fn() as any).mockImplementation(async ({
   };
 });
 
-// Mock the localCliTool
+// Mock the fileSystemTool
 const mockExecFunction = (jest.fn() as any).mockImplementation((command, args) => {
   if (command === 'read_file') {
     return Promise.resolve({ success: true, content: 'Mock file content' });
@@ -71,7 +71,7 @@ const mockLocalCliTool = {
 
 // Mock processFileOperations for our tests
 jest.mock('../../../src/mcp/tools/roleHandlers.js', () => ({
-  processFileOperations: (jest.fn() as any).mockImplementation(async (response, localCliTool, logger) => {
+  processFileOperations: (jest.fn() as any).mockImplementation(async (response, fileSystemTool, logger) => {
     const fileOpRegex = /<file_operation>([^]*?)<\/file_operation>/g;
     let match;
     let processedResponse = response;
@@ -101,12 +101,12 @@ jest.mock('../../../src/mcp/tools/roleHandlers.js', () => ({
           let result;
           switch (command) {
           case 'read_file': {
-            result = await localCliTool.execute('read_file', { path: filePath });
+            result = await fileSystemTool.execute('read_file', { path: filePath });
           
           break;
           }
           case 'write_file': {
-            result = await localCliTool.execute('write_file', {
+            result = await fileSystemTool.execute('write_file', {
               path: filePath,
               content: content || '',
               allowOverwrite
@@ -115,12 +115,12 @@ jest.mock('../../../src/mcp/tools/roleHandlers.js', () => ({
           break;
           }
           case 'list_directory': {
-            result = await localCliTool.execute('list_directory', { path: filePath });
+            result = await fileSystemTool.execute('list_directory', { path: filePath });
           
           break;
           }
           case 'search_codebase': {
-            result = await localCliTool.execute('search_codebase', { 
+            result = await fileSystemTool.execute('search_codebase', { 
               query: content || filePath, 
               recursive: true 
             });
@@ -128,7 +128,7 @@ jest.mock('../../../src/mcp/tools/roleHandlers.js', () => ({
           break;
           }
           case 'find_files': {
-            result = await localCliTool.execute('find_files', { 
+            result = await fileSystemTool.execute('find_files', { 
               pattern: filePath, 
               recursive: true 
             });
@@ -161,7 +161,7 @@ jest.mock('../../../src/mcp/tools/roleHandlers.js', () => ({
 }));
 
 // Mock the factory directly
-jest.mock('../../../src/tools/factory/localCliToolFactory.js', () => ({
+jest.mock('../../../src/tools/factory/fileSystemToolFactory.js', () => ({
   createFileSystemTool: (jest.fn() as any).mockReturnValue(mockLocalCliTool)
 }));
 

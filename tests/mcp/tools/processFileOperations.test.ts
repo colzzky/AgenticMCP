@@ -16,10 +16,10 @@ describe('processFileOperations', () => {
     setLevel: jest.fn()
   };
 
-  // Mock execute function for the localCliTool
+  // Mock execute function for the fileSystemTool
   const mockExecFunction = jest.fn();
   
-  // Mock the localCliTool with our execute function
+  // Mock the fileSystemTool with our execute function
   const mockLocalCliTool = {
     execute: mockExecFunction
   };

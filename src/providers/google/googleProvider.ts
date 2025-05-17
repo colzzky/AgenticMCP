@@ -19,14 +19,14 @@ import {
 import { convertToolsToGoogleFormat, convertToolChoiceToGoogleFormat } from './googleTypes';
 import { extractToolCallsFromGenAIResponse } from './googleToolExtraction';
 import { convertMessagesToGenAIFormat } from './googleMessageConversion';
-import { ToolExecutor } from '@/tools/toolExecutor';
+import { ProviderBase } from '../providerBase';
 
 /**
  * GoogleProvider adapter for the Google Gemini API
  * Supports both the Gemini Developer API and Vertex AI
  * Uses dependency injection for better testability.
  */
-export class GoogleProvider implements LLMProvider {
+export class GoogleProvider extends ProviderBase {
   private providerConfig?: GoogleProviderSpecificConfig;
   private client?: GoogleGenAI;
   private configManager: ConfigManager;
@@ -45,6 +45,7 @@ export class GoogleProvider implements LLMProvider {
     logger: Logger,
     GoogleGenAIClass: typeof GoogleGenAI = GoogleGenAI
   ) {
+    super();
     this.configManager = configManager;
     this.logger = logger;
     this.GoogleGenAIClass = GoogleGenAIClass;

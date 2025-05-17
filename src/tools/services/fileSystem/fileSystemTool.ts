@@ -1,6 +1,6 @@
 import type { Logger } from '../../../core/types/logger.types';
 import { getFileSystemToolDefinitions } from './fileSystemToolDefinitions';
-import type { ToolDefinition, LocalCliToolConfig } from '../../types';
+import type { ToolDefinition, FileSystemToolConfig } from '../../types';
 import type { Tool } from '../../../core/types/provider.types';
 import type { IFileSystem } from '../../../core/interfaces/file-system.interface';
 import type { IDiffService } from '../../../core/interfaces/diff-service.interface';
@@ -37,7 +37,7 @@ export class FileSystemTool {
   private commandMap: LocalCliCommandMap;
 
   constructor(
-    config: LocalCliToolConfig,
+    config: FileSystemToolConfig,
     logger: Logger,
     fileSystem: IFileSystem,
     diffService: IDiffService,
@@ -76,6 +76,10 @@ export class FileSystemTool {
 
   public getCommandMap(): Readonly<LocalCliCommandMap> {
     return this.commandMap;
+  }
+
+  public getTools(): Tool[] {
+    return getFileSystemToolDefinitions();
   }
 
   public getToolDefinitions(): ToolDefinition[] {
