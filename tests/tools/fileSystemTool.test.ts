@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { FileSystemTool } from '../../src/tools/fileSystemTool.js';
+import { FileSystemTool } from '../../src/tools/services/fileSystem/index.js';
 import type { Logger } from '../../src/core/types/logger.types.js';
 import type { IFileSystem } from '../../src/core/interfaces/file-system.interface.js';
 import type { IDiffService } from '../../src/core/interfaces/diff-service.interface.js';
@@ -47,7 +47,7 @@ const mockPathDI: PathDI = {
 };
 
 describe('FileSystemTool', () => {
-  let localCliTool: FileSystemTool;
+  let fileSystemTool: FileSystemTool;
   const baseDir = '/test/base/dir';
   
   beforeEach(() => {
@@ -63,7 +63,7 @@ describe('FileSystemTool', () => {
       return `Mock diff: ${oldContent} -> ${newContent}`;
     });
     
-    localCliTool = new FileSystemTool(
+    fileSystemTool = new FileSystemTool(
       { baseDir },
       mockLogger,
       mockFileSystem,
@@ -74,7 +74,7 @@ describe('FileSystemTool', () => {
   
   describe('constructor', () => {
     it('should initialize with valid config', () => {
-      expect(localCliTool).toBeDefined();
+      expect(fileSystemTool).toBeDefined();
       expect(mockLogger.debug).toHaveBeenCalled();
     });
     
@@ -107,7 +107,7 @@ describe('FileSystemTool', () => {
   
   describe('getCommandMap', () => {
     it('should return command map with all expected commands', () => {
-      const commandMap = localCliTool.getCommandMap();
+      const commandMap = fileSystemTool.getCommandMap();
       
       expect(commandMap).toHaveProperty('create_directory');
       expect(commandMap).toHaveProperty('write_file');
@@ -120,8 +120,8 @@ describe('FileSystemTool', () => {
     });
     
     it('should return readonly command map', () => {
-      const commandMap = localCliTool.getCommandMap();
-      const updatedMap = localCliTool.getCommandMap();
+      const commandMap = fileSystemTool.getCommandMap();
+      const updatedMap = fileSystemTool.getCommandMap();
       
       // Compare original map with the one returned after attempted modification
       // We just test that the commandMap doesn't change between invocations
@@ -132,7 +132,7 @@ describe('FileSystemTool', () => {
   
   describe('getToolDefinitions', () => {
     it('should return array of tool definitions', () => {
-      const toolDefinitions = localCliTool.getToolDefinitions();
+      const toolDefinitions = fileSystemTool.getToolDefinitions();
       
       expect(Array.isArray(toolDefinitions)).toBe(true);
       expect(toolDefinitions.length).toBeGreaterThan(0);
@@ -155,7 +155,7 @@ describe('FileSystemTool', () => {
         (mockFileSystem.mkdir as jest.Mock).mockResolvedValueOnce(undefined);
         
         // Execute
-        const result = await localCliTool.execute('create_directory', { path: 'test-dir' });
+        const result = await fileSystemTool.execute('create_directory', { path: 'test-dir' });
         
         // Verify
         expect(mockFileSystem.mkdir).toHaveBeenCalledWith(`${baseDir}/test-dir`, { recursive: true });
@@ -168,7 +168,7 @@ describe('FileSystemTool', () => {
         (mockFileSystem.mkdir as jest.Mock).mockRejectedValueOnce(new Error('Failed to create directory'));
         
         // Execute
-        const result = await localCliTool.execute('create_directory', { path: 'error-dir' });
+        const result = await fileSystemTool.execute('create_directory', { path: 'error-dir' });
         
         // Verify
         expect(result).toEqual({ success: false });
@@ -189,7 +189,7 @@ describe('FileSystemTool', () => {
         (mockFileSystem.writeFile as jest.Mock).mockResolvedValueOnce(undefined);
         
         // Execute
-        const result = await localCliTool.execute('write_file', { 
+        const result = await fileSystemTool.execute('write_file', { 
           path: 'test-file.txt', 
           content: 'test content'
         });
@@ -223,7 +223,7 @@ describe('FileSystemTool', () => {
         (mockFileSystem.writeFile as jest.Mock).mockResolvedValueOnce(undefined);
         
         // Execute
-        const result = await localCliTool.execute('write_file', { 
+        const result = await fileSystemTool.execute('write_file', { 
           path: 'test-file.txt', 
           content: 'new content',
           allowOverwrite: true
@@ -256,7 +256,7 @@ describe('FileSystemTool', () => {
         (mockFileSystem.readFile as jest.Mock).mockResolvedValueOnce('existing content');
         
         // Execute
-        const result = await localCliTool.execute('write_file', { 
+        const result = await fileSystemTool.execute('write_file', { 
           path: 'test-file.txt', 
           content: 'new content',
           allowOverwrite: false
@@ -278,7 +278,7 @@ describe('FileSystemTool', () => {
         });
         
         // Execute
-        const result = await localCliTool.execute('write_file', { 
+        const result = await fileSystemTool.execute('write_file', { 
           path: 'test-file.txt', 
           content: 'new content'
         });
@@ -298,7 +298,7 @@ describe('FileSystemTool', () => {
         (mockFileSystem.writeFile as jest.Mock).mockRejectedValueOnce(new Error('Write error'));
         
         // Execute
-        const result = await localCliTool.execute('write_file', { 
+        const result = await fileSystemTool.execute('write_file', { 
           path: 'test-file.txt', 
           content: 'test content'
         });
@@ -319,7 +319,7 @@ describe('FileSystemTool', () => {
         (mockFileSystem.readFile as jest.Mock).mockResolvedValueOnce('existing content');
         
         // Execute
-        const result = await localCliTool.execute('read_file', { path: 'test-file.txt' });
+        const result = await fileSystemTool.execute('read_file', { path: 'test-file.txt' });
         
         // Verify
         expect(mockFileSystem.readFile).toHaveBeenCalledWith(`${baseDir}/test-file.txt`, 'utf8');
@@ -334,7 +334,7 @@ describe('FileSystemTool', () => {
         (mockFileSystem.readFile as jest.Mock).mockResolvedValueOnce('existing content');
         
         // Execute
-        const result = await localCliTool.execute('read_file', { path: 'non-existent.txt' });
+        const result = await fileSystemTool.execute('read_file', { path: 'non-existent.txt' });
         
         // Verify - match what our mock is actually returning
         expect(result).toEqual({ content: 'existing content' });
@@ -345,7 +345,7 @@ describe('FileSystemTool', () => {
       it('should throw error for unknown command', async () => {
         await expect(
           // @ts-expect-error - Testing with invalid command
-          localCliTool.execute('invalid_command', {})
+          fileSystemTool.execute('invalid_command', {})
         ).rejects.toThrow('Unknown command');
       });
     });

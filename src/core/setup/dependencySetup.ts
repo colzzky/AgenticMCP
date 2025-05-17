@@ -2,7 +2,7 @@ import { DIContainer } from '../di/container';
 import { DI_TOKENS } from '../di/tokens';
 import { FileSystemService } from '../services/file-system.service';
 import { DiffService } from '../services/diff.service';
-import { FileSystemTool, LocalCliToolConfig } from '../../tools/fileSystemTool';
+import { FileSystemTool, LocalCliToolConfig } from '../../tools/services/fileSystem';
 import type { PathDI, FileSystemDI, SpawnDi } from '../../types/global.types';
 import type { Logger } from '../types/logger.types';
 import { DILocalShellCliTool } from '../../tools/localShellCliTool';

@@ -3,7 +3,7 @@
  * Tests the CLI tool schema definitions and validation
  */
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { getFileSystemToolDefinitions, validateToolDefinitions } from '../../src/tools/fileSystemToolDefinitions.js';
+import { getFileSystemToolDefinitions, validateToolDefinitions } from '@/tools/services/fileSystem/fileSystemToolDefinitions';
 import type { Tool, ProviderType } from '../../src/core/types/provider.types.js';
 
 describe('fileSystemToolDefinitions', () => {

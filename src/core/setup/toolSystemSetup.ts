@@ -1,4 +1,4 @@
-import { FileSystemTool } from '../../tools/fileSystemTool';
+import { FileSystemTool } from '../../tools/services/fileSystem';
 import { DILocalShellCliTool } from '../../tools/localShellCliTool';
 import { UnifiedShellCliTool } from '../../tools/unifiedShellCliTool';
 import { getLocalShellCliToolDefinitions } from '../../tools/localShellCliToolDefinitions';
@@ -7,7 +7,7 @@ import { ToolExecutor } from '../../tools/toolExecutor';
 import { ToolResultFormatter } from '../../tools/toolResultFormatter';
 import type { Logger } from '../types/logger.types';
 import type { Tool } from '../../core/types/provider.types';
-import { getFileSystemToolDefinitions } from '../../tools/fileSystemToolDefinitions';
+import { getFileSystemToolDefinitions } from '../../tools/services/fileSystem/fileSystemToolDefinitions';
 
 
 export type SetupToolSystemFn = (

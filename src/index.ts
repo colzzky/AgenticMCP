@@ -4,7 +4,7 @@ import { Command } from 'commander';
 import { logger } from './core/utils/logger';
 import { ConfigManager } from './core/config/configManager';
 import { DIContainer } from './core/di/container';
-import { FileSystemTool } from './tools/fileSystemTool';
+import { FileSystemTool } from './tools/services/fileSystem';
 import { DILocalShellCliTool } from './tools/localShellCliTool';
 import { UnifiedShellCliTool } from './tools/unifiedShellCliTool';
 import { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';

@@ -2,8 +2,8 @@ import { getRoleDescription, getRoleInstructions } from './xmlPromptUtilsHelpers
 import { roleEnums } from './roleSchemas';
 import type { AllRoleSchemas } from './roleSchemas';
 import type { Tool } from '../../core/types/provider.types';
-import { getFileSystemToolDefinitions } from '../../tools/fileSystemToolDefinitions';
-import { getUnifiedShellToolDefinition, shellCommandDescriptions } from '../../tools/unifiedShellToolDefinition';
+import { getFileSystemToolDefinitions } from '@/tools/services/fileSystem/fileSystemToolDefinitions';
+import { getUnifiedShellToolDefinition, shellCommandDescriptions } from '@/tools/unifiedShellToolDefinition';
 import { getDefaultRoleModelConfigManager } from './config/roleModelConfigFactory.js';
 
 /**

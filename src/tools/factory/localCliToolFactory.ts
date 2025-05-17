@@ -6,7 +6,7 @@ import { DI_TOKENS } from '../../core/di/tokens';
 import { IFileSystem } from '../../core/interfaces/file-system.interface';
 import { IDiffService } from '../../core/interfaces/diff-service.interface';
 import { Logger } from '../../core/types/logger.types';
-import { FileSystemTool, LocalCliToolConfig } from '../fileSystemTool';
+import { FileSystemTool, LocalCliToolConfig } from '../services/fileSystem';
 import type { PathDI } from '../../types/global.types';
 
 /**

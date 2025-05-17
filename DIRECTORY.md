@@ -1,18 +1,17 @@
 ```markdown
 .
-├── AUDIT.md
 ├── CLAUDE.md
 ├── DIRECTORY.md
-├── FIXED_TESTS.md
 ├── KNOWLEDGE.md
 ├── LICENSE
 ├── PROGRESS.jsonl
 ├── README.md
-├── SHELL_TOOL_INTEGRATION.md
+├── REQUIREMENTS.md
 ├── TASKS.jsonl
-├── TESTING.md
 ├── commands/
 │   └── turnover.txt
+├── config-templates/
+│   └── role-model-config.json
 ├── context/
 │   ├── README.md
 │   ├── anthropic-tool-use.md
@@ -40,13 +39,14 @@
 ├── jest.config.js
 ├── package-lock.json
 ├── package.json
-├── project-summary.md
+├── pnpm-lock.yaml
 ├── src/
 │   ├── commands/
 │   │   ├── configCommands.ts
 │   │   ├── credentialCommands.ts
 │   │   ├── llmCommand.ts
 │   │   ├── mcpCommands.ts
+│   │   ├── roleModelConfigCommand.ts
 │   │   └── toolCommands.ts
 │   ├── config/
 │   │   └── appConfig.ts
@@ -55,8 +55,6 @@
 │   │   ├── filePathProcessor.ts
 │   │   └── index.ts
 │   ├── core/
-│   │   ├── adapters/
-│   │   │   └── nodeFileSystemAdapter.ts
 │   │   ├── commands/
 │   │   │   ├── baseCommand.ts
 │   │   │   ├── decorators.ts
@@ -112,6 +110,13 @@
 │   │   ├── index.ts
 │   │   ├── mcpServer.ts
 │   │   ├── tools/
+│   │   │   ├── config/
+│   │   │   │   ├── roleModelConfig.ts
+│   │   │   │   ├── roleModelConfigFactory.ts
+│   │   │   │   └── roleModelConfigManager.ts
+│   │   │   ├── orchestration/
+│   │   │   │   ├── toolLoopOrchestrator.ts
+│   │   │   │   └── toolLoopOrchestratorFactory.ts
 │   │   │   ├── registrarFactory.ts
 │   │   │   ├── roleBasedTools.ts
 │   │   │   ├── roleHandlers.ts
@@ -123,6 +128,7 @@
 │   ├── providers/
 │   │   ├── anthropic/
 │   │   │   ├── anthropicProvider.ts
+│   │   │   ├── anthropicProviderUtils.ts
 │   │   │   └── index.ts
 │   │   ├── google/
 │   │   │   ├── googleMessageConversion.ts
@@ -142,8 +148,10 @@
 │   │   ├── providerFactory.ts
 │   │   ├── providerInitializer.ts
 │   │   ├── providerModuleFactory.ts
+│   │   ├── providerUtils.ts
 │   │   └── types.ts
 │   ├── tools/
+│   │   ├── commands/
 │   │   ├── factory/
 │   │   │   ├── localCliToolFactory.ts
 │   │   │   └── unifiedShellToolFactory.ts
@@ -158,7 +166,8 @@
 │   │   ├── toolRegistry.ts
 │   │   ├── toolResultFormatter.ts
 │   │   ├── unifiedShellCliTool.ts
-│   │   └── unifiedShellToolDefinition.ts
+│   │   ├── unifiedShellToolDefinition.ts
+│   │   └── utils/
 │   ├── tsconfig.json
 │   └── types/
 │       ├── global.types.ts
@@ -212,6 +221,11 @@
 │   ├── mcp/
 │   │   ├── mcpServer.test.ts
 │   │   └── tools/
+│   │       ├── config/
+│   │       │   ├── roleModelConfig.test.ts
+│   │       │   └── roleModelConfigManager.test.ts
+│   │       ├── orchestration/
+│   │       │   └── toolLoopOrchestrator.test.ts
 │   │       ├── processFileOperations.test.ts
 │   │       ├── registrarFactory.test.ts
 │   │       ├── roleBasedTools.test.ts
@@ -243,7 +257,6 @@
 │   │   ├── factory/
 │   │   │   ├── di-local-cli-tool-factory.test.ts
 │   │   │   ├── factoryMocks.ts
-│   │   │   ├── localCliToolFactory.test.ts
 │   │   │   └── unified-shell-cli-tool-factory.test.ts
 │   │   ├── fileSystemTool.test.ts
 │   │   ├── fileSystemToolDefinitions.test.ts
@@ -257,7 +270,8 @@
 │   │   ├── toolResultFormatter.test.ts
 │   │   ├── unifiedShellCliTool.test.ts
 │   │   └── unifiedShellToolDefinition.test.ts
-│   └── tsconfig.json
+│   ├── tsconfig.json
+│   └── tsconfig.tsbuildinfo
 ├── tree.sh
 └── tsconfig.json
 ```

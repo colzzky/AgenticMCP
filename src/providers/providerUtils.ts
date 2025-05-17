@@ -34,7 +34,7 @@ export async function orchestrateToolLoop(
     // Set default options
     const maxIterations = options.maxIterations || 10;
     const verbose = options.verbose || false;
-    const onProgress = options.onProgress || (() => { });
+    const onProgress = options.onProgress || (() => {});
 
     // Initialize tracking variables
     let currentRequest = { ...request };

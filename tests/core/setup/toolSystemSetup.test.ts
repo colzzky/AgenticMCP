@@ -5,7 +5,7 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { setupToolSystem } from '../../../src/core/setup/toolSystemSetup.js';
 import type { Logger } from '../../../src/core/types/logger.types.js';
-import type { FileSystemTool } from '../../../src/tools/fileSystemTool.js';
+import type { FileSystemTool } from '../../../src/tools/services/fileSystem/index.js';
 import type { DILocalShellCliTool } from '../../../src/tools/localShellCliTool.js';
 import type { UnifiedShellCliTool } from '../../../src/tools/unifiedShellCliTool.js';
 

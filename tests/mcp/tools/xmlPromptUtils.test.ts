@@ -10,7 +10,7 @@ import * as roleModelConfigFactory from '../../../src/mcp/tools/config/roleModel
 import { roleEnums } from '../../../src/mcp/tools/roleSchemas.js';
 import * as helpers from '../../../src/mcp/tools/xmlPromptUtilsHelpers.js';
 import type { Tool } from '../../../src/core/types/provider.types';
-import { getFileSystemToolDefinitions } from '../../../src/tools/fileSystemToolDefinitions';
+import { getFileSystemToolDefinitions, validateToolDefinitions } from '@/tools/services/fileSystem/fileSystemToolDefinitions';
 import { getUnifiedShellToolDefinition, shellCommandDescriptions } from '../../../src/tools/unifiedShellToolDefinition';
 // Import the module that we'll test
 import * as roleModelConfig from '../../../src/mcp/tools/config/roleModelConfig.js';

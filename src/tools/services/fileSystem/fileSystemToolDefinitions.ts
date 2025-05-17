@@ -3,24 +3,11 @@
  * Contains the JSON schema definitions for LocalCliTool operations
  */
 
-import type { Tool, ToolParameterSchema } from '../core/types/provider.types';
+import type { Tool, ToolParameterSchema } from '../../../core/types/provider.types';
 import type {
-  CreateDirectoryArgs,
-  WriteFileArgs,
-  ReadFileArgs,
-  DeleteFileArgs,
-  DeleteDirectoryArgs,
-  ListDirectoryArgs,
-  SearchCodebaseArgs,
-  FindFilesArgs,
-  DirectoryTreeArgs,
-  GetFileInfoArgs,
-  EditFileArgs,
-  MoveFileArgs,
-  ReadMultipleFilesArgs,
   LocalCliCommandMap
-} from '../core/types/cli.types';
-import type { ProviderType } from '../core/types/provider.types';
+} from '../../../core/types/cli.types';
+import type { ProviderType } from '../../../core/types/provider.types';
 
 /**
  * Type definition for file system tool

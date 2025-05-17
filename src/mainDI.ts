@@ -33,7 +33,7 @@ import type { DefaultShellCommandWrapper } from './tools/shellCommandWrapper';
 import { FileKeytar } from './core/credentials/file-keytar';
 import { DILocalShellCliTool } from './tools/localShellCliTool';
 import { UnifiedShellCliTool } from './tools/unifiedShellCliTool';
-import { FileSystemTool } from './tools/fileSystemTool';
+import { FileSystemTool } from './tools/services/fileSystem';
 import { FileSystemService } from './core/services/file-system.service';
 
 import type {

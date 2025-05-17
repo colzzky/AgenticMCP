@@ -4,7 +4,7 @@
  */
 
 import type { Tool } from '../core/types/provider.types';
-import { FileSystemTool } from './fileSystemTool';
+import { FileSystemTool } from './services/fileSystem';
 import type { Logger } from '../core/types/logger.types';
 import { ProviderType } from '../core/types/provider.types';
 

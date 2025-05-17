@@ -71,13 +71,12 @@ export function mapMessagesToAnthropicFormat(messages: ChatMessage[]): MessagePa
             const contentArray = message.content as Array<any>;
 
             // Use a type-safe approach with contentArray
-            contentArray.forEach(part => {
+            for (const part of contentArray) {
                 if (typeof part === 'object' && part !== null && 'text' in part) {
                     const textPart = part as { text: string };
                     textParts.push(textPart.text);
                 }
-            });
-
+            }
             content = textParts.join('\n');
         }
 

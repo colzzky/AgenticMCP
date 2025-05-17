@@ -66,7 +66,7 @@ export class RoleModelConfigCommand {
     // Check if the path exists
     if (!fs.existsSync(configPath)) {
       this.logger.error(`Configuration file not found: ${configPath}`);
-      process.exit(1);
+      throw new Error('Process exited due to an error.');
     }
 
     // Validate the configuration file format
@@ -98,7 +98,7 @@ export class RoleModelConfigCommand {
     
     this.logger.info(`Active role model configuration source: ${configSource}`);
     this.logger.info('Configuration:');
-    console.log(JSON.stringify(config, null, 2));
+    console.log(JSON.stringify(config, undefined, 2));
   }
 
   @CommandHandler('export-template')
@@ -115,7 +115,7 @@ export class RoleModelConfigCommand {
     // Write the default configuration as a template
     fs.writeFileSync(
       outputPath, 
-      JSON.stringify(defaultRoleModelConfig, null, 2),
+      JSON.stringify(defaultRoleModelConfig, undefined, 2),
       'utf-8'
     );
     
@@ -132,7 +132,7 @@ export class RoleModelConfigCommand {
     // Check if the path exists
     if (!fs.existsSync(configPath)) {
       this.logger.error(`Configuration file not found: ${configPath}`);
-      process.exit(1);
+      throw new Error('Process exited due to an error.');
     }
 
     // Try to load and validate the configuration
@@ -143,7 +143,7 @@ export class RoleModelConfigCommand {
       this.logger.info(`✓ Configuration file is valid: ${configPath}`);
     } else {
       this.logger.error(`✗ Invalid configuration file: ${configPath}`);
-      process.exit(1);
+      throw new Error('Process exited due to an error.');
     }
   }
 }

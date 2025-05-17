@@ -115,13 +115,8 @@ export class AnthropicProvider implements LLMProvider {
    */
   public async initialize(config?: ProviderConfig): Promise<boolean> {
     try {
-      // If config is provided, use it to initialize
-      if (config?.providerSpecificConfig) {
-        this.providerConfig = config.providerSpecificConfig as AnthropicProviderSpecificConfig;
-      } else {
-        // Otherwise load from config manager
-        this.providerConfig = await this.configManager.getConfig().providers?.anthropic as AnthropicProviderSpecificConfig;
-      }
+      this.providerConfig = config?.providerSpecificConfig
+          || (await this.configManager.getConfig().providers?.anthropic as AnthropicProviderSpecificConfig);
 
       if (!this.providerConfig || !this.providerConfig.apiKey) {
         this.logger.error('Anthropic API key not found in config or environment');
