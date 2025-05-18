@@ -5,10 +5,8 @@ import { Command } from 'commander';
 import path from 'node:path';
 import fs from 'node:fs';
 import { CommandHandler, AgentCommand, CommandParam } from '../core/commands/decorators';
-import { DIContainer } from '../core/di/container';
-import { DI_TOKENS } from '../core/di/tokens';
 import { createRoleModelConfigManager } from '../mcp/tools/config/roleModelConfigFactory';
-import { Logger } from '../core/types/logger.types';
+import { type Logger } from '../core/types/logger.types';
 import { defaultRoleModelConfig } from '../mcp/tools/config/roleModelConfig';
 
 @AgentCommand({
@@ -16,12 +14,10 @@ import { defaultRoleModelConfig } from '../mcp/tools/config/roleModelConfig';
   description: 'Manage role-to-model configurations for LLM roles'
 })
 export class RoleModelConfigCommand {
-  private container: DIContainer;
   private logger: Logger;
 
-  constructor(container: DIContainer = DIContainer.getInstance()) {
-    this.container = container;
-    this.logger = container.get<Logger>(DI_TOKENS.LOGGER);
+  constructor(logger: Logger) {
+    this.logger = logger;
   }
 
   /**
@@ -70,7 +66,7 @@ export class RoleModelConfigCommand {
     }
 
     // Validate the configuration file format
-    const configManager = createRoleModelConfigManager(configPath, this.container);
+    const configManager = createRoleModelConfigManager(configPath);
     
     // If loading was successful, set the environment variable
     process.env.AGENTICMCP_ROLE_MODEL_CONFIG = path.resolve(configPath);
@@ -88,8 +84,7 @@ export class RoleModelConfigCommand {
   ): Promise<void> {
     // Use the specified path or the environment variable
     const configManager = createRoleModelConfigManager(
-      configPath || process.env.AGENTICMCP_ROLE_MODEL_CONFIG,
-      this.container
+      configPath || process.env.AGENTICMCP_ROLE_MODEL_CONFIG
     );
     
     // Get the active configuration
@@ -136,7 +131,7 @@ export class RoleModelConfigCommand {
     }
 
     // Try to load and validate the configuration
-    const configManager = createRoleModelConfigManager(configPath, this.container);
+    const configManager = createRoleModelConfigManager(configPath);
     
     // Check if the config path was set, which indicates successful validation
     if (configManager.getConfigPath()) {

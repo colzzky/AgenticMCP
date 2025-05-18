@@ -4,10 +4,9 @@ import { CommandHandler } from '../core/commands/decorators.js';
 import type { Logger } from '../core/types/logger.types.js';
 import { ConfigManager } from '../core/config/configManager.js';
 import type { McpServerType, McpServerTransport, BaseMcpServer } from '../mcp/types.js';
-import type { RoleBasedToolsRegistrar } from '../mcp/tools/types';
 import type { ProviderFactoryInterface } from '../providers/types.js';
 import type { ProviderType } from '../core/types/provider.types.js';
-
+import { registerRoleBasedTools } from '../mcp/tools/roleBasedTools';
 
 /**
  * Command options for serving the MCP server
@@ -27,6 +26,10 @@ export interface ServeMcpOptions {
   provider?: string;
 }
 
+export interface handlers {
+  registerRoleBasedTools: typeof registerRoleBasedTools
+}
+
 /**
  * Command for starting an MCP server to expose FileSystemTool functionality through MCP.
  * This allows external LLM applications to access file operations via the standard MCP protocol.
@@ -40,7 +43,7 @@ export class McpCommands {
   private process: NodeJS.Process
   private transport: McpServerTransport;
   private providerFactoryInstance: ProviderFactoryInterface;
-  private roleBasedToolsRegistrar: RoleBasedToolsRegistrar;
+  private handlers: handlers;
 
   constructor(
     configManager: ConfigManager,
@@ -51,7 +54,7 @@ export class McpCommands {
     process: NodeJS.Process,
     transport: McpServerTransport,
     providerFactoryInstance: ProviderFactoryInterface,
-    roleBasedToolsRegistrar: RoleBasedToolsRegistrar
+    handlers: handlers
   ) {
     this.configManager = configManager;
     this.logger = logger;
@@ -61,7 +64,7 @@ export class McpCommands {
     this.process = process;
     this.transport = transport;
     this.providerFactoryInstance = providerFactoryInstance;
-    this.roleBasedToolsRegistrar = roleBasedToolsRegistrar;
+    this.handlers = handlers;
   }
 
   /**
@@ -81,7 +84,6 @@ export class McpCommands {
       .option('-v, --version <version>', 'Version of the MCP server')
       .option('-d, --description <description>', 'Description of the MCP server')
       .option('-t, --tool-prefix <prefix>', 'Tool name prefix')
-      .option('-p, --provider <provider>', 'Default LLM provider for role-based tools')
       .action(this.handleServeMcp.bind(this));
   }
 
@@ -97,7 +99,6 @@ export class McpCommands {
         version = this.getDefaultServerVersion(),
         description = this.getDefaultServerDescription(),
         toolPrefix = this.getDefaultToolPrefix(),
-        provider = this.getDefaultProviderName(),
       } = options;
 
       this.logger.info(`Starting MCP server (${name} v${version})`);
@@ -117,21 +118,11 @@ export class McpCommands {
         this.baseMcpServer
       );
 
-      // Check if the provider exists
-      const providerName = provider.toLowerCase() as ProviderType;
-      if (!['openai', 'anthropic', 'google', 'grok'].includes(providerName)) {
-        throw new Error(`Provider "${providerName}" not supported. Please configure it first.`);
-      }
-
-      // Create a provider factory with the proper injected dependencies
-      const llmProvider = this.providerFactoryInstance.getProvider(providerName as any);
-
-      // Register role-based tools
-      const mcpServerWithTools = this.roleBasedToolsRegistrar.register(
-        mcpServer, 
-        this.logger, 
-        llmProvider, 
-        this.pathDI
+      // Create the role-based tools registrar
+      const mcpServerWithTools = this.handlers.registerRoleBasedTools(
+        mcpServer,
+        this.logger,
+        this.providerFactoryInstance,
       );
 
       this.logger.info(`Starting HTTP MCP server`);
@@ -182,11 +173,4 @@ export class McpCommands {
     return config.mcp?.tools?.namePrefix || '';
   }
 
-  /**
-   * Get default provider name for role-based tools
-   */
-  private getDefaultProviderName(): string {
-    const config = this.configManager.getConfig();
-    return config.defaultProvider || 'openai';
-  }
 }

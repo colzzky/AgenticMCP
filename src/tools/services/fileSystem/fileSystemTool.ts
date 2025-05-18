@@ -43,7 +43,7 @@ export class FileSystemTool {
     diffService: IDiffService,
     pathDI: PathDI
   ) {
-    if (!config.baseDir) throw new TypeError("'baseDir' must be specified in the configuration.");
+    config.baseDir = config.baseDir || pathDI.resolve(process.cwd());
     if (!pathDI.isAbsolute(config.baseDir)) throw new TypeError("'baseDir' must be an absolute path.");
 
     this.baseDir = pathDI.resolve(config.baseDir);
@@ -72,6 +72,14 @@ export class FileSystemTool {
 
     this.logger.debug(`FileSystemTool initialized with baseDir: ${this.baseDir}`);
 
+  }
+
+  public setBaseDir(baseDir: string): void {
+    this.baseDir = baseDir;
+  }
+
+  public setAllowFileOverwrite(allowFileOverwrite: boolean): void {
+    this.allowFileOverwrite = allowFileOverwrite;
   }
 
   public getCommandMap(): Readonly<LocalCliCommandMap> {

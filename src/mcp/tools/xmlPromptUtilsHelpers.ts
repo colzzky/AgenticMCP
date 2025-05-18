@@ -110,4 +110,4 @@ export function getRoleInstructions<R extends roleEnums>(role: R, args: RoleArgs
   return instructions;
 }
 
-export { selectModelForRole } from './xmlPromptUtils';
+export { getRoleLlmConfig } from './xmlPromptUtils';

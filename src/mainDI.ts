@@ -9,7 +9,6 @@ import type { AppConfig } from './config/appConfig';
 import type { PathDI, FileSystemDI, SpawnDi } from './types/global.types';
 
 // Import more specific types for proper type checking
-import type { DIContainer as DIContainerType } from './core/di/container';
 import type { FileSystemService as FileSystemServiceType } from './core/services/file-system.service';
 import type { DiffService as DiffServiceType } from './core/services/diff.service';
 import type { ToolRegistry as ToolRegistryType } from './tools/toolRegistry';
@@ -34,7 +33,6 @@ import { FileKeytar } from './core/credentials/file-keytar';
 import { LocalShellCliTool } from './tools/localShellCliTool';
 import { UnifiedShellCliTool } from './tools/unifiedShellCliTool';
 import { FileSystemTool } from './tools/services/fileSystem';
-import { FileSystemService } from './core/services/file-system.service';
 
 import type {
   SetupCliCommandsFn,
@@ -64,7 +62,6 @@ export interface MainDependencies {
   
   // Classes and factories with more specific types
   Command: typeof Command;
-  DIContainer: { getInstance: () => DIContainerType };
   FileSystemService: typeof FileSystemServiceType; 
   DiffService: typeof DiffServiceType;
   FileSystemTool: typeof FileSystemTool;
@@ -85,7 +82,6 @@ export interface MainDependencies {
   BaseMcpServer: typeof BaseMcpServer;
   StdioServerTransport: typeof StdioServerTransportType;
   CredentialManager: typeof CredentialManager;
-  RoleBasedToolsRegistrarFactory: { createDefault: () => RoleBasedToolsRegistrar };
 
   // Shell Tool
   LocalShellCliTool: typeof LocalShellCliTool;
@@ -107,13 +103,8 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
     const program = new deps.Command();
     program.version(deps.pkg.version).description(deps.pkg.description);
 
-    // Create the role-based tools registrar
-    const roleRegistrar = deps.RoleBasedToolsRegistrarFactory.createDefault();
-
     // Set up the dependency injection container
-    const container = deps.DIContainer.getInstance();
     const diResult = deps.setupDependencyInjection(
-      container,
       deps.logger,
       deps.FileSystemService,
       deps.DiffService,
@@ -181,7 +172,6 @@ export async function mainDI(deps: MainDependencies): Promise<void> {
       deps.BaseMcpServer,
       deps.StdioServerTransport,
       credentialManagerInstance,
-      roleRegistrar
     );
 
     // Run the program

@@ -83,6 +83,7 @@ export class ToolExecutor {
     const { id, name, arguments: argsStr } = toolCall;
     
     this.logger.debug(`Executing tool call: ${name} (ID: ${id})`);
+    this.logger.debug(`Arguments: ${JSON.stringify(toolCall)}`);
     
     // Check if the tool exists in our implementations
     if (!this.toolImplementations[name]) {
@@ -113,6 +114,7 @@ export class ToolExecutor {
       const outputStr = typeof output === 'string' ? output : JSON.stringify(output);
       
       this.logger.debug(`Tool call ${name} (ID: ${id}) executed successfully`);
+      this.logger.debug(`Output: ${outputStr}`)
       
       return {
         success: true,

@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { MessageParam, Tool as AnthropicTool } from '@anthropic-ai/sdk/resources/messages';
+import type { MessageParam, Tool as AnthropicTool, ContentBlock } from '@anthropic-ai/sdk/resources/messages';
 import type {
     ChatMessage,
     Tool,
@@ -43,9 +43,6 @@ export function convertToolsToAnthropicFormat(tools?: Tool[]): AnthropicTool[] |
             type: 'object',
             properties: tool.parameters.properties,
             required: tool.parameters.required || []
-        },
-        cache_control: {
-            type: 'ephemeral'
         }
     }));
 }
@@ -62,8 +59,11 @@ export function mapMessagesToAnthropicFormat(messages: ChatMessage[]): MessagePa
         const role = message.role === 'assistant' ? 'assistant' : 'user';
 
         // Basic content mapping
-        let content = '';
-        if (typeof message.content === 'string') {
+        let content = '' as string | Anthropic.Messages.Message['content'];
+        if (message.rawMessage) {
+            content = message.rawMessage as Anthropic.Messages.Message['content'];
+        }
+        else if (typeof message.content === 'string') {
             content = message.content;
         } else if (Array.isArray(message.content)) {
             // Handle complex content with media
@@ -83,4 +83,11 @@ export function mapMessagesToAnthropicFormat(messages: ChatMessage[]): MessagePa
         return { role, content };
 
     });
+}
+
+export function extractContentFromResponse(content: ContentBlock[]): string {
+    if (!content || !Array.isArray(content)) {
+        return '';
+    }
+    return content.filter(block => block.type === 'text').map(block => block.text).join('\n');
 }

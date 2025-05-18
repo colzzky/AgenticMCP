@@ -15,7 +15,7 @@ export interface ToolDefinition {
  */
 export interface FileSystemToolConfig {
   /** Absolute base directory for all file operations */
-  baseDir: string;
+  baseDir?: string;
   /** Whitelisted shell commands (not implemented here) */
   allowedCommands?: string[];
   /** Whether to allow overwriting existing files without confirmation (default: false) */

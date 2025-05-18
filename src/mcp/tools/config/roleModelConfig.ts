@@ -47,7 +47,7 @@ export interface RoleModelConfig {
 export const defaultRoleModelConfig: RoleModelConfig = {
   default: {
     provider: 'anthropic',
-    model: 'claude-3-sonnet-20240229',
+    model: 'claude-3-5-sonnet-20241022',
     parameters: {
       temperature: 0.2,
       maxTokens: 4000
@@ -57,7 +57,7 @@ export const defaultRoleModelConfig: RoleModelConfig = {
     // Coder role - uses a model good at code generation
     [roleEnums.CODER]: {
       provider: 'anthropic',
-      model: 'claude-3-opus-20240229',
+      model: 'claude-3-5-sonnet-20241022',
       parameters: {
         temperature: 0.1,
         maxTokens: 4000
@@ -66,7 +66,7 @@ export const defaultRoleModelConfig: RoleModelConfig = {
     // Rewriter role - uses a model good at creative writing with higher temperature
     [roleEnums.REWRITER]: {
       provider: 'anthropic',
-      model: 'claude-3-sonnet-20240229',
+      model: 'claude-3-5-sonnet-20241022',
       parameters: {
         temperature: 0.7,
         maxTokens: 8000
@@ -75,7 +75,7 @@ export const defaultRoleModelConfig: RoleModelConfig = {
     // UI/UX role - uses a model good at design thinking
     [roleEnums.UI_UX]: {
       provider: 'anthropic',
-      model: 'claude-3-sonnet-20240229',
+      model: 'claude-3-5-sonnet-20241022',
       parameters: {
         temperature: 0.4,
         maxTokens: 4000
@@ -84,7 +84,7 @@ export const defaultRoleModelConfig: RoleModelConfig = {
     // Analyst role - uses a model good at documentation and analysis
     [roleEnums.ANALYST]: {
       provider: 'anthropic',
-      model: 'claude-3-sonnet-20240229',
+      model: 'claude-3-5-sonnet-20241022',
       parameters: {
         temperature: 0.3,
         maxTokens: 6000

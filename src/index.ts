@@ -3,7 +3,6 @@
 import { Command } from 'commander';
 import { logger } from './core/utils/logger';
 import { ConfigManager } from './core/config/configManager';
-import { DIContainer } from './core/di/container';
 import { FileSystemTool } from './tools/services/fileSystem';
 import { LocalShellCliTool } from './tools/localShellCliTool';
 import { UnifiedShellCliTool } from './tools/unifiedShellCliTool';
@@ -30,7 +29,6 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { DIFilePathProcessor } from './context/filePathProcessor';
 import { CredentialManager } from './core/credentials/credentialManager';
 import { ProviderFactory } from './providers/providerFactory';
-import { RoleBasedToolsRegistrarFactory } from './mcp/tools/registrarFactory';
 import { defaultAppConfig } from './config/appConfig';
 import {
   setupDependencyInjection,
@@ -66,7 +64,6 @@ export async function main(): Promise<void> {
     
     // Classes and factories
     Command,
-    DIContainer,
     FileSystemService,
     DiffService,
     FileSystemTool,
@@ -90,7 +87,6 @@ export async function main(): Promise<void> {
     BaseMcpServer,
     StdioServerTransport,
     CredentialManager,
-    RoleBasedToolsRegistrarFactory,
     
     // Configuration
     defaultAppConfig

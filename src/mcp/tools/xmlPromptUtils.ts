@@ -1,7 +1,7 @@
 import { getRoleDescription, getRoleInstructions } from './xmlPromptUtilsHelpers';
 import { roleEnums } from './roleSchemas';
 import type { AllRoleSchemas } from './roleSchemas';
-import type { Tool } from '../../core/types/provider.types';
+import type { ProviderType, Tool } from '../../core/types/provider.types';
 import { getFileSystemToolDefinitions } from '@/tools/services/fileSystem/fileSystemToolDefinitions';
 import { getUnifiedShellToolDefinition, shellCommandDescriptions } from '@/tools/unifiedShellToolDefinition';
 import { getDefaultRoleModelConfigManager } from './config/roleModelConfigFactory.js';
@@ -91,13 +91,20 @@ export function constructXmlPrompt(
  * @param role The role to select a model for
  * @returns The model ID to use for the specified role
  */
-export function selectModelForRole(role: string): string {
+export function getRoleLlmConfig(role: string): {
+  providerType: ProviderType;
+  model: string;
+} {
   // Get a RoleModelConfigManager instance with our factory
   const configManager = getDefaultRoleModelConfigManager();
   
   // Get the model configuration for this role from our config manager
   const modelConfig = configManager.getModelConfigForRole(role);
+  const providerType = configManager.getProviderTypeForRole(role);
   
   // Return the configured model for the role
-  return modelConfig.model;
+  return {
+    providerType,
+    model: modelConfig.model
+  };
 }

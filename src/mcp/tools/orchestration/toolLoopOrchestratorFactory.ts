@@ -1,30 +1,11 @@
-import { DIContainer } from '../../../core/di/container';
-import { DI_TOKENS } from '../../../core/di/tokens';
 import { ToolLoopOrchestrator } from './toolLoopOrchestrator';
-import { Logger } from '../../../core/types/logger.types';
+import { logger } from '@/core/utils';
 
 /**
  * Creates a ToolLoopOrchestrator with dependencies from the DI container
- * @param container DI container to resolve dependencies from
  * @returns A new ToolLoopOrchestrator instance
  */
-export function createToolLoopOrchestrator(
-  container: DIContainer = DIContainer.getInstance()
-): ToolLoopOrchestrator {
-  // Resolve dependencies from the container
-  const logger = container.get<Logger>(DI_TOKENS.LOGGER);
-  
+export function createToolLoopOrchestrator(): ToolLoopOrchestrator {
   // Create and return the orchestrator
   return new ToolLoopOrchestrator(logger);
-}
-
-/**
- * Gets the default ToolLoopOrchestrator instance
- * @param container DI container to resolve dependencies from
- * @returns A ToolLoopOrchestrator instance
- */
-export function getDefaultToolLoopOrchestrator(
-  container: DIContainer = DIContainer.getInstance()
-): ToolLoopOrchestrator {
-  return createToolLoopOrchestrator(container);
 }

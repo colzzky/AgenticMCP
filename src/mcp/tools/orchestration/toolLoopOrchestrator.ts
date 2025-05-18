@@ -1,6 +1,3 @@
-// Remove dependency on decorators since they're not available in this codebase
-import { DI_TOKENS } from '../../../core/di/tokens';
-import { Logger } from '../../../core/types/logger.types';
 import {
   LLMProvider,
   ProviderRequest,
@@ -8,6 +5,7 @@ import {
   RecursiveToolLoopOptions
 } from '../../../core/types/provider.types';
 import { orchestrateToolLoop } from '@/providers/providerUtils';
+import { type Logger } from '../../../core/types/logger.types';
 
 /**
  * Extended options for orchestrating the tool loop

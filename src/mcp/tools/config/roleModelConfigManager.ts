@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { defaultRoleModelConfig, RoleModelConfig, RoleModelMapping } from './roleModelConfig.js';
 import { Logger } from '../../../core/types/logger.types.js';
+import type { ProviderType } from '../../../core/types/provider.types.js';
 
 /**
  * Configuration parameters for the RoleModelConfigManager
@@ -115,7 +116,11 @@ export class RoleModelConfigManager {
    * @returns The model configuration for the role
    */
   public getModelConfigForRole(role: string): RoleModelMapping {
-    return this.config.roleMap[role] || this.config.default;
+    return this.config.roleMap[role] || this.config.default.model;
+  }
+
+  public getProviderTypeForRole(role: string): ProviderType {
+    return (this.config.roleMap[role].provider || this.config.default.provider) as ProviderType;
   }
 
   /**

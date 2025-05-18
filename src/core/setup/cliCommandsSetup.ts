@@ -18,6 +18,7 @@ import type { RoleBasedToolsRegistrar } from '../../mcp/tools/types';
 import type { PathDI } from '../../types/global.types';
 import type { Logger } from '../types/logger.types';
 import type { ProviderFactoryInterface } from '../../providers/types';
+import { registerRoleBasedTools } from '../../mcp/tools/roleBasedTools';
 
 export type SetupCliCommandsFn = (
   program: Command,
@@ -36,7 +37,6 @@ export type SetupCliCommandsFn = (
   baseMcpServer: typeof BaseMcpServer,
   stdioServerTransport: typeof StdioServerTransport,
   credentialManager: InstanceType<typeof CredentialManager>,
-  roleBasedToolsRegistrar: RoleBasedToolsRegistrar
 ) => void;
 
 /**
@@ -59,7 +59,6 @@ export const setupCliCommands: SetupCliCommandsFn = (
   baseMcpServer: typeof BaseMcpServer,
   stdioServerTransport: typeof StdioServerTransport,
   credentialManager: InstanceType<typeof CredentialManager>,
-  roleBasedToolsRegistrar: RoleBasedToolsRegistrar
 ) => {
   // Register config and credential commands
   registerConfigCommands(program, configManagerInstance, processDi, loggerTool);
@@ -79,7 +78,9 @@ export const setupCliCommands: SetupCliCommandsFn = (
     processDi,
     stdioServerTransport,
     providerFactoryInstance,
-    roleBasedToolsRegistrar
+    {
+      registerRoleBasedTools: registerRoleBasedTools
+    }
   );
   mcpCommandsInstance.registerCommands(program);
 
@@ -101,6 +102,6 @@ export const setupCliCommands: SetupCliCommandsFn = (
   );
 
   // Register role model configuration commands
-  const roleModelConfigInstance = new roleModelConfigCommand();
+  const roleModelConfigInstance = new roleModelConfigCommand(loggerTool);
   roleModelConfigInstance.registerCommands(program);
 }

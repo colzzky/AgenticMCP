@@ -13,7 +13,7 @@
   "scripts": {
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
-    "build": "tsc && tsc-esm-fix dist",
+    "build": "tsc && tsc-alias && tsc-esm-fix dist",
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
@@ -50,6 +50,7 @@
     "prettier": "^3.4.2",
     "ts-jest": "^29.3.2",
     "ts-morph": "^25.0.1",
+    "tsc-alias": "^1.8.16",
     "tsc-esm-fix": "^3.1.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.0"

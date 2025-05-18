@@ -1,11 +1,9 @@
 import { orchestrateToolLoop } from '@/providers/providerUtils';
-import type { PathDI } from '../../types/global.types';
-import { createFileSystemTool } from '@/tools/factory/fileSystemToolFactory';
 import type { Logger } from '../../core/types/logger.types.js';
-import type { LLMProvider } from '../../core/types/provider.types.js';
-import { constructXmlPrompt, selectModelForRole } from './xmlPromptUtils';
+import { constructXmlPrompt, getRoleLlmConfig } from './xmlPromptUtils';
 import { roleEnums, AllRoleSchemas } from './roleSchemas';
-import { ToolExecutor } from '@/tools/toolExecutor';
+import { FileSystemTool } from '@/tools/services/fileSystem';
+import type { ProviderFactoryInterface } from '@/providers/types.js';
 
 /**
  * Interface to define the structure of regex matches
@@ -20,7 +18,7 @@ interface FileOperationMatch {
  */
 export async function processFileOperations(
   response: string,
-  fileSystemTool: ReturnType<typeof createFileSystemTool>,
+  fileSystemTool: FileSystemTool,
   logger: Logger
 ): Promise<string> {
   const fileOpRegex = /<file_operation>([^]*?)<\/file_operation>/g;
@@ -88,13 +86,23 @@ export async function processFileOperations(
   return processedResponse;
 }
 
+export interface HandleRoleBasedToolHandlers {
+  orchestrateToolLoop: typeof orchestrateToolLoop,
+  getRoleLlmConfig: typeof getRoleLlmConfig,
+  constructXmlPrompt: typeof constructXmlPrompt,
+  processFileOperations: typeof processFileOperations,
+}
+
 export type HandleRoleBasedToolArgs = {
   args: AllRoleSchemas;
   role: roleEnums;
   logger: Logger;
-  llmProvider: LLMProvider;
-  pathDI: PathDI;
+  providerFactoryInstance: ProviderFactoryInterface;
+  fileSystemTool: FileSystemTool;
+  handlers: HandleRoleBasedToolHandlers;
+  options?: { verbose: boolean };
 };
+
 
 /**
  * Handles execution of a role-based tool
@@ -103,63 +111,59 @@ export async function handleRoleBasedTool({
   args,
   role,
   logger,
-  llmProvider,
-  pathDI
-}: HandleRoleBasedToolArgs): Promise<any> {
+  providerFactoryInstance,
+  fileSystemTool,
+  handlers,
+  options
+}: HandleRoleBasedToolArgs): Promise<{ success: boolean, content: string }> {
   const { prompt, base_path, context, related_files, allow_file_overwrite } = args;
-  // Create a dedicated FileSystemTool instance with the specified base path
-  // Set allowFileOverwrite to false by default for safety
-  const dedicatedLocalCliTool = createFileSystemTool({
-    baseDir: pathDI.resolve(base_path),
-    allowFileOverwrite: allow_file_overwrite || false // Default to safe mode - require explicit allowOverwrite for existing files
-  });
   const fileContents = [] as Array<{ path: string, content: string }>;
+  fileSystemTool.setBaseDir(base_path);
+  fileSystemTool.setAllowFileOverwrite(allow_file_overwrite ?? false);
   if (related_files && related_files.length > 0) {
     for (const filePath of related_files) {
       try {
-        const content = await dedicatedLocalCliTool.execute('read_file', { path: filePath });
+        const content = await fileSystemTool.execute('read_file', { path: filePath });
         fileContents.push({ path: filePath, content: content.content });
       } catch (error) {
         logger.warn(`Failed to read file ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
-  const systemPrompt = constructXmlPrompt(role, prompt, context, fileContents, args);
+  const systemPrompt = handlers.constructXmlPrompt(role, prompt, context, fileContents, args);
   const messages = [
     { role: 'system' as const, content: systemPrompt },
     { role: 'user' as const, content: prompt }
   ];
-  try {
-    logger.info(`Executing ${role} role-based tool with prompt: ${prompt.slice(0, 100)}...`);
-    /*const providerResponse = await llmProvider.chat({
+  const { providerType, model } = handlers.getRoleLlmConfig(role);
+  logger.info(`Configuring ${role} role-based tool with model: ${model}, provider: ${providerType}`);
+  const llmProvider = providerFactoryInstance.getProvider(providerType);
+  await llmProvider.configure({
+    providerType,
+    model
+  })
+  logger.info(`Executing ${role} role-based tool with prompt: ${prompt.slice(0, 100)}...`);
+  const providerResponse = await handlers.orchestrateToolLoop(
+    llmProvider,
+    {
       messages,
-      maxTokens: 4000,
+      maxTokens: 10000,
       temperature: 0.2,
-      model: selectModelForRole(role)
-    });*/
+      model
+    },
+    logger,
+    options
+  );
+  logger.debug(`Processing file operations in ${role} response`, providerResponse);
+  const responseContent = providerResponse.content || '';
+  const processedResponse = await handlers.processFileOperations(
+    responseContent,
+    fileSystemTool,
+    logger
+  );
+  return {
+    content: processedResponse,
+    success: true
+  };
 
-    const providerResponse = await orchestrateToolLoop(
-      llmProvider,
-      {
-        messages,
-        maxTokens: 4000,
-        temperature: 0.2,
-        model: selectModelForRole(role)
-      },
-      logger
-    );
-    logger.debug(`Processing file operations in ${role} response`);
-    const responseContent = providerResponse.content || '';
-    const processedResponse = await processFileOperations(
-      responseContent,
-      dedicatedLocalCliTool,
-      logger
-    );
-    return {
-      content: [{ type: 'text', text: processedResponse }]
-    };
-  } catch (error) {
-    logger.error(`Error executing ${role} role-based tool:`, error);
-    throw error;
-  }
 }

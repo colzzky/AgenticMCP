@@ -26,6 +26,12 @@ import type {
   CustomSchema
 } from './roleSchemas.js';
 import type { PathDI } from '../../types/global.types.js';
+import { createFileSystemTool } from '@/tools/factory/fileSystemToolFactory';
+import { constructXmlPrompt, getRoleLlmConfig } from './xmlPromptUtils';
+import { FileSystemTool } from '@/tools/services/fileSystem';
+import { processFileOperations } from './roleHandlers';
+import { orchestrateToolLoop } from '@/providers/providerUtils';
+import type { ProviderFactoryInterface } from '@/providers/types.js';
 
 /**
  * Register role-based tools with the MCP server
@@ -34,10 +40,16 @@ import type { PathDI } from '../../types/global.types.js';
 export function registerRoleBasedTools(
   server: McpServer,
   logger: Logger,
-  llmProvider: LLMProvider,
-  pathDI: PathDI
+  providerFactoryInstance: ProviderFactoryInterface,
 ): McpServer {
   logger.info('Registering role-based MCP tools');
+  const fileSystemTool = createFileSystemTool({});
+  const handler = {
+    orchestrateToolLoop,
+    getRoleLlmConfig,
+    constructXmlPrompt,
+    processFileOperations
+  }
   server.registerTool(
     'coder',
     'Expert software developer that can generate, analyze, or refactor code',
@@ -46,8 +58,9 @@ export function registerRoleBasedTools(
       args,
       role: roleEnums.CODER,
       logger,
-      llmProvider,
-      pathDI
+      providerFactoryInstance,
+      fileSystemTool,
+      handlers: handler
     })
   );
   server.registerTool(
@@ -58,8 +71,9 @@ export function registerRoleBasedTools(
       args,
       role: roleEnums.QA,
       logger,
-      llmProvider,
-      pathDI
+      providerFactoryInstance,
+      fileSystemTool,
+      handlers: handler
     })
   );
   server.registerTool(
@@ -70,8 +84,9 @@ export function registerRoleBasedTools(
       args,
       role: roleEnums.PROJECT_MANAGER,
       logger,
-      llmProvider,
-      pathDI
+      providerFactoryInstance,
+      fileSystemTool,
+      handlers: handler
     })
   );
   server.registerTool(
@@ -82,8 +97,9 @@ export function registerRoleBasedTools(
       args,
       role: roleEnums.CPO,
       logger,
-      llmProvider,
-      pathDI
+      providerFactoryInstance,
+      fileSystemTool,
+      handlers: handler
     })
   );
   server.registerTool(
@@ -94,8 +110,9 @@ export function registerRoleBasedTools(
       args,
       role: roleEnums.UI_UX,
       logger,
-      llmProvider,
-      pathDI
+      providerFactoryInstance,
+      fileSystemTool,
+      handlers: handler
     })
   );
   server.registerTool(
@@ -106,8 +123,9 @@ export function registerRoleBasedTools(
       args,
       role: roleEnums.SUMMARIZER,
       logger,
-      llmProvider,
-      pathDI
+      providerFactoryInstance,
+      fileSystemTool,
+      handlers: handler
     })
   );
   server.registerTool(
@@ -118,8 +136,9 @@ export function registerRoleBasedTools(
       args,
       role: roleEnums.REWRITER,
       logger,
-      llmProvider,
-      pathDI
+      providerFactoryInstance,
+      fileSystemTool,
+      handlers: handler
     })
   );
   server.registerTool(
@@ -130,8 +149,9 @@ export function registerRoleBasedTools(
       args,
       role: roleEnums.ANALYST,
       logger,
-      llmProvider,
-      pathDI
+      providerFactoryInstance,
+      fileSystemTool,
+      handlers: handler
     })
   );
   server.registerTool(
@@ -142,8 +162,9 @@ export function registerRoleBasedTools(
       args,
       role: roleEnums.CUSTOM,
       logger,
-      llmProvider,
-      pathDI
+      providerFactoryInstance,
+      fileSystemTool,
+      handlers: handler
     })
   );
   logger.info('Role-based MCP tools registered successfully');

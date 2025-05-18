@@ -76,6 +76,7 @@ export interface ProviderRequest {
   tool_choice?: 'auto' | 'required' | 'none' | { type: 'function'; function: { name: string } }; // Control when tools are called
   parallelToolCalls?: boolean; // Whether multiple tools can be called in parallel
   system?: string; // System message
+  tool_outputs?: ToolCallOutput[] //
   [key: string]: any; // Allow other provider-specific parameters
 }
 
@@ -90,6 +91,7 @@ export interface ProviderResponse {
   id?: string; // Optional ID of the response, e.g., from OpenAI
   model?: string; // Optional model used for the response
   finishReason?: 'stop' | 'length' | 'tool_calls' | 'content_filter' | 'function_call' | string; // Optional reason the model stopped generating tokens
+  rawMessage?: unknown,
   usage?: {
     promptTokens?: number;
     completionTokens?: number;
@@ -121,7 +123,8 @@ export interface ChatMessage {
   content: string;
   tool_calls?: ToolCall[]; // Tool calls made by the assistant
   tool_call_id?: string; // For tool_call_output messages
-  name?: string; // For tool_call_output messages (function name)
+  name?: string; // For tool_call_output messages (function name),
+  rawMessage?: unknown,
 }
 
 /**
