@@ -8,7 +8,7 @@ import { roleEnums } from '../roleSchemas.js';
  * Configuration for a specific role-to-model mapping
  */
 export interface RoleModelMapping {
-  /** The provider to use for this role (e.g., 'anthropic', 'openai', 'google') */
+  /** The provider to use for this role (e.g., 'google', 'google', 'google') */
   provider: string;
   
   /** The specific model to use for this role */
@@ -46,8 +46,8 @@ export interface RoleModelConfig {
  */
 export const defaultRoleModelConfig: RoleModelConfig = {
   default: {
-    provider: 'anthropic',
-    model: 'claude-3-5-sonnet-20241022',
+    provider: 'google',
+    model: 'gemini-2.5-pro-preview-05-06',
     parameters: {
       temperature: 0.2,
       maxTokens: 4000
@@ -56,8 +56,8 @@ export const defaultRoleModelConfig: RoleModelConfig = {
   roleMap: {
     // Coder role - uses a model good at code generation
     [roleEnums.CODER]: {
-      provider: 'anthropic',
-      model: 'claude-3-5-sonnet-20241022',
+      provider: 'google',
+      model: 'gemini-2.5-pro-preview-05-06',
       parameters: {
         temperature: 0.1,
         maxTokens: 4000
@@ -65,8 +65,8 @@ export const defaultRoleModelConfig: RoleModelConfig = {
     },
     // Rewriter role - uses a model good at creative writing with higher temperature
     [roleEnums.REWRITER]: {
-      provider: 'anthropic',
-      model: 'claude-3-5-sonnet-20241022',
+      provider: 'google',
+      model: 'gemini-2.5-pro-preview-05-06',
       parameters: {
         temperature: 0.7,
         maxTokens: 8000
@@ -74,8 +74,8 @@ export const defaultRoleModelConfig: RoleModelConfig = {
     },
     // UI/UX role - uses a model good at design thinking
     [roleEnums.UI_UX]: {
-      provider: 'anthropic',
-      model: 'claude-3-5-sonnet-20241022',
+      provider: 'google',
+      model: 'gemini-2.5-pro-preview-05-06',
       parameters: {
         temperature: 0.4,
         maxTokens: 4000
@@ -83,8 +83,8 @@ export const defaultRoleModelConfig: RoleModelConfig = {
     },
     // Analyst role - uses a model good at documentation and analysis
     [roleEnums.ANALYST]: {
-      provider: 'anthropic',
-      model: 'claude-3-5-sonnet-20241022',
+      provider: 'google',
+      model: 'gemini-2.5-pro-preview-05-06',
       parameters: {
         temperature: 0.3,
         maxTokens: 6000

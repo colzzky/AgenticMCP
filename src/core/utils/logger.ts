@@ -41,7 +41,7 @@ export function error(message: string): void {
  */
 export function debug(message: string): void {
   // Simple debug check, can be expanded (e.g., using a library like 'debug')
-  if (process.env.DEBUG === 'true' || process.env.AGENTICMCP_DEBUG === 'true') {
+  if (process.env.DEVMODELOG === 'true' || process.env.AGENTICMCP_DEBUG === 'true') {
     console.log(`[DEBUG] ${message}`);
   }
 }

@@ -2,7 +2,16 @@
  * @file Type definitions for Google/Gemini Provider
  */
 
-import { Content, GenerateContentResponse } from '@google/genai';
+import {
+  Content,
+  GenerateContentResponse,
+  GoogleGenAI,
+  FunctionCallingConfigMode,
+  FunctionDeclaration,
+  Type,
+  GenerateContentConfig,
+  ToolConfig,
+} from '@google/genai';
 import type { Tool } from '../../core/types/provider.types';
 
 // Google API specific interfaces for strong typing
@@ -26,12 +35,8 @@ export interface GoogleGenAIModelInstance {
 export interface GoogleGenerateContentConfig {
   contents: Content[];
   generationConfig?: GenerationConfig;
-  tools?: GoogleToolConfig[];
+  tools?: FunctionDeclaration[];
   toolConfig?: GoogleToolCallingConfig;
-}
-
-export interface GoogleToolConfig {
-  functionDeclarations: GoogleFunctionDeclaration[];
 }
 
 export interface GoogleFunctionDeclaration {
@@ -86,31 +91,61 @@ export interface GoogleGenAIResponse {
   response?: GoogleGenAIResponse;
 }
 
+
+const convertToolParamsToGoogleFormat = (tool: Tool): FunctionDeclaration['parameters'] => {
+
+  const googleTypeMap = {
+    string: Type.STRING,
+    number: Type.NUMBER,
+    boolean: Type.BOOLEAN,
+    array: Type.ARRAY,
+    object: Type.OBJECT,
+    integer: Type.INTEGER,
+  }
+
+  const declaration: FunctionDeclaration['parameters'] = {
+    type: Type.OBJECT,
+    description: tool.description,
+    properties: {},
+    required: tool.parameters.required,
+  };
+
+  Object.entries(tool.parameters.properties).forEach(([key, value]) => {
+    if (!declaration.properties) return;
+    const type = Array.isArray(value.type) ? value.type[0] : value.type;
+    declaration.properties[key] = {
+      type: googleTypeMap[type],
+      description: value.description,
+    };
+    if (googleTypeMap[type] === Type.ARRAY) {
+      declaration.properties[key].items = {
+        type: Type.STRING,
+        description: "The array item"
+      };
+    }
+  });
+
+  return declaration;
+}
+
 /**
  * Converts the generic Tool interface to Google's function declaration format
  * @param tools Array of Tool objects to convert
  * @returns Google-specific function declaration format or undefined if no tools provided
  */
-export function convertToolsToGoogleFormat(tools?: Tool[]): GoogleToolConfig[] | undefined {
+export function convertToolsToGoogleFormat(tools?: Tool[]): FunctionDeclaration[] | undefined {
   if (!tools || tools.length === 0) {
     return undefined;
   }
-  
+
   // Create a functionDeclarations array in the format Google Gemini expects
   const functionDeclarations = tools.map(tool => ({
     name: tool.name,
-    description: tool.description || '',
-    parameters: {
-      type: tool.parameters.type,
-      properties: tool.parameters.properties,
-      required: tool.parameters.required || []
-    }
-  }));
-  
+    parameters: convertToolParamsToGoogleFormat(tool),
+  } as FunctionDeclaration));
+
   // Return the tools array in Google's format
-  return [{
-    functionDeclarations
-  }];
+  return functionDeclarations;
 }
 
 /**
@@ -120,32 +155,32 @@ export function convertToolsToGoogleFormat(tools?: Tool[]): GoogleToolConfig[] |
  */
 export function convertToolChoiceToGoogleFormat(
   toolChoice: 'auto' | 'required' | 'none' | { type: 'function'; name: string }
-): GoogleToolCallingConfig {
-  const toolConfig: GoogleToolCallingConfig = {
+): ToolConfig {
+  const toolConfig: ToolConfig = {
     functionCallingConfig: {}
   };
-  
-  if (typeof toolChoice === 'string') {
-    switch (toolChoice) {
-      case 'auto': {
-        // This is the default, so no need to specify
-        toolConfig.functionCallingConfig.mode = 'AUTO';
-        break;
+  if (toolConfig.functionCallingConfig) {
+    if (typeof toolChoice === 'string') {
+      switch (toolChoice) {
+        case 'auto': {
+          // This is the default, so no need to specify
+          toolConfig.functionCallingConfig.mode = FunctionCallingConfigMode.AUTO;
+          break;
+        }
+        case 'required': {
+          toolConfig.functionCallingConfig.mode = FunctionCallingConfigMode.ANY;
+          break;
+        }
+        case 'none': {
+          toolConfig.functionCallingConfig.mode = FunctionCallingConfigMode.NONE;
+          break;
+        }
       }
-      case 'required': {
-        toolConfig.functionCallingConfig.mode = 'ANY';
-        break;
-      }
-      case 'none': {
-        toolConfig.functionCallingConfig.mode = 'NONE';
-        break;
-      }
+    } else if (toolChoice && typeof toolChoice === 'object' && toolChoice.type === 'function') {
+      // Specific tool requested
+      toolConfig.functionCallingConfig.mode = FunctionCallingConfigMode.ANY;
+      toolConfig.functionCallingConfig.allowedFunctionNames = [toolChoice.name];
     }
-  } else if (toolChoice && typeof toolChoice === 'object' && toolChoice.type === 'function') {
-    // Specific tool requested
-    toolConfig.functionCallingConfig.mode = 'ANY';
-    toolConfig.functionCallingConfig.allowedFunctionNames = [toolChoice.name];
   }
-  
   return toolConfig;
 }

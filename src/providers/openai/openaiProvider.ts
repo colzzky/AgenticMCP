@@ -1,6 +1,6 @@
 // Forcing re-evaluation for TS diagnostics
 import OpenAI from 'openai';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type { ChatCompletionMessageParam, ChatCompletionToolMessageParam } from 'openai/resources/chat/completions';
 import {
   LLMProvider,
   ProviderRequest,
@@ -139,6 +139,14 @@ export class OpenAIProvider extends ProviderBase {
       return handleProviderError(this.logger, new Error('OpenAIProvider not configured. Call configure() first.'), 'OpenAIProvider.chat');
     }
 
+    let OpenAiTools: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming['tools'] = [];
+    const toolsLibrary = this.toolExecutor?.getAllTools()
+    if (toolsLibrary) {
+      // Add tools support if enabled
+      this.logger.debug(`Adding ${toolsLibrary.length} tools to request`);
+      OpenAiTools = mappers.mapToolsToOpenAIChatTools(toolsLibrary);
+    }
+
     const model = request.model || this.providerConfig.model || this.defaultModel;
     const temperature = request.temperature ?? this.providerConfig.temperature ?? 0.7;
 
@@ -147,62 +155,98 @@ export class OpenAIProvider extends ProviderBase {
       : [];
 
     try {
-      this.logger.debug(`Sending OpenAI chat request with model: ${model}`);
+
+      const maxCallIterations = 10;
+      let callIterations = 0;
+      let openAiProviderResult: ProviderResponse = {
+        success: false,
+        content: '',
+        toolCalls: undefined,
+      };
 
       const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
         model,
         messages,
         temperature,
-        tool_choice: 'auto', // Set default to 'auto' as per OpenAI docs
+        tool_choice: 'auto', // Set default to 'auto' as per OpenAI docs,
+        tools: OpenAiTools,
+        parallel_tool_calls: true,
       };
 
-      // Add tools support if enabled
-      if (request.tools && request.tools.length > 0) {
-        this.logger.debug(`Adding ${request.tools.length} tools to request`);
-        requestOptions.tools = mappers.mapToolsToOpenAIChatTools(request.tools);
-        
-        // Set parallelToolCalls based on request option (default to true if not specified)
-        requestOptions.parallel_tool_calls = request.parallelToolCalls !== false;
-      }
+      while (callIterations < maxCallIterations) {
+        this.logger.debug(`Sending OpenAI chat request with model: ${model}`);
 
-      // Add tool_choice if specified
-      if (request.tool_choice) {
-        if (typeof request.tool_choice === 'string') {
-          requestOptions.tool_choice = request.tool_choice as 'none' | 'auto' | 'required';
-        } else if (typeof request.tool_choice === 'object') {
-          // Ensure request.tool_choice is compatible with ChatCompletionNamedToolChoice
-          const toolChoiceObj = request.tool_choice as OpenAI.Chat.Completions.ChatCompletionNamedToolChoice;
-          requestOptions.tool_choice = toolChoiceObj.type === 'function' && toolChoiceObj.function?.name ? {
-            type: 'function',
-            function: { name: toolChoiceObj.function.name }
-          } : 'auto';
-        } else {
-          requestOptions.tool_choice = 'auto';
+        // Add tool_choice if specified
+        if (request.tool_choice) {
+          if (typeof request.tool_choice === 'string') {
+            requestOptions.tool_choice = request.tool_choice as 'none' | 'auto' | 'required';
+          } else if (typeof request.tool_choice === 'object') {
+            // Ensure request.tool_choice is compatible with ChatCompletionNamedToolChoice
+            const toolChoiceObj = request.tool_choice as OpenAI.Chat.Completions.ChatCompletionNamedToolChoice;
+            requestOptions.tool_choice = toolChoiceObj.type === 'function' && toolChoiceObj.function?.name ? {
+              type: 'function',
+              function: { name: toolChoiceObj.function.name }
+            } : 'auto';
+          } else {
+            requestOptions.tool_choice = 'auto';
+          }
         }
+
+        // Handle multi-reply
+        if (typeof request.n === 'number') {
+          requestOptions.n = request.n;
+        }
+
+        // Standard non-streaming request
+        this.logger.debug(`Sending OpenAI chat request with JSON: ${JSON.stringify(requestOptions)}`);
+        const completion = await this.client.chat.completions.create(requestOptions);
+        this.logger.debug(`Received response from OpenAI API: ${JSON.stringify(completion)}`);
+
+        openAiProviderResult = buildProviderResponseFromCompletion(this.logger, completion);
+        const toolUseMessages: ChatCompletionToolMessageParam[] = [];
+        const toolCalls = openAiProviderResult.toolCalls;
+        if (toolCalls && toolCalls.length > 0) {
+          const messageWithToolCallIntent = completion.choices[0].message;
+          for (const toolCall of toolCalls) {
+            try {
+              const output = await this.executeToolCall(toolCall);
+              toolUseMessages.push({
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                content: typeof output === 'string' ? output : JSON.stringify(output)
+              });
+            } catch (error) {
+              this.logger.error(`Error executing tool ${toolCall.name}: ${error instanceof Error ? error.message : String(error)}`);
+              toolUseMessages.push({
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                content: `Error: ${error instanceof Error ? error.message : String(error)}`
+              });
+            }
+          }
+          requestOptions.messages = [
+            ...requestOptions.messages,
+            messageWithToolCallIntent,
+            ...toolUseMessages
+          ];
+        }
+
+        if (
+          completion.choices[0].finish_reason !== "tool_calls"
+          &&
+          completion.choices[0].finish_reason !== "function_call"
+        ) {
+          break;
+        }
+        callIterations++;
       }
 
-      // Add parallelToolCalls if specified
-      requestOptions.parallel_tool_calls = true;
-      if (request.parallelToolCalls !== undefined) {
-        requestOptions.parallel_tool_calls = request.parallelToolCalls;
-      }
+      return openAiProviderResult;
 
-      // Handle multi-reply
-      if (typeof request.n === 'number') {
-        requestOptions.n = request.n;
-      }
-
-      // Add streaming support if requested
-      if (request.stream && typeof request.onStream === 'function') {
-        return this._handleStreamingChatRequest(request, requestOptions);
-      }
-
-      // Standard non-streaming request
-      const completion = await this.client.chat.completions.create(requestOptions);
-      return buildProviderResponseFromCompletion(this.logger, completion);
     } catch (error: unknown) {
       return handleProviderError(this.logger, error, 'OpenAIProvider.chat');
     }
+
   }
 
   public async generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse> {

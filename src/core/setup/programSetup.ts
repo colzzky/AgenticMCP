@@ -31,7 +31,7 @@ export const runProgram: RunProgramFn = async (
   } catch (error) {
     if (error instanceof Error) {
       loggerTool.error(`Command execution failed: ${error.message}`);
-      if (processDi.env.DEBUG === 'true') {
+      if (processDi.env.DEVMODELOG === 'true') {
         loggerTool.error(error.stack ?? '');
       }
     } else {

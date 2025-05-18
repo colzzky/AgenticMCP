@@ -3,12 +3,12 @@
  */
 
 import { ToolCall } from '../../core/types/provider.types';
-import { GoogleGenAIResponse } from './googleTypes';
+import { type GenerateContentResponse } from '@google/genai';
 
 /**
  * Extracts tool/function calls from the Google Gemini response
  */
-export function extractToolCallsFromGenAIResponse(response: GoogleGenAIResponse): ToolCall[] | undefined {
+export function extractToolCallsFromGenAIResponse(response: GenerateContentResponse): ToolCall[] | undefined {
   if (!response?.candidates?.[0]?.content?.parts) return undefined;
 
   const toolCalls: ToolCall[] = [];
@@ -19,8 +19,11 @@ export function extractToolCallsFromGenAIResponse(response: GoogleGenAIResponse)
     if (part.functionCall) {
       const uniqueId = `${part.functionCall.name}_${Date.now()}`;
       toolCalls.push({
-        id: uniqueId, call_id: uniqueId, type: 'function_call',
-        name: part.functionCall.name, arguments: JSON.stringify(part.functionCall.args)
+        id: uniqueId,
+        call_id: uniqueId,
+        type: 'function_call',
+        name: part.functionCall.name!,
+        arguments: JSON.stringify(part.functionCall.args)
       });
     }
   }
@@ -30,8 +33,11 @@ export function extractToolCallsFromGenAIResponse(response: GoogleGenAIResponse)
     for (const call of response.functionCalls) {
       const uniqueId = `${call.name}_${Date.now()}`;
       toolCalls.push({
-        id: uniqueId, call_id: uniqueId, type: 'function_call',
-        name: call.name, arguments: JSON.stringify(call.args)
+        id: uniqueId,
+        call_id: uniqueId,
+        type: 'function_call',
+        name: call.name!,
+        arguments: JSON.stringify(call.args)
       });
     }
   }

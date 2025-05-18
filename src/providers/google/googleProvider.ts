@@ -2,22 +2,16 @@
  * @file Implementation of the Google/Gemini Provider adapter with dependency injection
  */
 
-import { GoogleGenAI } from '@google/genai';
-import type { LLMProvider, ProviderRequest, ProviderResponse, Tool, ToolCall, ChatMessage, ToolResultsRequest, ToolCallOutput, RecursiveToolLoopOptions } from '../../core/types/provider.types';
+import {
+  GoogleGenAI,
+  GenerateContentConfig,
+  Part,
+} from '@google/genai';
+import type { ProviderRequest, ProviderResponse, ChatMessage, ToolResultsRequest, ToolCallOutput, RecursiveToolLoopOptions } from '../../core/types/provider.types';
 import type { GoogleProviderSpecificConfig } from '../../core/types/config.types';
 import type { ConfigManager } from '../../core/config/configManager';
 import type { Logger } from '../../core/types/logger.types';
-
-import {
-  GoogleGenAIResponse,
-  GoogleResponseCandidate,
-  GoogleResponsePart,
-  GoogleGenerateContentConfig,
-  GoogleGenAIModelInstance,
-  GenerationConfig
-} from './googleTypes';
 import { convertToolsToGoogleFormat, convertToolChoiceToGoogleFormat } from './googleTypes';
-import { extractToolCallsFromGenAIResponse } from './googleToolExtraction';
 import { convertMessagesToGenAIFormat } from './googleMessageConversion';
 import { ProviderBase } from '../providerBase';
 
@@ -75,7 +69,7 @@ export class GoogleProvider extends ProviderBase {
 
     // Check for environment variable first
     let apiKey = process.env.GEMINI_API_KEY;
-    
+
     // Fall back to credential store if environment variable is not set
     if (!apiKey) {
       try {
@@ -87,7 +81,7 @@ export class GoogleProvider extends ProviderBase {
         this.logger.debug(`Error retrieving API key from credential store: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
-    
+
     if (!apiKey && !config.vertexAI) {
       throw new Error(
         `Google Gemini API key not found for providerType: ${this.providerConfig.providerType}` +
@@ -101,31 +95,31 @@ export class GoogleProvider extends ProviderBase {
 
     // Initialize client differently based on whether we're using Vertex AI or the Gemini API
     const useVertexAI = this.providerConfig.vertexAI;
-    
+
     // Initialize client based on the configuration
     useVertexAI ? this.initializeVertexAI() : await this.initializeGeminiAPI();
   }
-  
+
   /**
    * Initialize the client for Vertex AI
    */
   private initializeVertexAI(): void {
     if (!this.providerConfig) return;
-    
+
     if (!this.providerConfig.vertexProject || !this.providerConfig.vertexLocation) {
       throw new Error('Vertex AI requires vertexProject and vertexLocation to be specified');
     }
-    
+
     // Initialize for Vertex AI
     this.client = new this.GoogleGenAIClass({
       project: this.providerConfig.vertexProject,
       location: this.providerConfig.vertexLocation,
       vertexai: true
     });
-    
+
     this.logger.info(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Vertex AI`);
   }
-  
+
   /**
    * Initialize the client for the Gemini Developer API
    */
@@ -140,10 +134,10 @@ export class GoogleProvider extends ProviderBase {
       if (!vertexProject || !vertexLocation) {
         throw new Error('Vertex AI requires vertexProject and vertexLocation to be specified.');
       }
-      
-      this.client = new this.GoogleGenAIClass({ 
-        project: vertexProject, 
-        location: vertexLocation 
+
+      this.client = new this.GoogleGenAIClass({
+        project: vertexProject,
+        location: vertexLocation
       });
     } else if (apiKey) {
       this.client = new this.GoogleGenAIClass({ apiKey });
@@ -158,7 +152,7 @@ export class GoogleProvider extends ProviderBase {
     if (!this.client) {
       throw new Error('Failed to initialize Google Gemini API client.');
     }
-    
+
     this.logger.info(`GoogleProvider configured for instance: ${this.providerConfig.instanceName || 'default'} with Gemini API`);
   }
 
@@ -179,6 +173,25 @@ export class GoogleProvider extends ProviderBase {
       }
     }
 
+    let usage = {
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+    }
+
+    // Configure tools if provided
+    const config: GenerateContentConfig = {
+      tools: [],
+      responseMimeType: 'text/plain',
+    };
+
+    const toolsLibrary = this.toolExecutor?.getAllTools()
+    if (toolsLibrary) {
+      // Add tools support if enabled
+      this.logger.debug(`Adding ${toolsLibrary.length} tools to request`);
+      config.tools = [{ functionDeclarations: convertToolsToGoogleFormat(toolsLibrary) }]
+    }
+
     try {
       const modelName = request.model || this.providerConfig.model || 'gemini-1.5-flash-latest';
       const sdkFormattedMessages = convertMessagesToGenAIFormat(request.messages || []);
@@ -194,116 +207,77 @@ export class GoogleProvider extends ProviderBase {
         };
       }
 
-      const generationConfig: GenerationConfig = {
-        maxOutputTokens: request.maxTokens || this.providerConfig.maxTokens,
-        temperature: request.temperature || this.providerConfig.temperature,
-        topK: this.providerConfig.topK,
-        topP: this.providerConfig.topP,
-      };
-
-      // Remove undefined values from generationConfig
-      for (const key of Object.keys(generationConfig)) {
-        if (generationConfig[key as keyof GenerationConfig] === undefined) {
-          delete generationConfig[key as keyof GenerationConfig];
-        }
-      }
-
-      // Get the model instance using the pattern that aligns with current mocks
-      // Type assertion is necessary for the Google API structure
-      const modelInstance = (this.client as any).models.get(modelName) as GoogleGenAIModelInstance;
-      if (!modelInstance) {
-          throw new Error(`Failed to get model instance for ${modelName}. Ensure client.models.get is correctly mocked or implemented.`);
-      }
-
-      // Configure tools if provided
-      const config: GoogleGenerateContentConfig = {
-        contents: sdkFormattedMessages,
-        generationConfig
-      };
-      
-      // Add tools if provided in the request
-      if (request.tools && request.tools.length > 0) {
-        config.tools = convertToolsToGoogleFormat(request.tools);
-      }
-
       // Add tool choice configuration if provided
-      if (request.toolChoice && 
-         (request.toolChoice === 'auto' || 
-          request.toolChoice === 'required' || 
-          request.toolChoice === 'none' || 
-          (typeof request.toolChoice === 'object' && 
-           'type' in request.toolChoice && 
-           request.toolChoice.type === 'function'))) {
+      if (request.toolChoice &&
+        (request.toolChoice === 'auto' ||
+          request.toolChoice === 'required' ||
+          request.toolChoice === 'none' ||
+          (typeof request.toolChoice === 'object' &&
+            'type' in request.toolChoice &&
+            request.toolChoice.type === 'function'))) {
         config.toolConfig = convertToolChoiceToGoogleFormat(request.toolChoice as 'auto' | 'required' | 'none' | { type: 'function'; name: string });
       }
-      
-      // Use modelInstance.generateContent for chat-like interactions with structured Content[]
-      const resultPromise = modelInstance.generateContent(config);
 
-      // For tests, the mock might return the response directly rather than a promise with a response property
-      let resultResponse: GoogleGenAIResponse;
-      try {
-        const response = await resultPromise;
-        // Handle both the actual Google API response format and our test format
-        resultResponse = ('response' in response ? response.response : response) as unknown as GoogleGenAIResponse;
-      } catch {
-        // For other formats or test scenarios
-        resultResponse = resultPromise as unknown as GoogleGenAIResponse;
+      let finalResponse = "";
+      let callIterations = 0;
+      const maxIterations = 10;
+      while (callIterations < maxIterations) {
 
-        // Special handling for tests - if we have a response property but it's not a promise
-        if (resultResponse.response && typeof resultResponse.response !== 'function') {
-          resultResponse = resultResponse.response;
+        // Use modelInstance.generateContent for chat-like interactions with structured Content[]
+        const resultResponse = await this.client.models.generateContent({
+          model: modelName,
+          contents: sdkFormattedMessages,
+          config: config
+        });
+
+        usage.promptTokens = usage.promptTokens + (resultResponse.usageMetadata?.promptTokenCount || 0),
+        usage.completionTokens = usage.completionTokens + (resultResponse.usageMetadata?.candidatesTokenCount || 0),
+        usage.totalTokens = usage.totalTokens + (resultResponse.usageMetadata?.totalTokenCount || 0),
+
+        this.logger.debug(`Google Response: ${JSON.stringify(resultResponse)}`)
+        const modelResponse = resultResponse?.candidates?.[0]?.content;
+        finalResponse = modelResponse?.parts?.[0]?.text || "";
+        const functionCallPart = modelResponse?.parts?.find((part) => part.functionCall) as Part;
+        if (functionCallPart) {
+          const functionCall = functionCallPart.functionCall;
+          const functionName = functionCall?.name;
+          const toolCallOutput = await this.executeToolCall({
+            id: functionCall?.name!,
+            call_id: functionCall?.name!,
+            type: 'function_call',
+            name: functionCall?.name!,
+            arguments: JSON.stringify(functionCall?.args!)
+          });
+          sdkFormattedMessages.push(
+            {
+              role: "model",
+              parts: [{ functionCall: functionCall }],
+            },
+            {
+              role: "function",
+              parts: [
+                {
+                  functionResponse: {
+                    name: functionName,
+                    response: {
+                      content: toolCallOutput,
+                    },
+                  },
+                },
+              ],
+            }
+          );
+          callIterations++;
+        } else {
+          break;
         }
+
       }
 
-      // Extract text content from parts - handle both direct text property and parts extraction
-      let content = '';
-
-      // Check if there are candidates with content parts
-      if (resultResponse.candidates &&
-          resultResponse.candidates.length > 0 &&
-          resultResponse.candidates[0].content &&
-          resultResponse.candidates[0].content.parts) {
-
-        // Extract text from parts that have text property
-        content = resultResponse.candidates[0].content.parts
-          .filter((part: GoogleResponsePart) => part.text && typeof part.text === 'string')
-          .map((part: GoogleResponsePart) => part.text as string)
-          .join(' ');
-      }
-
-      // If no content was extracted through parts but there's a text property on response, use that
-      if (!content && resultResponse.text) {
-        content = resultResponse.text;
-      }
-
-      if (!content && resultResponse.promptFeedback?.blockReason) {
-        const blockMessage = `Content generation blocked. Reason: ${resultResponse.promptFeedback.blockReason}. ${resultResponse.promptFeedback.blockReasonMessage || ''}`;
-        this.logger.error(blockMessage);
-        return {
-            success: false,
-            content: '',
-            error: { message: blockMessage, code: 'content_blocked' }
-        };
-      }
-      
-      // Extract tool calls from the response
-      const toolCalls = extractToolCallsFromGenAIResponse(resultResponse);
-      
-      this.logger.debug(`Google Gemini chat completion successful for instance ${this.providerConfig.instanceName || 'default'} with model ${modelName}`);
-      
       return {
         success: true,
-        content,
-        toolCalls,
-        choices: resultResponse.candidates?.map((candidate: GoogleResponseCandidate) => ({
-          text: candidate.content?.parts?.map((part: GoogleResponsePart) => part.text || '').join('') || '',
-        })) || [{ text: content }],
-        usage: {
-          promptTokens: resultResponse.usageMetadata?.promptTokenCount || 0,
-          completionTokens: resultResponse.usageMetadata?.candidatesTokenCount || 0,
-          totalTokens: resultResponse.usageMetadata?.totalTokenCount || 0,
-        }
+        content: finalResponse,
+        usage,
       };
     } catch (error_) {
       const message = error_ instanceof Error ? error_.message : String(error_);
@@ -344,10 +318,10 @@ export class GoogleProvider extends ProviderBase {
   async generateTextWithToolResults(request: ToolResultsRequest): Promise<ProviderResponse> {
     // For Google/Gemini, we handle tool results by adding them to the conversation history
     // and then continuing the conversation with a new chat request
-    
+
     // Extract tool outputs and add them to the messages
     const messages = [...(request.messages || [])] as ChatMessage[];
-    
+
     // If there are tool outputs, add them to the conversation
     if (request.tool_outputs && request.tool_outputs.length > 0) {
       for (const output of request.tool_outputs) {
@@ -366,11 +340,11 @@ export class GoogleProvider extends ProviderBase {
         });
       }
     }
-    
+
     // Continue the conversation with the updated messages
     return this.chat({ ...request, messages });
   }
-  
+
   /**
    * Continues a conversation with tool call results
    * @param initialRequest The original request that generated the tool calls
